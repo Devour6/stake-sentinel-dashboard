@@ -130,29 +130,33 @@ const Home = () => {
           <form onSubmit={handleSearch} className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
-              <Popover open={showSuggestions} onOpenChange={setShowSuggestions}>
-                <PopoverTrigger asChild>
-                  <Input
-                    type="text"
-                    placeholder="Search by validator vote account, identity, or name..."
-                    className="pl-10 bg-gojira-gray-dark border-gojira-gray-light"
-                    value={searchInput}
-                    onChange={handleInputChange}
-                    ref={searchInputRef}
-                    onFocus={() => filteredValidators.length > 0 && setShowSuggestions(true)}
-                  />
-                </PopoverTrigger>
-                <PopoverContent 
-                  className="p-0 w-[var(--radix-popover-trigger-width)] mt-1" 
-                  align="start"
-                  sideOffset={5}
-                >
-                  <div className="max-h-[300px] overflow-y-auto">
+              
+              {/* Removed Popover around Input, and implemented custom dropdown */}
+              <div className="relative">
+                <Input
+                  type="text"
+                  placeholder="Search by validator vote account, identity, or name..."
+                  className="pl-10 bg-gojira-gray-dark border-gojira-gray-light"
+                  value={searchInput}
+                  onChange={handleInputChange}
+                  ref={searchInputRef}
+                  onFocus={() => filteredValidators.length > 0 && setShowSuggestions(true)}
+                  onBlur={() => {
+                    // Delay hiding suggestions to allow for clicks
+                    setTimeout(() => setShowSuggestions(false), 200);
+                  }}
+                />
+                
+                {showSuggestions && filteredValidators.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-gojira-gray-dark border border-gojira-gray-light rounded-md shadow-lg max-h-[300px] overflow-y-auto">
                     {filteredValidators.map((validator) => (
                       <div
                         key={validator.votePubkey}
                         className="flex items-center justify-between p-3 hover:bg-accent cursor-pointer"
-                        onClick={() => handleSelectValidator(validator.votePubkey)}
+                        onMouseDown={(e) => {
+                          e.preventDefault(); // Prevent blur event from firing before click
+                          handleSelectValidator(validator.votePubkey);
+                        }}
                       >
                         <div className="flex items-center">
                           <span className="font-medium">{validator.name || "Unknown"}</span>
@@ -163,8 +167,8 @@ const Home = () => {
                       </div>
                     ))}
                   </div>
-                </PopoverContent>
-              </Popover>
+                )}
+              </div>
             </div>
             <Button 
               type="submit" 
