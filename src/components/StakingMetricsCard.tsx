@@ -1,6 +1,5 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatSol, formatChange, formatCommission } from "@/services/solanaApi";
+import { formatSol, formatCommission } from "@/services/solanaApi";
 import { ArrowUpRight, ArrowDownRight, Percent, Users } from "lucide-react";
 
 interface StakingMetricsCardProps {
@@ -36,7 +35,7 @@ export const StakingMetricsCard = ({
         )}
         {description && (
           <CardDescription className={`mt-1 flex items-center gap-1 ${
-            trend === "up" ? "text-gojira-red" : 
+            trend === "up" ? "text-green-500" : 
             trend === "down" ? "text-red-500" : ""
           }`}>
             {trend === "up" && <ArrowUpRight className="h-3 w-3" />}

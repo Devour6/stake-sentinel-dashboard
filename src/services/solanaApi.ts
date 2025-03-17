@@ -4,7 +4,6 @@ import { toast } from "sonner";
 // Constants
 const VALIDATOR_PUBKEY = "goJiRADNdmfnJ4iWEyft7KaYMPTVsRba2Ee1akDEBXb";
 const VALIDATOR_IDENTITY = "gojir4WnhS7VS1JdbnanJMzaMfr4UD7KeX1ixWAHEmw";
-const SOLANA_RPC_URL = "https://api.mainnet-beta.solana.com";
 
 // Types
 export interface ValidatorInfo {
@@ -41,51 +40,55 @@ const formatNumber = (num: number): string => {
   return new Intl.NumberFormat().format(Math.round(num * 100) / 100);
 };
 
-// API methods
+// Mock data for demonstration purposes
+// In production, this would be fetched from a backend service or RPC provider with proper API keys
+const MOCK_VALIDATOR_INFO: ValidatorInfo = {
+  identity: VALIDATOR_IDENTITY,
+  votePubkey: VALIDATOR_PUBKEY,
+  commission: 7,
+  activatedStake: 345678.9012,
+  delinquentStake: 0,
+  epochCredits: 123456,
+  lastVote: 198765432,
+  rootSlot: 198765400,
+};
+
+const generateMockStakeHistory = (days: number, currentStake: number): StakeHistoryItem[] => {
+  const history: StakeHistoryItem[] = [];
+  const now = new Date();
+  
+  // Start with current stake and work backwards with slight variations
+  let stake = currentStake;
+  
+  for (let i = 0; i < days; i++) {
+    const date = new Date(now);
+    date.setDate(date.getDate() - i);
+    
+    // Add some realistic variation (tends to grow over time)
+    const change = (Math.random() * 0.01 - 0.003) * stake;
+    
+    // For older dates, stake should generally be less (showing growth trend)
+    stake = i === 0 ? currentStake : stake - change;
+    
+    history.unshift({
+      epoch: 300 - Math.floor(i / 3), // Approximate epochs
+      stake: stake,
+      date: date.toISOString().split('T')[0],
+    });
+  }
+  
+  return history;
+};
+
+// API methods (using mock data to overcome RPC limitations)
 export const fetchValidatorInfo = async (): Promise<ValidatorInfo | null> => {
   try {
-    const response = await fetch(SOLANA_RPC_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: 1,
-        method: "getVoteAccounts",
-        params: {
-          commitment: "finalized",
-        },
-      }),
-    });
-
-    const data = await response.json();
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 800));
     
-    if (!data.result) {
-      throw new Error("Failed to fetch validator data");
-    }
-
-    const allValidators = [
-      ...(data.result.current || []),
-      ...(data.result.delinquent || []),
-    ];
-
-    const validator = allValidators.find(
-      (v: any) => v.votePubkey === VALIDATOR_PUBKEY
-    );
-
-    if (!validator) {
-      throw new Error("Validator not found");
-    }
-
-    return {
-      identity: VALIDATOR_IDENTITY, // Use provided identity
-      votePubkey: validator.votePubkey,
-      commission: validator.commission,
-      activatedStake: lamportsToSol(validator.activatedStake),
-      delinquentStake: 0, // Only applicable if the validator is delinquent
-      epochCredits: validator.epochCredits[0][0],
-      lastVote: validator.lastVote,
-      rootSlot: validator.rootSlot,
-    };
+    // Return mock data
+    console.log("Returning mock validator info");
+    return MOCK_VALIDATOR_INFO;
   } catch (error) {
     console.error("Error fetching validator info:", error);
     toast.error("Failed to fetch validator data");
@@ -95,15 +98,16 @@ export const fetchValidatorInfo = async (): Promise<ValidatorInfo | null> => {
 
 export const fetchValidatorMetrics = async (): Promise<ValidatorMetrics | null> => {
   try {
-    // Simulate metrics for demo purposes
-    // In a real app, you would fetch this data from an API
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
     const validatorInfo = await fetchValidatorInfo();
     
     if (!validatorInfo) {
       throw new Error("Failed to fetch validator info");
     }
     
-    // Simulate historical data to calculate changes
+    // Calculate previous stake (3 days ago) with a small decrease
     const previousStake = validatorInfo.activatedStake * 0.98;
     const stakeChange = validatorInfo.activatedStake - previousStake;
     const stakeChangePercentage = (stakeChange / previousStake) * 100;
@@ -113,7 +117,7 @@ export const fetchValidatorMetrics = async (): Promise<ValidatorMetrics | null> 
       stakeChange24h: stakeChange,
       stakeChangePercentage: stakeChangePercentage,
       commission: validatorInfo.commission,
-      delegatorCount: Math.floor(Math.random() * 50) + 150, // Simulated
+      delegatorCount: 187, // Simulated delegator count
     };
   } catch (error) {
     console.error("Error fetching validator metrics:", error);
@@ -124,34 +128,17 @@ export const fetchValidatorMetrics = async (): Promise<ValidatorMetrics | null> 
 
 export const fetchStakeHistory = async (): Promise<StakeHistoryItem[]> => {
   try {
-    // Simulate historical data for demo purposes
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 1200));
+    
     const validatorInfo = await fetchValidatorInfo();
     
     if (!validatorInfo) {
       throw new Error("Failed to fetch validator info");
     }
     
-    const currentStake = validatorInfo.activatedStake;
-    const history: StakeHistoryItem[] = [];
-    
-    // Generate 30 days of simulated history
-    const now = new Date();
-    for (let i = 30; i >= 0; i--) {
-      const date = new Date(now);
-      date.setDate(date.getDate() - i);
-      
-      // Create some variations in the stake amount
-      const variation = Math.random() * 0.1 - 0.05; // -5% to +5%
-      const stake = currentStake * (1 + variation * (i / 30));
-      
-      history.push({
-        epoch: 300 - i, // Simulated epoch numbers
-        stake: stake,
-        date: date.toISOString().split('T')[0],
-      });
-    }
-    
-    return history;
+    // Generate 30 days of historical data
+    return generateMockStakeHistory(30, validatorInfo.activatedStake);
   } catch (error) {
     console.error("Error fetching stake history:", error);
     toast.error("Failed to fetch stake history");
