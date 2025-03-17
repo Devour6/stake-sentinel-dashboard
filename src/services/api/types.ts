@@ -5,7 +5,7 @@ export interface ValidatorInfo {
   votePubkey: string;
   commission: number;
   activatedStake: number;
-  activatingStake: number; // Adding explicit activatingStake field
+  activatingStake: number;
   delinquentStake: number;
   epochCredits: number;
   lastVote: number;
@@ -23,5 +23,4 @@ export interface ValidatorMetrics {
   totalStake: number;
   activatingStake: number;
   commission: number;
-  delegatorCount: number | null;
 }

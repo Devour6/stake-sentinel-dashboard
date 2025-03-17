@@ -1,9 +1,10 @@
+
 import { toast } from "sonner";
 import { VALIDATOR_PUBKEY, VALIDATOR_IDENTITY } from "./constants";
 import { ValidatorInfo, ValidatorMetrics, StakeHistoryItem } from "./types";
 import { lamportsToSol } from "./utils";
 import { fetchVoteAccounts, fetchCurrentEpoch } from "./epochApi";
-import { fetchStakeHistory, fetchDelegatorCount } from "./stakeApi";
+import { fetchStakeHistory } from "./stakeApi";
 
 // API methods using real RPC endpoint
 export const fetchValidatorInfo = async (): Promise<ValidatorInfo | null> => {
@@ -23,12 +24,22 @@ export const fetchValidatorInfo = async (): Promise<ValidatorInfo | null> => {
     // Get current epoch info
     const currentEpoch = await fetchCurrentEpoch();
     
+    // Log the validator data for debugging purposes
+    console.log("Raw validator data:", validator);
+    
+    // Make sure to properly check for activatingStake and handle it correctly
+    const activatingStake = typeof validator.activatingStake === 'number' 
+      ? lamportsToSol(validator.activatingStake) 
+      : 0;
+      
+    console.log("Processed activatingStake:", activatingStake);
+    
     return {
       identity: validator.nodePubkey || VALIDATOR_IDENTITY,
       votePubkey: validator.votePubkey,
       commission: validator.commission,
       activatedStake: lamportsToSol(validator.activatedStake),
-      activatingStake: lamportsToSol(validator.activatingStake || 0),
+      activatingStake: activatingStake,
       delinquentStake: 0,
       epochCredits: validator.epochCredits[0]?.[0] || 0,
       lastVote: validator.lastVote,
@@ -65,24 +76,10 @@ export const fetchValidatorMetrics = async (): Promise<ValidatorMetrics | null> 
       throw new Error("Failed to fetch validator info");
     }
     
-    // Try to get delegator count using all available methods
-    let delegatorCount = null;
-    try {
-      delegatorCount = await fetchDelegatorCount();
-      // If the delegator count is 0, we still want to show it as 0, not as an error
-      if (delegatorCount === 0) {
-        console.log("Delegator count is 0, but this is valid data");
-      }
-    } catch (error) {
-      console.error("Could not fetch delegator count:", error);
-      // We'll keep delegatorCount as null to show the error state
-    }
-    
     return {
       totalStake: validatorInfo.activatedStake,
       activatingStake: validatorInfo.activatingStake,
       commission: validatorInfo.commission,
-      delegatorCount: delegatorCount,
     };
   } catch (error) {
     console.error("Error fetching validator metrics:", error);
@@ -93,7 +90,6 @@ export const fetchValidatorMetrics = async (): Promise<ValidatorMetrics | null> 
       totalStake: 345678.9012,
       activatingStake: 0,
       commission: 7,
-      delegatorCount: null,
     };
   }
 };
