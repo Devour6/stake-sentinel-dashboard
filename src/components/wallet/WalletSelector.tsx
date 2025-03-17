@@ -7,26 +7,41 @@ type WalletType = {
   name: string;
   icon: string;
   installUrl?: string;
+  providerName?: string; // Add property to store actual provider name
 };
 
 const DEFAULT_WALLETS: WalletType[] = [
-  { name: "Phantom", icon: "https://cdn.jsdelivr.net/gh/phantom-labs/website-assets@main/src/img/logo-dark.svg", installUrl: "https://phantom.app/" },
-  { name: "Solflare", icon: "https://solflare.com/favicon.ico", installUrl: "https://solflare.com/" },
-  { name: "Backpack", icon: "https://backpack.app/favicon.ico", installUrl: "https://backpack.app/" },
-  { name: "MagicEden", icon: "https://magiceden.io/img/favicon.ico", installUrl: "https://magiceden.io/wallet" },
+  { name: "Phantom", icon: "https://phantom.app/img/logo.png", installUrl: "https://phantom.app/" },
+  { name: "Solflare", icon: "https://solflare.com/assets/logo.svg", installUrl: "https://solflare.com/" },
+  { name: "Backpack", icon: "https://backpack.app/assets/backpack-logo.svg", installUrl: "https://backpack.app/" },
+  { name: "MagicEden", icon: "https://magiceden.io/img/logo.png", installUrl: "https://magiceden.io/wallet" },
 ];
 
-// Known wallets for icon mapping with reliable CDN URLs
+// Known wallets for icon mapping with reliable URLs
 const WALLET_ICONS: Record<string, string> = {
-  "phantom": "https://cdn.jsdelivr.net/gh/phantom-labs/website-assets@main/src/img/logo-dark.svg",
-  "solflare": "https://solflare.com/favicon.ico",
-  "backpack": "https://backpack.app/favicon.ico",
-  "magiceden": "https://magiceden.io/img/favicon.ico",
-  "coinbase": "https://www.coinbase.com/img/favicon/favicon.ico",
-  "slope": "https://slope.finance/favicon.ico",
-  "brave": "https://brave.com/static-assets/images/brave-favicon.png",
-  "exodus": "https://www.exodus.com/favicon.ico",
-  "glow": "https://glow.app/favicon.ico",
+  "phantom": "https://phantom.app/img/logo.png",
+  "solflare": "https://solflare.com/assets/logo.svg",
+  "backpack": "https://backpack.app/assets/backpack-logo.svg",
+  "magiceden": "https://magiceden.io/img/logo.png",
+  "coinbase": "https://www.coinbase.com/assets/images/favicon/favicon.ico",
+  "slope": "https://slope.finance/assets/images/logo.svg",
+  "brave": "https://brave.com/static-assets/images/brave-logo.svg",
+  "exodus": "https://www.exodus.com/images/logos/exodus-logo-white.svg",
+  "glow": "https://glow.app/icons/logo.svg",
+};
+
+// Mapping of provider names to more user-friendly display names
+const WALLET_NAME_MAPPING: Record<string, string> = {
+  "solana": "Phantom",
+  "solflare": "Solflare",
+  "backpack": "Backpack",
+  "magicEden": "Magic Eden",
+  "coinbasewallet": "Coinbase",
+  "coinbasewalletsdk": "Coinbase",
+  "bravedsolwallet": "Brave Wallet",
+  "exoduswallet": "Exodus",
+  "glowwallet": "Glow",
+  "slopewallet": "Slope",
 };
 
 interface WalletSelectorProps {
@@ -41,140 +56,196 @@ const WalletSelector = ({ onWalletSelect, isConnecting, selectedWallet }: Wallet
   const [defaultWallets, setDefaultWallets] = useState<WalletType[]>([]);
 
   useEffect(() => {
-    // Check for detected wallets and organize them
+    // Detect all available Solana wallets
+    detectWallets();
+  }, []);
+
+  const detectWallets = () => {
+    // First find all potential wallet providers in the window object
+    const detectedProviders: Record<string, any> = {};
+    const potentialProviders: Record<string, string> = {};
+    
+    // Check window for known wallet objects and properties
+    Object.keys(window).forEach(key => {
+      const lowerKey = key.toLowerCase();
+      
+      // Check if the key might be a Solana wallet provider
+      if (
+        (lowerKey.includes('wallet') || 
+         lowerKey.includes('solana') || 
+         lowerKey.includes('sol') ||
+         lowerKey.includes('adapter')) && 
+        typeof (window as any)[key] === 'object'
+      ) {
+        const provider = (window as any)[key];
+        
+        // Check if it has typical wallet methods
+        if (provider && (provider.connect || provider.signTransaction || provider.signAllTransactions)) {
+          potentialProviders[key] = key;
+        }
+      }
+    });
+    
+    // Special case checks for known wallet patterns
+    if (window.solana?.isPhantom) {
+      detectedProviders['phantom'] = window.solana;
+    }
+    
+    if (window.solflare) {
+      detectedProviders['solflare'] = window.solflare;
+    }
+    
+    if ((window as any).backpack) {
+      detectedProviders['backpack'] = (window as any).backpack;
+    }
+    
+    if ((window as any).magicEden) {
+      detectedProviders['magiceden'] = (window as any).magicEden;
+    }
+    
+    // Process other potential providers
+    for (const [key, provider] of Object.entries(potentialProviders)) {
+      const lowerKey = key.toLowerCase();
+      
+      // Skip if already detected
+      if (Object.keys(detectedProviders).some(providerName => 
+        lowerKey.includes(providerName) || providerName.includes(lowerKey)
+      )) {
+        continue;
+      }
+      
+      // Try to identify the wallet type
+      let walletName = '';
+      for (const [knownWallet, displayName] of Object.entries(WALLET_NAME_MAPPING)) {
+        if (lowerKey.includes(knownWallet.toLowerCase())) {
+          walletName = displayName;
+          detectedProviders[knownWallet.toLowerCase()] = (window as any)[key];
+          break;
+        }
+      }
+      
+      // If not identified but has wallet-like properties, add as generic wallet
+      if (!walletName && ((window as any)[key].connect || (window as any)[key].signTransaction)) {
+        let formattedName = formatWalletName(key);
+        detectedProviders[formattedName.toLowerCase()] = (window as any)[key];
+      }
+    }
+    
+    console.log("Detected wallet providers:", detectedProviders);
+    
+    // Now create proper wallet objects from the detected providers
     const detected: WalletType[] = [];
     const remaining: WalletType[] = [];
-
+    
+    // Process default wallets first
     DEFAULT_WALLETS.forEach(wallet => {
-      if (checkWalletInstalled(wallet.name)) {
-        detected.push(wallet);
+      const walletLower = wallet.name.toLowerCase();
+      if (detectedProviders[walletLower]) {
+        detected.push({
+          ...wallet,
+          providerName: getProviderNameForWallet(wallet.name, detectedProviders)
+        });
       } else {
         remaining.push(wallet);
       }
     });
-
-    // Try to detect additional wallets
-    detectAdditionalWallets(detected);
-
+    
+    // Add any additional detected wallets not in DEFAULT_WALLETS
+    for (const [providerKey, provider] of Object.entries(detectedProviders)) {
+      // Skip if we already added this wallet
+      if (detected.some(w => w.name.toLowerCase() === providerKey || 
+                           (w.providerName && w.providerName.toLowerCase() === providerKey))) {
+        continue;
+      }
+      
+      // Get the display name for this provider
+      let displayName = getDisplayNameForProvider(providerKey);
+      let iconUrl = getIconForWallet(displayName);
+      
+      detected.push({
+        name: displayName,
+        icon: iconUrl,
+        providerName: providerKey
+      });
+    }
+    
+    console.log("Processed wallets:", { detected, remaining });
+    
     setDetectedWallets(detected);
     setDefaultWallets(remaining);
-  }, []);
-
-  const detectAdditionalWallets = (detected: WalletType[]) => {
-    // Check for standard Solana wallets first
-    const standardWallets = [
-      { key: "solana", name: "Phantom", condition: (w: any) => w.isPhantom },
-      { key: "solflare", name: "Solflare", condition: (w: any) => true },
-      { key: "backpack", name: "Backpack", condition: (w: any) => true },
-      { key: "magicEden", name: "Magic Eden", condition: (w: any) => true },
-    ];
-
-    // Check standard wallet patterns
-    standardWallets.forEach(({ key, name, condition }) => {
-      const wallet = (window as any)[key];
-      if (wallet && condition(wallet) && !detected.some(w => w.name.toLowerCase() === name.toLowerCase())) {
-        detected.push({
-          name,
-          icon: WALLET_ICONS[name.toLowerCase()] || "/placeholder.svg",
-          installUrl: undefined
-        });
-      }
-    });
-
-    // Check for other wallet patterns in window
-    const walletPatterns = ["wallet", "sol", "solana", "adapter"];
-    const existingNames = new Set(detected.map(w => w.name.toLowerCase()));
-    
-    // Find potential wallet keys in window object
-    Object.keys(window).forEach(key => {
-      const keyLower = key.toLowerCase();
-      
-      // Skip if we've already detected this wallet
-      if ([...existingNames].some(name => keyLower.includes(name))) {
-        return;
-      }
-      
-      // Check if this key might be a wallet
-      if (walletPatterns.some(pattern => keyLower.includes(pattern)) &&
-          typeof (window as any)[key] === 'object') {
-        
-        // Format wallet name properly
-        let walletName = formatWalletName(key);
-        
-        // Find appropriate icon
-        let iconUrl = findWalletIcon(walletName);
-        
-        // Add to detected wallets if not already present
-        if (!detected.some(w => w.name.toLowerCase() === walletName.toLowerCase())) {
-          detected.push({
-            name: walletName,
-            icon: iconUrl,
-            installUrl: undefined
-          });
-        }
-      }
-    });
   };
 
-  const formatWalletName = (key: string): string => {
-    // Remove common patterns
-    let name = key;
-    const patternsToRemove = [
-      "wallet", "Wallet", "WALLET",
-      "sdk", "SDK", "Sdk",
-      "provider", "Provider", "PROVIDER",
-      "adapter", "Adapter", "ADAPTER",
-      "extension", "Extension", "EXTENSION",
-      "request", "Request", "REQUEST"
-    ];
+  const getProviderNameForWallet = (walletName: string, providers: Record<string, any>): string => {
+    const walletLower = walletName.toLowerCase();
     
-    // Try to find known wallet names within the key
-    for (const [knownWallet] of Object.entries(WALLET_ICONS)) {
-      if (name.toLowerCase().includes(knownWallet.toLowerCase())) {
-        // Extract just the wallet name part
-        const matches = new RegExp(`(${knownWallet})`, 'i').exec(name);
-        if (matches && matches[1]) {
-          const walletPart = matches[1];
-          // Capitalize properly
-          return walletPart.charAt(0).toUpperCase() + walletPart.slice(1).toLowerCase();
-        }
+    // Direct match
+    if (providers[walletLower]) {
+      return walletLower;
+    }
+    
+    // Check for partial matches
+    for (const providerKey of Object.keys(providers)) {
+      if (providerKey.includes(walletLower) || walletLower.includes(providerKey)) {
+        return providerKey;
       }
     }
     
-    // If no known wallet found, clean up the name
-    patternsToRemove.forEach(pattern => {
-      name = name.replace(new RegExp(pattern, 'gi'), '');
-    });
+    // Special case mappings
+    if (walletLower === "phantom" && providers["solana"]) {
+      return "solana";
+    }
     
-    // Remove any remaining non-alphabetic characters
-    name = name.replace(/[^a-zA-Z0-9]/g, ' ').trim();
+    return walletLower; // Fallback to the wallet name itself
+  };
+
+  const getDisplayNameForProvider = (providerKey: string): string => {
+    // Check our mapping first
+    for (const [key, displayName] of Object.entries(WALLET_NAME_MAPPING)) {
+      if (providerKey.toLowerCase().includes(key.toLowerCase())) {
+        return displayName;
+      }
+    }
     
-    // Handle CamelCase
-    name = name.replace(/([a-z])([A-Z])/g, '$1 $2');
+    // If not in mapping, format the provider key
+    return formatWalletName(providerKey);
+  };
+
+  const formatWalletName = (key: string): string => {
+    // Remove common wallet-related terms
+    let name = key.replace(/(wallet|sdk|provider|adapter|extension|request|solana)/gi, " ");
+    
+    // Remove non-alphanumeric characters except spaces
+    name = name.replace(/[^a-zA-Z0-9\s]/g, " ");
+    
+    // Split camelCase
+    name = name.replace(/([a-z])([A-Z])/g, "$1 $2");
+    
+    // Trim and clean up multiple spaces
+    name = name.replace(/\s+/g, " ").trim();
     
     // Capitalize each word
-    name = name.split(' ')
+    name = name.split(" ")
       .filter(word => word.length > 0)
       .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
+      .join(" ");
     
-    // If name is empty after all processing, use a generic name
+    // If empty after all processing, use generic name
     if (!name) name = "Solana Wallet";
     
     return name;
   };
 
-  const findWalletIcon = (walletName: string): string => {
+  const getIconForWallet = (walletName: string): string => {
     const walletLower = walletName.toLowerCase();
     
-    // Check for exact matches first
+    // Check for exact matches in our icon mapping
     for (const [key, url] of Object.entries(WALLET_ICONS)) {
-      if (walletLower === key || walletLower.includes(key)) {
+      if (walletLower === key || walletLower.includes(key) || key.includes(walletLower)) {
         return url;
       }
     }
     
-    // Check for partial matches
+    // Try to find any partial matches
     for (const [key, url] of Object.entries(WALLET_ICONS)) {
       if (walletLower.includes(key) || key.includes(walletLower)) {
         return url;
@@ -185,23 +256,21 @@ const WalletSelector = ({ onWalletSelect, isConnecting, selectedWallet }: Wallet
     return "/placeholder.svg";
   };
 
-  const checkWalletInstalled = (name: string): boolean => {
-    if (name === "Phantom") return !!window.solana?.isPhantom;
-    if (name === "Solflare") return !!window.solflare;
-    if (name === "Backpack") return !!(window as any).backpack;
-    if (name === "MagicEden") return !!(window as any).magicEden;
-    return false;
-  };
-
   const handleWalletClick = async (wallet: WalletType) => {
-    const isInstalled = checkWalletInstalled(wallet.name);
+    // For detected wallets, try to connect directly
+    if (wallet.providerName) {
+      await onWalletSelect(wallet.name);
+      return;
+    }
     
-    if (!isInstalled && wallet.installUrl) {
+    // For non-detected wallets, redirect to install page
+    if (wallet.installUrl) {
       toast.info(`${wallet.name} not detected. Opening install page...`);
       window.open(wallet.installUrl, "_blank");
       return;
     }
     
+    // Fallback for any other case
     await onWalletSelect(wallet.name);
   };
 
@@ -244,38 +313,42 @@ const WalletSelector = ({ onWalletSelect, isConnecting, selectedWallet }: Wallet
         </>
       )}
 
-      <h3 className="text-sm font-medium text-white">Available wallets</h3>
-      <div className="grid grid-cols-2 gap-3">
-        {defaultWallets.map((wallet) => (
-          <Button
-            key={wallet.name}
-            variant="outline"
-            className="flex items-center justify-start gap-2 py-5 border-gojira-gray-light hover:bg-gojira-gray-light relative"
-            disabled={isConnecting}
-            onClick={() => handleWalletClick(wallet)}
-            onMouseEnter={() => setHoveredWallet(wallet.name)}
-            onMouseLeave={() => setHoveredWallet(null)}
-          >
-            {isConnecting && selectedWallet === wallet.name ? (
-              <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-            ) : (
-              <img 
-                src={wallet.icon} 
-                alt={wallet.name} 
-                className="h-5 w-5 object-contain" 
-                onError={(e) => handleImageError(e, wallet.name)}
-              />
-            )}
-            <span>{wallet.name}</span>
-            
-            {hoveredWallet === wallet.name && (
-              <div className="absolute bottom-full left-0 mb-2 p-2 bg-gojira-gray-dark text-xs rounded border border-gojira-gray-light whitespace-nowrap">
-                Not installed. Click to install.
-              </div>
-            )}
-          </Button>
-        ))}
-      </div>
+      {defaultWallets.length > 0 && (
+        <>
+          <h3 className="text-sm font-medium text-white">Available wallets</h3>
+          <div className="grid grid-cols-2 gap-3">
+            {defaultWallets.map((wallet) => (
+              <Button
+                key={wallet.name}
+                variant="outline"
+                className="flex items-center justify-start gap-2 py-5 border-gojira-gray-light hover:bg-gojira-gray-light relative"
+                disabled={isConnecting}
+                onClick={() => handleWalletClick(wallet)}
+                onMouseEnter={() => setHoveredWallet(wallet.name)}
+                onMouseLeave={() => setHoveredWallet(null)}
+              >
+                {isConnecting && selectedWallet === wallet.name ? (
+                  <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <img 
+                    src={wallet.icon} 
+                    alt={wallet.name} 
+                    className="h-5 w-5 object-contain" 
+                    onError={(e) => handleImageError(e, wallet.name)}
+                  />
+                )}
+                <span>{wallet.name}</span>
+                
+                {hoveredWallet === wallet.name && (
+                  <div className="absolute bottom-full left-0 mb-2 p-2 bg-gojira-gray-dark text-xs rounded border border-gojira-gray-light whitespace-nowrap">
+                    Not installed. Click to install.
+                  </div>
+                )}
+              </Button>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 };

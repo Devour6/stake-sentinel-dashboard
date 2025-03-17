@@ -29,82 +29,41 @@ export function useWallet() {
     
     try {
       let walletPublicKey: string | null = null;
+      let walletProvider: any = null;
       
-      // Actual wallet connection logic
-      if (walletName === "Phantom") {
-        if (!window.solana || !window.solana.isPhantom) {
-          window.open("https://phantom.app/", "_blank");
-          throw new Error("Phantom wallet is not installed");
-        }
-        
-        try {
-          // This will prompt the user to connect
-          const resp = await window.solana.connect();
-          walletPublicKey = resp.publicKey.toString();
-        } catch (error) {
-          console.error("User rejected the connection request", error);
-          throw new Error("Connection rejected");
-        }
-      } 
-      else if (walletName === "Solflare") {
-        if (!window.solflare) {
-          window.open("https://solflare.com/", "_blank");
-          throw new Error("Solflare wallet is not installed");
-        }
-        
-        try {
-          const resp = await window.solflare.connect();
-          walletPublicKey = resp.publicKey.toString();
-        } catch (error) {
-          console.error("User rejected the connection request", error);
-          throw new Error("Connection rejected");
-        }
-      }
-      else if (walletName === "MagicEden") {
-        const magicEden = (window as any).magicEden;
-        if (!magicEden) {
-          window.open("https://magiceden.io/wallet", "_blank");
-          throw new Error("MagicEden wallet is not installed");
-        }
-        
-        try {
-          const resp = await magicEden.connect();
-          walletPublicKey = resp.publicKey.toString();
-        } catch (error) {
-          console.error("User rejected the connection request", error);
-          throw new Error("Connection rejected");
-        }
-      }
-      else {
-        // For Backpack and other wallets - in a real app, 
-        // you'd implement proper connection logic for each
-        const openLinks: Record<string, string> = {
+      // First, try to find the wallet provider based on the wallet name
+      walletProvider = findWalletProvider(walletName);
+      
+      if (!walletProvider) {
+        // Check if we need to open an install page
+        const installUrls: Record<string, string> = {
+          "Phantom": "https://phantom.app/",
+          "Solflare": "https://solflare.com/",
           "Backpack": "https://backpack.app/",
-          "MagicEden": "https://magiceden.io/wallet"
+          "Magic Eden": "https://magiceden.io/wallet",
+          "Coinbase": "https://www.coinbase.com/wallet",
+          "Slope": "https://slope.finance/",
+          "Brave Wallet": "https://brave.com/wallet/",
+          "Exodus": "https://www.exodus.com/",
+          "Glow": "https://glow.app/"
         };
         
-        // Check if we have a window property for this wallet
-        const walletKey = walletName.toLowerCase();
-        const walletProvider = Object.keys(window).find(key => 
-          key.toLowerCase() === walletKey || 
-          key.toLowerCase().includes(walletKey)
-        );
-        
-        if (walletProvider && (window as any)[walletProvider]?.connect) {
-          try {
-            const resp = await (window as any)[walletProvider].connect();
-            walletPublicKey = resp.publicKey.toString();
-          } catch (error) {
-            console.error(`User rejected the ${walletName} connection request`, error);
-            throw new Error("Connection rejected");
-          }
-        } else if (openLinks[walletName]) {
-          window.open(openLinks[walletName], "_blank");
-          throw new Error(`${walletName} wallet is not installed or not supported yet`);
+        if (installUrls[walletName]) {
+          window.open(installUrls[walletName], "_blank");
+          throw new Error(`${walletName} wallet is not installed`);
         } else {
-          // Mock connection for development
-          walletPublicKey = "5pV7aBJyZcEXPGGENNWzANkdShxf8RQEKfRHMQB8Lc9x";
+          throw new Error(`Could not find ${walletName} wallet provider`);
         }
+      }
+      
+      // Attempt to connect using the provider
+      try {
+        console.log(`Connecting to ${walletName} using provider:`, walletProvider);
+        const resp = await walletProvider.connect();
+        walletPublicKey = resp.publicKey?.toString();
+      } catch (error) {
+        console.error(`User rejected the ${walletName} connection request`, error);
+        throw new Error("Connection rejected");
       }
       
       if (walletPublicKey) {
@@ -126,40 +85,91 @@ export function useWallet() {
     }
   };
 
-  const disconnectWallet = () => {
-    // Disconnect from the actual wallet
-    if (window.solana && selectedWallet === "Phantom") {
-      try {
-        window.solana.disconnect();
-      } catch (error) {
-        console.error("Error disconnecting from Phantom:", error);
-      }
-    } else if (window.solflare && selectedWallet === "Solflare") {
-      try {
-        window.solflare.disconnect();
-      } catch (error) {
-        console.error("Error disconnecting from Solflare:", error);
-      }
-    } else if ((window as any).magicEden && selectedWallet === "MagicEden") {
-      try {
-        (window as any).magicEden.disconnect();
-      } catch (error) {
-        console.error("Error disconnecting from MagicEden:", error);
-      }
-    } else {
-      // Try to find other wallet providers
-      const walletKey = selectedWallet?.toLowerCase() || '';
-      const walletProvider = Object.keys(window).find(key => 
-        key.toLowerCase() === walletKey || 
-        key.toLowerCase().includes(walletKey)
-      );
-      
-      if (walletProvider && (window as any)[walletProvider]?.disconnect) {
-        try {
-          (window as any)[walletProvider].disconnect();
-        } catch (error) {
-          console.error(`Error disconnecting from ${selectedWallet}:`, error);
+  // Helper function to find the wallet provider based on wallet name
+  const findWalletProvider = (walletName: string): any => {
+    const nameLower = walletName.toLowerCase();
+    
+    // Direct matching for common wallets
+    if (nameLower === "phantom" && window.solana?.isPhantom) {
+      return window.solana;
+    }
+    
+    if (nameLower === "solflare" && window.solflare) {
+      return window.solflare;
+    }
+    
+    if (nameLower === "backpack" && (window as any).backpack) {
+      return (window as any).backpack;
+    }
+    
+    if ((nameLower === "magic eden" || nameLower === "magiceden") && (window as any).magicEden) {
+      return (window as any).magicEden;
+    }
+    
+    if (nameLower === "coinbase" && ((window as any).coinbaseWallet || (window as any).coinbaseWalletSDK)) {
+      return (window as any).coinbaseWallet || (window as any).coinbaseWalletSDK;
+    }
+    
+    // Look for wallet provider in window object by common patterns
+    const walletMappings: Record<string, string[]> = {
+      "phantom": ["solana"],
+      "solflare": ["solflare"],
+      "backpack": ["backpack"],
+      "magic eden": ["magicEden", "magiceden"],
+      "coinbase": ["coinbaseWallet", "coinbaseWalletSDK"],
+      "slope": ["slope", "slopeWallet"],
+      "brave": ["braveSolWallet"],
+      "exodus": ["exodus", "exodusWallet"],
+      "glow": ["glow", "glowWallet"]
+    };
+    
+    // Check our mappings
+    for (const [wallet, keys] of Object.entries(walletMappings)) {
+      if (nameLower === wallet || nameLower.includes(wallet) || wallet.includes(nameLower)) {
+        for (const key of keys) {
+          if ((window as any)[key] && 
+             ((window as any)[key].connect || (window as any)[key].signTransaction)) {
+            return (window as any)[key];
+          }
         }
+      }
+    }
+    
+    // More aggressive search for any wallet-like provider
+    for (const key of Object.keys(window)) {
+      const lowerKey = key.toLowerCase();
+      
+      // Check if the key resembles the wallet name
+      if (lowerKey.includes(nameLower) || nameLower.includes(lowerKey)) {
+        const provider = (window as any)[key];
+        if (provider && (provider.connect || provider.signTransaction)) {
+          return provider;
+        }
+      }
+      
+      // Check for wallet-like patterns
+      if ((lowerKey.includes('wallet') || lowerKey.includes('solana') || lowerKey.includes('sol')) &&
+          nameLower.includes(lowerKey.replace(/(wallet|solana|sol|sdk|provider)/gi, ''))) {
+        const provider = (window as any)[key];
+        if (provider && (provider.connect || provider.signTransaction)) {
+          return provider;
+        }
+      }
+    }
+    
+    console.warn(`Could not find provider for wallet: ${walletName}`);
+    return null;
+  };
+
+  const disconnectWallet = () => {
+    // Attempt to disconnect from the connected wallet provider
+    const walletProvider = findWalletProvider(selectedWallet || "");
+    
+    if (walletProvider && walletProvider.disconnect) {
+      try {
+        walletProvider.disconnect();
+      } catch (error) {
+        console.error(`Error disconnecting from ${selectedWallet}:`, error);
       }
     }
     
