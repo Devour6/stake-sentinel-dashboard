@@ -85,11 +85,23 @@ export const fetchValidatorConfig = async (): Promise<ValidatorSearchResult[]> =
             }
             
             try {
+              // Try to parse the JSON
               validatorInfo = JSON.parse(cleanedData);
             } catch (e) {
-              // Try another approach if the first parse fails
-              cleanedData = cleanedData.replace(/\\/g, '');
-              validatorInfo = JSON.parse(cleanedData);
+              // If first approach fails, try removing all backslashes
+              try {
+                cleanedData = cleanedData.replace(/\\/g, '');
+                validatorInfo = JSON.parse(cleanedData);
+              } catch (e2) {
+                // One more attempt with a different cleanup approach
+                try {
+                  // Some validators have JSON with escaped characters that need to be properly handled
+                  validatorInfo = JSON.parse(JSON.stringify(eval("(" + cleanedData + ")")));
+                } catch (e3) {
+                  console.error("Could not parse validator JSON after multiple attempts:", e3);
+                  continue;
+                }
+              }
             }
           } else if (typeof configData === 'object') {
             validatorInfo = configData;
@@ -98,11 +110,19 @@ export const fetchValidatorConfig = async (): Promise<ValidatorSearchResult[]> =
           }
           
           if (validatorInfo && validatorInfo.name) {
+            // Extract website or keybase for icon
+            let icon = null;
+            if (validatorInfo.website) {
+              icon = validatorInfo.website;
+            } else if (validatorInfo.keybaseUsername) {
+              icon = `https://keybase.io/${validatorInfo.keybaseUsername}`;
+            }
+            
             validatorConfigs.push({
               name: validatorInfo.name,
               identity: identityPubkey,
               votePubkey: '', // Will be matched later
-              icon: validatorInfo.website || validatorInfo.keybaseUsername || null
+              icon: icon
             });
             
             console.log(`Found validator with name: ${validatorInfo.name}, identity: ${identityPubkey}`);

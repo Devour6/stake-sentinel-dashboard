@@ -1,4 +1,3 @@
-
 import { toast } from "sonner";
 import { RPC_ENDPOINT } from "./constants";
 import { ValidatorSearchResult } from "./types";
@@ -8,7 +7,7 @@ import { fetchValidatorConfig } from "./validatorConfigApi";
 
 // Well-known validators as a fallback mechanism
 const WELL_KNOWN_VALIDATORS = [
-  { name: "Helius", votePubkey: "HeZU7mjJx9FFLX8ad4fErHhiTXNxwqLzW3AVUBCfXxT", identity: "7TMu26hC7sfyEqmA8aXGLLx66JD8WMuKQkExW2K8rfwx", icon: null },
+  { name: "Helius", votePubkey: "HeZU7mjJx9FFLX8ad4fErHhiTXNxwqLzW3AVUBCfXxT", identity: "7TMu26hC7sfyEqmA8aXGLLx66JD8WMuKQkExW2K8rfwx", icon: "https://helius.xyz" },
   { name: "Gojira", votePubkey: "goJiRADNdmfnJ4iWEyft7KaYMPTVsRba2Ee1akDEBXb", identity: "gojir4WnhS7VS1JdbnanJMzaMfr4UD7KeX1ixWAHEmw", icon: null },
   { name: "Solana Foundation", votePubkey: "GhBd6sozvfR9F2YwHVj2tAHbGyzQSuHxWNn5K8ofuYkx", identity: "7BJUCjD9sMQQ3LXeNZ3j8FQmJxMS1hC9t5S2g4gtLQBJ", icon: null },
   { name: "Jito", votePubkey: "E5ruSVxEKrAoXAcuMaAfcN5tX6bUYK6ouJcS5yAbs6Zh", identity: "88E5dLt2WQ6WNbQTXoZYwywickdGF9U5e3tbeYxQmHJx", icon: null },
@@ -18,11 +17,13 @@ const WELL_KNOWN_VALIDATORS = [
   { name: "Chorus One", votePubkey: "CZ8HVPSQhtXHSsK1j2L5tYXHCb2qrPQ5re2xMYhSMUAg", identity: "67Xdd5GF5oYdGGGXK2L6YJ1syt97GXnGiM7m8ER2X6VP", icon: null },
   { name: "Figment", votePubkey: "FBmNp4VBze47nQ3J3qeMboPdQfqRJzKp9kK6wLu7rhCG", identity: "5n8KCdzqtvTnhJHJVi8jgEJYJ1GiSXRrN6YbZN15h6g5", icon: null },
   { name: "MF 64", votePubkey: "EuZ5JiQ2P2qjyRTQ5VqcJwPPt3z9cRC2gzAaVxVFiqvI", identity: "CG7zvuaN2x6ZcQKAMU6gehkLyEYEN9osYrZY4YJyVbCM", icon: null },
+  // Top validators that must be included
+  { name: "Triton", votePubkey: "GoCwdN1C1WXXArrqoivMoaiqksR8QP79N1qoajbHrYG1", identity: "5GKFxHSZrJ4KgErXGNdXEJwvS59W2a2j59V3Xex6P3ow", icon: null },
+  { name: "Blockdaemon", votePubkey: "GBU4rXNppvuYjUDuUHK9evta7aQ9G9567QH5ViVPjvFv", identity: "GBU4rXNppvuYjUDuUHK9evta7aQ9G9567QH5ViVPjvFv", icon: null },
   { name: "Staking Facilities", votePubkey: "8LULGgNdsY6gNMmEcezWQSZvE3HCCccTuGAa3JMx8XkL", identity: "5gKtgyjCNCBvD5qHzNdVMQQgBXXqQMYnzyG4bsC6syKS", icon: null },
   { name: "P2P", votePubkey: "9NA5HZ3R2zz5Rjt6aBRgr1ZYwKJf1V9ndh9NnytRVVvt", identity: "Ft9LS8UFaD1Mi4mYnUVdmDFBMxpDjeMSKMbZSxHv2vCd", icon: null },
   { name: "Everstake", votePubkey: "RxH2oHLtW9P6y3GSWfXjjgfA4qP5MZrFzpUCxkVdLhY", identity: "CRzMxdyS56N2vkb55X5q155sSdVkjZhiFedWzzhvBXSN", icon: null },
   { name: "Certus One", votePubkey: "9SfKTdP5HLh3P4VP7eZ3houc5MP2ztGGJchKJ6U9XGbp", identity: "5vxoRv2P12q4K4cWPCJkvPjg1A4ZYANeFZdA2LCTV4uX", icon: null },
-  { name: "Blockdaemon", votePubkey: "3PdGUBtJK2k1FiMdX3QzEKMYZFcbgn7rGd3QMt5hPuHZ", identity: "EX73A5dC2LRSEGPvpWyeRvVxbH5JM7hf4rkBUxKcT3fj", icon: null },
   { name: "Jump Crypto", votePubkey: "D8srGYyKYoXEyXfYHG3SahXjSUJxicFQYZKyXxJ7fGPf", identity: "DmRKm16KZDvSgwSfpPyejiFcQjZJ7N9myDmd7prXzLtY", icon: null },
   { name: "Staked", votePubkey: "51JBzSTU5rAM8gLAVQKgp4WoLsNmozTw1GOX39UpsJtU", identity: "5R1aUGVRYYrvkGzcxJJCDVxnB3sMrWcJgAopVi8Vynzc", icon: null },
   { name: "Coinbase Cloud", votePubkey: "EH6VQ9oE6HRvxWYeAUG4GiZFpZ3vb7j2fGquAktTsRQJ", identity: "7PdkaCviHKVo8ouPDWYZyt3VxQMxCTo9ZXYnGdKZj8J2", icon: null },
@@ -59,10 +60,14 @@ const WELL_KNOWN_VALIDATORS = [
 
 // Extra well-known validators to ensure we have the major ones covered
 const ADDITIONAL_VALIDATORS = [
-  { name: "Helius", votePubkey: "HeZU7mjJx9FFLX8ad4fErHhiTXNxwqLzW3AVUBCfXxT", identity: "7TMu26hC7sfyEqmA8aXGLLx66JD8WMuKQkExW2K8rfwx", icon: null },
-  { name: "Triton", votePubkey: "GoCwdN1C1WXXArrqoivMoaiqksR8QP79N1qoajbHrYG1", identity: "GoCwdN1C1WXXArrqoivMoaiqksR8QP79N1qoajbHrYG1", icon: null },
+  { name: "Helius", votePubkey: "HeZU7mjJx9FFLX8ad4fErHhiTXNxwqLzW3AVUBCfXxT", identity: "7TMu26hC7sfyEqmA8aXGLLx66JD8WMuKQkExW2K8rfwx", icon: "https://helius.xyz" },
+  { name: "Triton", votePubkey: "GoCwdN1C1WXXArrqoivMoaiqksR8QP79N1qoajbHrYG1", identity: "5GKFxHSZrJ4KgErXGNdXEJwvS59W2a2j59V3Xex6P3ow", icon: null },
   { name: "Blockdaemon", votePubkey: "GBU4rXNppvuYjUDuUHK9evta7aQ9G9567QH5ViVPjvFv", identity: "GBU4rXNppvuYjUDuUHK9evta7aQ9G9567QH5ViVPjvFv", icon: null },
-  { name: "Gojira", votePubkey: "goJiRADNdmfnJ4iWEyft7KaYMPTVsRba2Ee1akDEBXb", identity: "gojir4WnhS7VS1JdbnanJMzaMfr4UD7KeX1ixWAHEmw", icon: null }
+  { name: "Gojira", votePubkey: "goJiRADNdmfnJ4iWEyft7KaYMPTVsRba2Ee1akDEBXb", identity: "gojir4WnhS7VS1JdbnanJMzaMfr4UD7KeX1ixWAHEmw", icon: null },
+  { name: "P2P Validator", votePubkey: "D52Q6Ap8RVMw1EvJYTdEABP6M5SPg98aToMcqw7KVLD9", identity: "DRpbCBMxVnDK7maPM5tGv6MvG3QC8kLZ6RqTMV5LJcQzRW", icon: null },
+  { name: "Validators.app", votePubkey: "8g4iBKx35wPg1DYALMnCTVYBFbFBvhgKawUzJJnnfqT3", identity: "DTCytRdyR2RXn7ApVzRZtEQYSGgm8cXWH7ZnfLKgYGT7", icon: null },
+  { name: "Solflare", votePubkey: "CcaHc2L43ZWjwCHART3oZoJvHLAe9hzT2DJNUpBzoTN1", identity: "EZKQZTstC8XGxrGPgZ4Lb4UtgzEf2GfRgj3MVgYnzZXy", icon: null },
+  { name: "Shinobi Systems", votePubkey: "wWf94sVnaXHzBYrePsRUyesq6ofndocfBmKRcmJRyuD", identity: "7K8DVxtNJGnMtUY1CQJT5jcs8sFGSZTDiG7kowvFpECh", icon: null },
 ];
 
 export const fetchAllValidators = async (): Promise<ValidatorSearchResult[]> => {
@@ -116,14 +121,19 @@ export const fetchAllValidators = async (): Promise<ValidatorSearchResult[]> => 
         if (validator) {
           validator.name = configValidator.name;
           if (configValidator.icon) validator.icon = configValidator.icon;
+          console.log(`Matched on-chain name for ${validator.votePubkey}: ${validator.name}`);
         } else {
           // If we have on-chain info but no matching validator in our list, add it
+          // This might happen for validators not currently active
+          console.log(`Found on-chain validator with no vote account: ${configValidator.name}`);
           allValidators.push({
             ...configValidator,
             activatedStake: 0,
             commission: 0,
             delinquent: false
           });
+          // Add to map for future lookups
+          identityToValidator.set(configValidator.identity, allValidators[allValidators.length - 1]);
         }
       }
     } catch (error) {
@@ -147,11 +157,14 @@ export const fetchAllValidators = async (): Promise<ValidatorSearchResult[]> => 
       if (existingByVote && !existingByVote.name) {
         existingByVote.name = known.name;
         if (known.icon) existingByVote.icon = known.icon;
+        console.log(`Added well-known name for ${known.name} (${known.votePubkey})`);
       } else if (existingByIdentity && !existingByIdentity.name) {
         existingByIdentity.name = known.name;
         if (known.icon) existingByIdentity.icon = known.icon;
+        console.log(`Added well-known name for ${known.name} (${known.identity})`);
       } else if (!existingByVote && !existingByIdentity) {
         // Add missing well-known validator
+        console.log(`Adding missing well-known validator: ${known.name}`);
         allValidators.push({
           ...known,
           activatedStake: 0,

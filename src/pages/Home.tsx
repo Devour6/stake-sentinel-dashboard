@@ -44,71 +44,63 @@ const Home = () => {
     if (searchInput.trim()) {
       const searchTerm = searchInput.toLowerCase();
       
-      // Improved search algorithm based on stakewiz approach
+      // StakeWiz-like search algorithm - prioritize exact matches first
       
-      // First check for exact matches (case insensitive)
-      const exactNameMatches = validators.filter(
-        validator => validator.name?.toLowerCase() === searchTerm
+      // 1. EXACT matches (case insensitive)
+      const exactNameMatches = validators.filter(v => 
+        v.name?.toLowerCase() === searchTerm
       );
       
-      const exactPubkeyMatches = validators.filter(
-        validator => 
-          validator.votePubkey.toLowerCase() === searchTerm ||
-          validator.identity.toLowerCase() === searchTerm
+      const exactPubkeyMatches = validators.filter(v => 
+        v.votePubkey.toLowerCase() === searchTerm ||
+        v.identity.toLowerCase() === searchTerm
       );
       
-      // Then check for name prefix matches
-      const nameStartsWithMatches = validators.filter(
-        validator => 
-          validator.name?.toLowerCase().startsWith(searchTerm) &&
-          validator.name?.toLowerCase() !== searchTerm
+      // 2. Name STARTS WITH matches
+      const nameStartsWithMatches = validators.filter(v => 
+        v.name?.toLowerCase().startsWith(searchTerm) &&
+        v.name?.toLowerCase() !== searchTerm
       );
       
-      // Then check for substring matches
-      const nameContainsMatches = validators.filter(
-        validator => 
-          validator.name?.toLowerCase().includes(searchTerm) && 
-          !validator.name?.toLowerCase().startsWith(searchTerm) &&
-          validator.name?.toLowerCase() !== searchTerm
+      // 3. Name CONTAINS matches
+      const nameContainsMatches = validators.filter(v => 
+        v.name?.toLowerCase().includes(searchTerm) && 
+        !v.name?.toLowerCase().startsWith(searchTerm) &&
+        v.name?.toLowerCase() !== searchTerm
       );
       
-      // Finally check for substring matches in pubkeys
-      const pubkeyContainsMatches = validators.filter(
-        validator => 
-          (validator.votePubkey.toLowerCase().includes(searchTerm) && 
-           validator.votePubkey.toLowerCase() !== searchTerm) ||
-          (validator.identity.toLowerCase().includes(searchTerm) &&
-           validator.identity.toLowerCase() !== searchTerm)
+      // 4. Pubkey contains matches
+      const pubkeyContainsMatches = validators.filter(v => 
+        (v.votePubkey.toLowerCase().includes(searchTerm) && 
+         v.votePubkey.toLowerCase() !== searchTerm) ||
+        (v.identity.toLowerCase().includes(searchTerm) &&
+         v.identity.toLowerCase() !== searchTerm)
       );
       
-      // Combine all matches with priority ordering and remove duplicates
-      const allMatches = [
-        ...exactNameMatches, 
+      // Combine results in priority order and remove duplicates
+      const allResults = [
+        ...exactNameMatches,
         ...exactPubkeyMatches,
-        ...nameStartsWithMatches,
+        ...nameStartsWithMatches, 
         ...nameContainsMatches,
         ...pubkeyContainsMatches
       ];
       
       // Remove duplicates by votePubkey
-      const uniqueMatches = allMatches.filter(
+      const uniqueResults = allResults.filter(
         (v, i, a) => a.findIndex(t => t.votePubkey === v.votePubkey) === i
       );
       
-      // Sort by stake (if available)
-      const sortedMatches = uniqueMatches.sort((a, b) => {
-        // Sort by stake if available
-        if (a.activatedStake && b.activatedStake) {
-          return b.activatedStake - a.activatedStake;
-        }
-        return 0;
-      });
+      // Sort by stake (higher stake first)
+      const sortedResults = uniqueResults.sort((a, b) => 
+        (b.activatedStake || 0) - (a.activatedStake || 0)
+      );
       
       // Limit to 10 results for performance
-      const filtered = sortedMatches.slice(0, 10);
+      const limitedResults = sortedResults.slice(0, 10);
       
-      setFilteredValidators(filtered);
-      setShowSuggestions(filtered.length > 0);
+      setFilteredValidators(limitedResults);
+      setShowSuggestions(limitedResults.length > 0);
     } else {
       setFilteredValidators([]);
       setShowSuggestions(false);
@@ -123,53 +115,59 @@ const Home = () => {
     setIsSearching(true);
     
     try {
-      // First check if input is a valid vote pubkey
+      // First, try to find exact matches
+      
+      // 1. Check if it's a valid vote pubkey
       if (validateVotePubkey(searchInput.trim())) {
         navigate(`/validator/${encodeURIComponent(searchInput.trim())}`);
         return;
       }
       
-      // Exact name match
-      const nameMatch = validators.find(v => 
+      // 2. Look for exact name match
+      const exactNameMatch = validators.find(v => 
         v.name?.toLowerCase() === searchInput.toLowerCase()
       );
       
-      if (nameMatch) {
-        navigate(`/validator/${encodeURIComponent(nameMatch.votePubkey)}`);
+      if (exactNameMatch) {
+        console.log(`Found exact name match: ${exactNameMatch.name}`);
+        navigate(`/validator/${encodeURIComponent(exactNameMatch.votePubkey)}`);
         return;
       }
 
-      // Identity match
-      const identityMatch = validators.find(v => 
+      // 3. Look for exact identity match
+      const exactIdentityMatch = validators.find(v => 
         v.identity.toLowerCase() === searchInput.toLowerCase()
       );
       
-      if (identityMatch) {
-        navigate(`/validator/${encodeURIComponent(identityMatch.votePubkey)}`);
+      if (exactIdentityMatch) {
+        console.log(`Found exact identity match: ${exactIdentityMatch.identity}`);
+        navigate(`/validator/${encodeURIComponent(exactIdentityMatch.votePubkey)}`);
         return;
       }
       
-      // Partial name matches - prioritize "starts with" over "contains"
+      // 4. Look for name starts with
       const nameStartsWithMatches = validators.filter(v => 
         v.name?.toLowerCase().startsWith(searchInput.toLowerCase()) && 
         v.name?.toLowerCase() !== searchInput.toLowerCase()
       );
       
       if (nameStartsWithMatches.length > 0) {
-        // Sort by stake and name length for better matches
+        // Sort by stake (higher first) and name length (shorter first)
         const bestMatch = nameStartsWithMatches.sort((a, b) => {
           // First by stake (higher is better)
           const stakeDiff = (b.activatedStake || 0) - (a.activatedStake || 0);
           if (stakeDiff !== 0) return stakeDiff;
           
-          // Then by name length (shorter is better)
+          // Then by name length (shorter is better for more exact matches)
           return (a.name?.length || 0) - (b.name?.length || 0);
         })[0];
         
+        console.log(`Found name starts with match: ${bestMatch.name}`);
         navigate(`/validator/${encodeURIComponent(bestMatch.votePubkey)}`);
         return;
       }
       
+      // 5. Look for name contains
       const nameContainsMatches = validators.filter(v => 
         v.name?.toLowerCase().includes(searchInput.toLowerCase()) && 
         !v.name?.toLowerCase().startsWith(searchInput.toLowerCase()) &&
@@ -181,23 +179,26 @@ const Home = () => {
           (b.activatedStake || 0) - (a.activatedStake || 0)
         )[0];
         
+        console.log(`Found name contains match: ${bestMatch.name}`);
         navigate(`/validator/${encodeURIComponent(bestMatch.votePubkey)}`);
         return;
       }
       
-      // Try partial pubkey matches as last resort
+      // 6. Try partial pubkey matches as last resort
       const pubkeyMatch = validators.find(v => 
         v.votePubkey.toLowerCase().includes(searchInput.toLowerCase()) ||
         v.identity.toLowerCase().includes(searchInput.toLowerCase())
       );
 
       if (pubkeyMatch) {
+        console.log(`Found pubkey match: ${pubkeyMatch.votePubkey}`);
         navigate(`/validator/${encodeURIComponent(pubkeyMatch.votePubkey)}`);
         return;
       }
       
-      // If we have any filtered validators from the live search, use the first one
+      // 7. If we have any filtered validators from the live search, use the first one
       if (filteredValidators.length > 0) {
+        console.log(`Using first filtered result: ${filteredValidators[0].name}`);
         navigate(`/validator/${encodeURIComponent(filteredValidators[0].votePubkey)}`);
         return;
       }
