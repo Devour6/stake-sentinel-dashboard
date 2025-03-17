@@ -1,3 +1,4 @@
+
 import { toast } from "sonner";
 import { RPC_ENDPOINT } from "./constants";
 import { ValidatorSearchResult } from "./types";
@@ -5,6 +6,7 @@ import { lamportsToSol } from "./utils";
 import { fetchVoteAccounts } from "./epochApi";
 import { fetchValidatorConfig } from "./validatorConfigApi";
 
+// Well-known validators as a fallback mechanism
 const WELL_KNOWN_VALIDATORS = [
   { name: "Helius", votePubkey: "HeZU7mjJx9FFLX8ad4fErHhiTXNxwqLzW3AVUBCfXxT", identity: "7TMu26hC7sfyEqmA8aXGLLx66JD8WMuKQkExW2K8rfwx", icon: null },
   { name: "Gojira", votePubkey: "goJiRADNdmfnJ4iWEyft7KaYMPTVsRba2Ee1akDEBXb", identity: "gojir4WnhS7VS1JdbnanJMzaMfr4UD7KeX1ixWAHEmw", icon: null },
@@ -59,8 +61,10 @@ export const fetchAllValidators = async (): Promise<ValidatorSearchResult[]> => 
   try {
     console.log("Fetching all validators...");
     
-    // Use the existing fetchVoteAccounts function to get all validators
+    // First fetch all active and delinquent validators
     const { current, delinquent } = await fetchVoteAccounts();
+    
+    console.log(`Fetched ${current.length} active validators and ${delinquent.length} delinquent validators`);
     
     // Process both current and delinquent validators
     const allValidators: ValidatorSearchResult[] = [
@@ -84,11 +88,55 @@ export const fetchAllValidators = async (): Promise<ValidatorSearchResult[]> => 
       }))
     ];
     
-    console.log(`Fetched ${allValidators.length} total validators (${current.length} active, ${delinquent.length} delinquent)`);
+    console.log(`Processed ${allValidators.length} total validators`);
     
-    // Add all well-known validators to ensure they're in the list
-    WELL_KNOWN_VALIDATORS.forEach(known => {
-      if (!allValidators.some(v => v.votePubkey === known.votePubkey)) {
+    // Create a map of identities to vote accounts for easy lookup
+    const identityToValidator = new Map<string, ValidatorSearchResult>();
+    allValidators.forEach(validator => {
+      identityToValidator.set(validator.identity, validator);
+    });
+    
+    // Fetch on-chain validator info for names and websites
+    try {
+      console.log("Fetching on-chain validator configurations...");
+      const onChainValidators = await fetchValidatorConfig();
+      console.log(`Fetched ${onChainValidators.length} on-chain validator configurations`);
+      
+      // Match on-chain config with validators by identity key
+      for (const configValidator of onChainValidators) {
+        const validator = identityToValidator.get(configValidator.identity);
+        if (validator) {
+          validator.name = configValidator.name;
+          if (configValidator.icon) validator.icon = configValidator.icon;
+        } else {
+          // If we have on-chain info but no matching validator in our list, add it
+          allValidators.push({
+            ...configValidator,
+            activatedStake: 0,
+            commission: 0,
+            delinquent: false
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching validator on-chain info:", error);
+      // Continue with fallback names
+    }
+    
+    // Add all well-known validators if they're not already in the list
+    // and update names for existing validators
+    for (const known of WELL_KNOWN_VALIDATORS) {
+      const existingByVote = allValidators.find(v => v.votePubkey === known.votePubkey);
+      const existingByIdentity = allValidators.find(v => v.identity === known.identity && !v.name);
+      
+      if (existingByVote && !existingByVote.name) {
+        existingByVote.name = known.name;
+        if (known.icon) existingByVote.icon = known.icon;
+      } else if (existingByIdentity) {
+        existingByIdentity.name = known.name;
+        if (known.icon) existingByIdentity.icon = known.icon;
+      } else {
+        // Add missing well-known validator
         allValidators.push({
           ...known,
           activatedStake: 0,
@@ -96,46 +144,7 @@ export const fetchAllValidators = async (): Promise<ValidatorSearchResult[]> => 
           delinquent: false
         });
       }
-    });
-    
-    // Fetch on-chain validator info for proper names and logos
-    try {
-      const onChainValidators = await fetchValidatorConfig();
-      console.log(`Fetched ${onChainValidators.length} on-chain validator configurations`);
-      
-      // Match on-chain config with validators by identity key and update names
-      if (onChainValidators.length > 0) {
-        allValidators.forEach(validator => {
-          const onChainInfo = onChainValidators.find(v => 
-            v.identity === validator.identity
-          );
-          
-          if (onChainInfo && onChainInfo.name) {
-            validator.name = onChainInfo.name;
-            if (onChainInfo.icon) validator.icon = onChainInfo.icon;
-          }
-        });
-      }
-      
-      console.log("Updated validators with on-chain names");
-    } catch (error) {
-      console.error("Error fetching validator on-chain info:", error);
-      // Continue with fallback names if this fails
     }
-    
-    // Update names from well-known validators list for any that weren't found on-chain
-    allValidators.forEach(validator => {
-      if (!validator.name) {
-        const knownValidator = WELL_KNOWN_VALIDATORS.find(
-          known => known.votePubkey === validator.votePubkey || known.identity === validator.identity
-        );
-        
-        if (knownValidator) {
-          validator.name = knownValidator.name;
-          if (knownValidator.icon) validator.icon = knownValidator.icon;
-        }
-      }
-    });
     
     // Fill missing names with first characters of vote pubkey
     allValidators.forEach(validator => {
@@ -152,6 +161,8 @@ export const fetchAllValidators = async (): Promise<ValidatorSearchResult[]> => 
   } catch (error) {
     console.error("Error fetching validators:", error);
     toast.error("Failed to fetch validators");
+    
+    // Use well-known validators as fallback
     return WELL_KNOWN_VALIDATORS.map(v => ({
       ...v,
       activatedStake: 0,

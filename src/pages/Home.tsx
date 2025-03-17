@@ -44,38 +44,55 @@ const Home = () => {
     if (searchInput.trim()) {
       const searchTerm = searchInput.toLowerCase();
       
-      // Prioritize search matches
+      // More aggressive search strategy
+      
+      // 1. Exact matches first (case insensitive)
       const exactNameMatches = validators.filter(
-        (validator) => validator.name?.toLowerCase() === searchTerm
+        validator => validator.name?.toLowerCase() === searchTerm
       );
       
       const exactPubkeyMatches = validators.filter(
-        (validator) => 
+        validator => 
           validator.votePubkey.toLowerCase() === searchTerm ||
           validator.identity.toLowerCase() === searchTerm
       );
       
-      const partialNameMatches = validators.filter(
-        (validator) => 
-          validator.name?.toLowerCase().includes(searchTerm) && 
+      // 2. Starts with matches (higher priority than contains)
+      const nameStartsWithMatches = validators.filter(
+        validator => 
+          validator.name?.toLowerCase().startsWith(searchTerm) &&
           validator.name?.toLowerCase() !== searchTerm
       );
       
-      const partialPubkeyMatches = validators.filter(
-        (validator) => 
+      // 3. Contains matches (lower priority)
+      const nameContainsMatches = validators.filter(
+        validator => 
+          validator.name?.toLowerCase().includes(searchTerm) && 
+          !validator.name?.toLowerCase().startsWith(searchTerm) &&
+          validator.name?.toLowerCase() !== searchTerm
+      );
+      
+      const pubkeyContainsMatches = validators.filter(
+        validator => 
           (validator.votePubkey.toLowerCase().includes(searchTerm) && 
            validator.votePubkey.toLowerCase() !== searchTerm) ||
           (validator.identity.toLowerCase().includes(searchTerm) &&
            validator.identity.toLowerCase() !== searchTerm)
       );
       
-      // Combine and limit to top 10 results with prioritization
-      const filtered = [
+      // Combine all matches with priority ordering and remove duplicates
+      const allMatches = [
         ...exactNameMatches, 
         ...exactPubkeyMatches,
-        ...partialNameMatches,
-        ...partialPubkeyMatches
-      ].filter((v, i, a) => a.findIndex(t => t.votePubkey === v.votePubkey) === i).slice(0, 10);
+        ...nameStartsWithMatches,
+        ...nameContainsMatches,
+        ...pubkeyContainsMatches
+      ];
+      
+      // Remove duplicates by votePubkey
+      const filtered = allMatches.filter(
+        (v, i, a) => a.findIndex(t => t.votePubkey === v.votePubkey) === i
+      ).slice(0, 10);
       
       setFilteredValidators(filtered);
       setShowSuggestions(filtered.length > 0);
@@ -119,35 +136,60 @@ const Home = () => {
         return;
       }
       
-      // Partial matches - try to find the best match
-      const partialNameMatches = validators.filter(v => 
-        v.name?.toLowerCase().includes(searchInput.toLowerCase())
+      // Partial name matches - prioritize "starts with" over "contains"
+      const nameStartsWithMatches = validators.filter(v => 
+        v.name?.toLowerCase().startsWith(searchInput.toLowerCase()) && 
+        v.name?.toLowerCase() !== searchInput.toLowerCase()
       );
       
-      if (partialNameMatches.length > 0) {
-        // Sort by length of name (shorter names usually indicate better matches)
-        const bestMatch = partialNameMatches.sort((a, b) => 
-          (a.name?.length || 0) - (b.name?.length || 0)
-        )[0];
+      if (nameStartsWithMatches.length > 0) {
+        // Sort by stake and name length for better matches
+        const bestMatch = nameStartsWithMatches.sort((a, b) => {
+          // First by stake (higher is better)
+          const stakeDiff = (b.activatedStake || 0) - (a.activatedStake || 0);
+          if (stakeDiff !== 0) return stakeDiff;
+          
+          // Then by name length (shorter is better)
+          return (a.name?.length || 0) - (b.name?.length || 0);
+        })[0];
+        
         navigate(`/validator/${encodeURIComponent(bestMatch.votePubkey)}`);
         return;
       }
       
-      const partialPubkeyMatch = validators.find(v => 
+      const nameContainsMatches = validators.filter(v => 
+        v.name?.toLowerCase().includes(searchInput.toLowerCase()) && 
+        !v.name?.toLowerCase().startsWith(searchInput.toLowerCase()) &&
+        v.name?.toLowerCase() !== searchInput.toLowerCase()
+      );
+      
+      if (nameContainsMatches.length > 0) {
+        const bestMatch = nameContainsMatches.sort((a, b) => 
+          (b.activatedStake || 0) - (a.activatedStake || 0)
+        )[0];
+        
+        navigate(`/validator/${encodeURIComponent(bestMatch.votePubkey)}`);
+        return;
+      }
+      
+      // Try partial pubkey matches as last resort
+      const pubkeyMatch = validators.find(v => 
         v.votePubkey.toLowerCase().includes(searchInput.toLowerCase()) ||
         v.identity.toLowerCase().includes(searchInput.toLowerCase())
       );
 
-      if (partialPubkeyMatch) {
-        navigate(`/validator/${encodeURIComponent(partialPubkeyMatch.votePubkey)}`);
+      if (pubkeyMatch) {
+        navigate(`/validator/${encodeURIComponent(pubkeyMatch.votePubkey)}`);
         return;
       }
       
+      // If we have any filtered validators from the live search, use the first one
       if (filteredValidators.length > 0) {
         navigate(`/validator/${encodeURIComponent(filteredValidators[0].votePubkey)}`);
-      } else {
-        toast.error("No validator found matching your search");
+        return;
       }
+      
+      toast.error("No validator found matching your search");
     } catch (error) {
       console.error("Search error:", error);
       toast.error("Error searching for validator");

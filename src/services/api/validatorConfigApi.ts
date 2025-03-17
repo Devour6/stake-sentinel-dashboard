@@ -20,7 +20,7 @@ export const fetchValidatorConfig = async (): Promise<ValidatorSearchResult[]> =
           'Config1111111111111111111111111111111111111',
           {
             commitment: "confirmed",
-            encoding: "base64",
+            encoding: "jsonParsed",
             filters: [
               {
                 memcmp: {
@@ -45,41 +45,33 @@ export const fetchValidatorConfig = async (): Promise<ValidatorSearchResult[]> =
     
     const validatorConfigs: ValidatorSearchResult[] = [];
     
+    // Use a simplified approach that doesn't rely on Buffer
     for (const account of data.result) {
       try {
-        if (!account.account || !account.account.data) {
+        if (!account.account || !account.account.data || !account.account.data.parsed) {
           continue;
         }
         
-        const base64Data = account.account.data[0];
+        const parsedData = account.account.data.parsed;
         
-        // Skip accounts with no data
-        if (!base64Data) continue;
-        
-        // Decode base64 data
-        const buffer = Buffer.from(base64Data, 'base64');
-        
-        // Skip if too small
-        if (buffer.length < 100) continue;
-        
-        // The identity key starts at position 8 (32 bytes)
-        const identityPubkey = buffer.slice(8, 40).toString('base64');
-        
-        // The actual JSON data is after the keys at the end of the data
-        // Try to find the start of the JSON data
-        let jsonStart = 45; // Start position after the identity key
-        
-        // Find the JSON start position (usually after some null bytes)
-        while (jsonStart < buffer.length && buffer[jsonStart] !== 123) { // 123 is '{'
-          jsonStart++;
+        // Skip if we don't have what we need
+        if (!parsedData.info || !parsedData.info.configData || !parsedData.info.configData.keys) {
+          continue;
         }
         
-        if (jsonStart >= buffer.length) continue;
+        // The identity key should be in the first key (usually at index 0)
+        const keys = parsedData.info.configData.keys;
+        if (keys.length < 1) continue;
         
-        // Extract JSON
+        const identityPubkey = keys[0].pubkey;
+        
+        // Extract the validator info JSON from the data
+        const configData = parsedData.info.configData.configData;
+        if (!configData) continue;
+        
         try {
-          const jsonData = buffer.slice(jsonStart).toString('utf8');
-          const validatorInfo = JSON.parse(jsonData);
+          // Parse the validator config JSON
+          const validatorInfo = JSON.parse(configData);
           
           if (validatorInfo && validatorInfo.name) {
             validatorConfigs.push({
@@ -92,7 +84,7 @@ export const fetchValidatorConfig = async (): Promise<ValidatorSearchResult[]> =
             console.log(`Found validator with name: ${validatorInfo.name}`);
           }
         } catch (e) {
-          // Skip invalid JSON
+          console.error("Error parsing validator JSON:", e);
           continue;
         }
       } catch (err) {
