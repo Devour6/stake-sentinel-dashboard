@@ -37,12 +37,19 @@ const Home = () => {
   useEffect(() => {
     if (searchInput.trim()) {
       const searchTerm = searchInput.toLowerCase();
-      const filtered = validators.filter(
+      const exactNameMatches = validators.filter(
+        (validator) => validator.name?.toLowerCase() === searchTerm
+      );
+      
+      const partialMatches = validators.filter(
         (validator) => 
-          (validator.name?.toLowerCase().includes(searchTerm)) ||
+          (validator.name?.toLowerCase().includes(searchTerm) && validator.name?.toLowerCase() !== searchTerm) ||
           validator.votePubkey.toLowerCase().includes(searchTerm) ||
           validator.identity.toLowerCase().includes(searchTerm)
-      ).slice(0, 10);
+      );
+      
+      const filtered = [...exactNameMatches, ...partialMatches].slice(0, 10);
+      
       setFilteredValidators(filtered);
       setShowSuggestions(filtered.length > 0);
     } else {
@@ -64,10 +71,19 @@ const Home = () => {
         return;
       }
       
+      const nameMatch = validators.find(v => 
+        v.name?.toLowerCase() === searchInput.toLowerCase()
+      );
+      
+      if (nameMatch) {
+        navigate(`/validator/${encodeURIComponent(nameMatch.votePubkey)}`);
+        return;
+      }
+      
       const matchedValidator = validators.find(v => 
-        (v.name?.toLowerCase() === searchInput.toLowerCase()) ||
         v.votePubkey.toLowerCase() === searchInput.toLowerCase() ||
-        v.identity.toLowerCase() === searchInput.toLowerCase()
+        v.identity.toLowerCase() === searchInput.toLowerCase() ||
+        v.name?.toLowerCase().includes(searchInput.toLowerCase())
       );
 
       if (matchedValidator) {

@@ -1,4 +1,3 @@
-
 import { toast } from "sonner";
 import { VALIDATOR_PUBKEY, VALIDATOR_IDENTITY, RPC_ENDPOINT } from "./constants";
 import { ValidatorInfo, ValidatorMetrics, StakeHistoryItem, RpcVoteAccount, StakeAccountInfo } from "./types";
@@ -22,6 +21,26 @@ export const fetchAllValidators = async () => {
     }));
     
     console.log(`Fetched ${allValidators.length} validators`);
+    
+    // Fetch on-chain validator info for proper names if available
+    try {
+      const validatorNames = await fetchValidatorNames();
+      
+      // Update validators with proper names
+      allValidators.forEach(validator => {
+        const validatorInfo = validatorNames.find(v => 
+          v.identity === validator.identity || 
+          v.votePubkey === validator.votePubkey
+        );
+        
+        if (validatorInfo && validatorInfo.name) {
+          validator.name = validatorInfo.name;
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching validator names:", error);
+      // Continue with fallback names if this fails
+    }
     
     // Add known validators with proper names
     const knownValidators = [
@@ -91,6 +110,84 @@ export const fetchAllValidators = async () => {
     return [];
   }
 };
+
+// New function to fetch on-chain validator names (similar to how StakeWiz does it)
+async function fetchValidatorNames() {
+  try {
+    // Fetch validator info accounts from the Config program
+    const response = await fetch(RPC_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 'validator-info',
+        method: 'getProgramAccounts',
+        params: [
+          'Config1111111111111111111111111111111111111',
+          {
+            encoding: 'base64',
+            filters: [
+              {
+                dataSize: 566 // Filter for validator info accounts
+              }
+            ]
+          }
+        ]
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch validator info: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    
+    if (!data.result || !Array.isArray(data.result)) {
+      return [];
+    }
+    
+    const validatorInfos = [];
+    
+    for (const account of data.result) {
+      try {
+        // Parse the validator info data
+        const buffer = Buffer.from(account.account.data[0], 'base64');
+        
+        // Skip if buffer is too small
+        if (buffer.length < 100) continue;
+        
+        // Extract the JSON info string (this is a simplified version)
+        // In a real implementation, you'd need to properly parse the Config program data format
+        let jsonStr = '';
+        for (let i = 45; i < buffer.length; i++) {
+          if (buffer[i] === 0) break;
+          jsonStr += String.fromCharCode(buffer[i]);
+        }
+        
+        if (!jsonStr) continue;
+        
+        // Try to parse the JSON
+        const info = JSON.parse(jsonStr);
+        
+        if (info.name && info.identity) {
+          validatorInfos.push({
+            name: info.name,
+            identity: info.identity,
+            votePubkey: info.votePubkey || ''
+          });
+        }
+      } catch (err) {
+        // Skip this account if there's an error parsing
+        continue;
+      }
+    }
+    
+    return validatorInfos;
+  } catch (error) {
+    console.error("Error fetching validator names:", error);
+    return [];
+  }
+}
 
 // Fetch stake accounts for a specific validator to determine activating stake
 async function fetchActivatingStake(voteAccount: string): Promise<number> {
