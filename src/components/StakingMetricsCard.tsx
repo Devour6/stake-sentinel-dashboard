@@ -51,23 +51,19 @@ export const StakingMetricsCard = ({
 
 interface ValidatorMetricsProps {
   totalStake: number;
-  activatingStake: number;
   commission: number;
-  mevCommission: number; // Added MEV commission
   delegatorCount: number;
   isLoading?: boolean;
 }
 
 export const ValidatorMetricsGrid = ({
   totalStake,
-  activatingStake,
   commission,
-  mevCommission,
   delegatorCount,
   isLoading = false,
 }: ValidatorMetricsProps) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-slide-up">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-slide-up">
       <StakingMetricsCard
         title="Total Stake"
         value={isLoading ? "" : formatSol(totalStake)}
@@ -75,17 +71,8 @@ export const ValidatorMetricsGrid = ({
         isLoading={isLoading}
       />
       <StakingMetricsCard
-        title="Activating Stake"
-        value={isLoading ? "" : formatSol(activatingStake)}
-        description="Active next epoch"
-        icon={<Clock className="h-4 w-4 text-gojira-red" />}
-        trend="up"
-        isLoading={isLoading}
-      />
-      <StakingMetricsCard
         title="Commission"
-        value={isLoading ? "" : `${formatCommission(commission)} / ${mevCommission}%`}
-        description="Vote / MEV"
+        value={isLoading ? "" : `${formatCommission(commission)}`}
         icon={<Percent className="h-4 w-4 text-gojira-red" />}
         isLoading={isLoading}
       />

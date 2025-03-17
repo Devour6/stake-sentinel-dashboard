@@ -4,7 +4,6 @@ import { ValidatorHeader } from "@/components/ValidatorHeader";
 import { ValidatorMetricsGrid } from "@/components/StakingMetricsCard";
 import { StakeChart } from "@/components/StakeChart";
 import { ValidatorInfoCard } from "@/components/ValidatorInfoCard";
-import { EpochTimer } from "@/components/EpochTimer";
 import { 
   fetchValidatorInfo, 
   fetchValidatorMetrics, 
@@ -77,31 +76,18 @@ const Index = () => {
           isLoading={isLoading}
         />
         
-        {/* Epoch Timer */}
-        <div className="mb-6">
-          <EpochTimer 
-            currentEpoch={validatorInfo?.currentEpoch || 0}
-            timeRemaining={validatorInfo?.epochTimeRemaining}
-            isLoading={isLoading}
-          />
-        </div>
-        
         {/* Validator metrics */}
         {validatorMetrics ? (
           <ValidatorMetricsGrid
             totalStake={validatorMetrics.totalStake}
-            activatingStake={validatorMetrics.activatingStake}
             commission={validatorMetrics.commission}
-            mevCommission={validatorMetrics.mevCommission}
             delegatorCount={validatorMetrics.delegatorCount}
             isLoading={isLoading}
           />
         ) : (
           <ValidatorMetricsGrid
             totalStake={0}
-            activatingStake={0}
             commission={0}
-            mevCommission={0}
             delegatorCount={0}
             isLoading={true}
           />
