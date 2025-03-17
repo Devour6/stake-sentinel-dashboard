@@ -1,15 +1,15 @@
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { validateVotePubkey } from "@/services/solanaApi";
 import { toast } from "sonner";
 import { fetchAllValidators } from "@/services/api/validatorApi";
 import StakeModal from "@/components/StakeModal";
 import { ValidatorSearchResult } from "@/services/api/types";
+import SearchBar from "@/components/search/SearchBar";
+import PageLayout from "@/components/layout/PageLayout";
+import Footer from "@/components/layout/Footer";
 
 const Home = () => {
   const [searchInput, setSearchInput] = useState("");
@@ -120,116 +120,29 @@ const Home = () => {
     navigate(`/validator/${encodeURIComponent(votePubkey)}`);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchInput(e.target.value);
-  };
-
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gojira-gray to-gojira-gray-dark p-4">
-      <div className="fixed top-4 right-4 z-10">
-        <Button 
-          variant="outline" 
-          className="border-gojira-red text-gojira-red hover:bg-gojira-red/10"
-          onClick={() => setIsStakeModalOpen(true)}
-        >
-          Stake to Gojira Validator
-        </Button>
-      </div>
-
-      <div className="w-full max-w-3xl mx-auto text-center mb-12 animate-fade-in">
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 text-white">
-          NodeScan
-        </h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Search for any Solana validator by vote account address, identity, or name to view detailed performance metrics.
-        </p>
-      </div>
-
+    <PageLayout onStakeModalOpen={() => setIsStakeModalOpen(true)}>
       <Card className="w-full max-w-2xl glass-card mx-auto animate-slide-up">
         <CardContent className="pt-6">
-          <form onSubmit={handleSearch} className="flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
-              
-              <div className="relative">
-                <Input
-                  type="text"
-                  placeholder={isLoadingValidators ? "Loading validators..." : "Search by validator name, vote account, or identity..."}
-                  className="pl-10 bg-gojira-gray-dark border-gojira-gray-light"
-                  value={searchInput}
-                  onChange={handleInputChange}
-                  ref={searchInputRef}
-                  onFocus={() => filteredValidators.length > 0 && setShowSuggestions(true)}
-                  onBlur={() => {
-                    // Delayed hide of suggestions to allow for clicks
-                    setTimeout(() => setShowSuggestions(false), 200);
-                  }}
-                  disabled={isLoadingValidators}
-                />
-                
-                {showSuggestions && filteredValidators.length > 0 && (
-                  <div className="absolute z-50 w-full mt-1 bg-gojira-gray-dark border border-gojira-gray-light rounded-md shadow-lg max-h-[300px] overflow-y-auto">
-                    {filteredValidators.map((validator) => (
-                      <div
-                        key={validator.votePubkey}
-                        className="flex items-center justify-between p-3 hover:bg-accent cursor-pointer"
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          handleSelectValidator(validator.votePubkey);
-                        }}
-                      >
-                        <div className="flex items-center gap-3">
-                          {validator.icon && (
-                            <img 
-                              src={validator.icon} 
-                              alt={`${validator.name || 'Validator'} logo`}
-                              className="w-6 h-6 rounded-full"
-                              onError={(e) => {
-                                // Hide broken images
-                                (e.target as HTMLImageElement).style.display = 'none';
-                              }}
-                            />
-                          )}
-                          <span className="font-medium">{validator.name || "Unknown Validator"}</span>
-                        </div>
-                        <span className="text-xs text-muted-foreground truncate max-w-[180px]">
-                          {validator.votePubkey.slice(0, 8)}...{validator.votePubkey.slice(-8)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-            <Button 
-              type="submit" 
-              variant="destructive"
-              className="bg-gojira-red hover:bg-gojira-red-dark"
-              disabled={isSearching || isLoadingValidators || !searchInput.trim()}
-            >
-              {isSearching ? (
-                <div className="h-5 w-5 border-2 border-white/20 border-t-white rounded-full animate-spin mr-2" />
-              ) : null}
-              Search
-            </Button>
-          </form>
+          <SearchBar
+            searchInput={searchInput}
+            setSearchInput={setSearchInput}
+            isSearching={isSearching}
+            isLoadingValidators={isLoadingValidators}
+            filteredValidators={filteredValidators}
+            showSuggestions={showSuggestions}
+            setShowSuggestions={setShowSuggestions}
+            onSearch={handleSearch}
+            onSelectValidator={handleSelectValidator}
+            ref={searchInputRef}
+          />
         </CardContent>
       </Card>
 
-      <div className="mt-16 text-center text-sm text-muted-foreground">
-        <div className="flex justify-center gap-1 items-center">
-          <span>Powered by</span>
-          <span className="text-gojira-red font-semibold">Gojira</span>
-          <img 
-            src="/lovable-uploads/31314417-ef5b-4d58-ac5e-91a2ab487110.png" 
-            alt="Gojira Logo" 
-            className="w-4 h-4"
-          />
-        </div>
-      </div>
+      <Footer />
 
       <StakeModal isOpen={isStakeModalOpen} setIsOpen={setIsStakeModalOpen} />
-    </div>
+    </PageLayout>
   );
 };
 
