@@ -1,16 +1,60 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { validateVotePubkey } from "@/services/solanaApi";
+import { 
+  CommandDialog,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem
+} from "@/components/ui/command";
+import { toast } from "sonner";
+
+// Mock validator list for autocomplete - this would be replaced with API data
+const VALIDATOR_SUGGESTIONS = [
+  { name: "Gojira", votePubkey: "CcaHc2L43ZWjwCHART3oZoJvHLAe9hzT2DJNUpBzoTN1", identity: "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM" },
+  { name: "Solana Foundation", votePubkey: "GhBd6sozvfR9F2YwHVj2tAHbGyzQSuHxWNn5K8ofuYkx", identity: "7BJUCjD9sMQQ3LXeNZ3j8FQmJxMS1hC9t5S2g4gtLQBJ" },
+  { name: "Jito", votePubkey: "E5ruSVxEKrAoXAcuMaAfcN5tX6bUYK6ouJcS5yAbs6Zh", identity: "88E5dLt2WQ6WNbQTXoZYwywickdGF9U5e3tbeYxQmHJx" },
+  { name: "Marinade", votePubkey: "DQ7D6ZRtKbBSxCcAunEkoTzQhCBKLPdzTjJRoFBDkntj", identity: "HxkZUjg1RnCUTJ8j1Lc9J4xzQXGbQMY8kqbAMU4rMDKr" },
+];
 
 const Home = () => {
   const [searchInput, setSearchInput] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [filteredSuggestions, setFilteredSuggestions] = useState(VALIDATOR_SUGGESTIONS);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setOpen((open) => !open);
+      }
+    };
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
+  }, []);
+
+  useEffect(() => {
+    if (searchInput.trim()) {
+      const filtered = VALIDATOR_SUGGESTIONS.filter(
+        (validator) => 
+          validator.name.toLowerCase().includes(searchInput.toLowerCase()) ||
+          validator.votePubkey.toLowerCase().includes(searchInput.toLowerCase()) ||
+          validator.identity.toLowerCase().includes(searchInput.toLowerCase())
+      );
+      setFilteredSuggestions(filtered);
+    } else {
+      setFilteredSuggestions(VALIDATOR_SUGGESTIONS);
+    }
+  }, [searchInput]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,22 +65,38 @@ const Home = () => {
     
     try {
       // For now just validate the pubkey format
-      // Later we can do more complex validation
       const isValid = validateVotePubkey(searchInput.trim());
       
       if (isValid) {
         navigate(`/validator/${encodeURIComponent(searchInput.trim())}`);
       } else {
-        // If not a valid pubkey, we could try searching by name in the future
-        console.error("Invalid vote account pubkey format");
-        // We'll still navigate, and let the validator page handle errors
-        navigate(`/validator/${encodeURIComponent(searchInput.trim())}`);
+        // Check if we have a suggestion that matches the search
+        const matchedValidator = VALIDATOR_SUGGESTIONS.find(v => 
+          v.name.toLowerCase() === searchInput.toLowerCase() ||
+          v.votePubkey.toLowerCase() === searchInput.toLowerCase() ||
+          v.identity.toLowerCase() === searchInput.toLowerCase()
+        );
+
+        if (matchedValidator) {
+          navigate(`/validator/${encodeURIComponent(matchedValidator.votePubkey)}`);
+        } else {
+          // If not a valid pubkey and no match, show an error
+          toast.error("No validator found matching your search");
+          // We'll still navigate, and let the validator page handle errors
+          navigate(`/validator/${encodeURIComponent(searchInput.trim())}`);
+        }
       }
     } catch (error) {
       console.error("Search error:", error);
+      toast.error("Error searching for validator");
     } finally {
       setIsSearching(false);
     }
+  };
+
+  const handleSelectValidator = (votePubkey: string) => {
+    setOpen(false);
+    navigate(`/validator/${encodeURIComponent(votePubkey)}`);
   };
 
   return (
@@ -45,12 +105,12 @@ const Home = () => {
         <div className="flex justify-center mb-6">
           <img 
             src="/lovable-uploads/31314417-ef5b-4d58-ac5e-91a2ab487110.png" 
-            alt="Gojira Logo" 
+            alt="hiStake Logo" 
             className="w-24 h-24 object-contain gojira-logo"
           />
         </div>
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 text-white">
-          Solana Validator Monitor
+          hiStake
         </h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
           Search for any Solana validator by vote account address, identity, or name to view detailed performance metrics.
@@ -68,6 +128,7 @@ const Home = () => {
                 className="pl-10 bg-gojira-gray-dark border-gojira-gray-light"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
+                onFocus={() => setOpen(true)}
               />
             </div>
             <Button 
@@ -96,6 +157,33 @@ const Home = () => {
           />
         </div>
       </div>
+
+      <CommandDialog open={open} onOpenChange={setOpen}>
+        <CommandInput 
+          placeholder="Search validators..." 
+          value={searchInput}
+          onValueChange={setSearchInput}
+        />
+        <CommandList>
+          <CommandEmpty>No validators found.</CommandEmpty>
+          <CommandGroup heading="Suggestions">
+            {filteredSuggestions.map((validator) => (
+              <CommandItem
+                key={validator.votePubkey}
+                onSelect={() => handleSelectValidator(validator.votePubkey)}
+                className="flex items-center justify-between"
+              >
+                <div className="flex items-center">
+                  <span>{validator.name}</span>
+                </div>
+                <span className="text-xs text-muted-foreground truncate max-w-[180px]">
+                  {validator.votePubkey.slice(0, 8)}...{validator.votePubkey.slice(-8)}
+                </span>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        </CommandList>
+      </CommandDialog>
     </div>
   );
 };

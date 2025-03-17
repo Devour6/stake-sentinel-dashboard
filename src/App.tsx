@@ -8,6 +8,9 @@ import Home from "./pages/Home";
 import ValidatorDashboard from "./pages/ValidatorDashboard";
 import NotFound from "./pages/NotFound";
 
+// Set the document title
+document.title = "hiStake - Solana Validator Monitor";
+
 const queryClient = new QueryClient();
 
 const App = () => (
