@@ -1,6 +1,6 @@
 
 import { useRef } from "react";
-import { PageLayout } from "@/components/layout/PageLayout";
+import PageLayout from "@/components/layout/PageLayout";
 import SearchBar from "@/components/search/SearchBar";
 import { useValidatorSearch } from "@/hooks/useValidatorSearch";
 import { Button } from "@/components/ui/button";
