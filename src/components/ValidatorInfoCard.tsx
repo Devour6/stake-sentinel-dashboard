@@ -2,7 +2,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ValidatorInfo } from "@/services/solanaApi";
-import { Check, AlertTriangle, Server, Clock } from "lucide-react";
+import { Check, AlertTriangle, Server, Clock, Globe } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface ValidatorInfoCardProps {
   validatorInfo: ValidatorInfo | null;
@@ -78,6 +79,25 @@ export const ValidatorInfoCard = ({
               </div>
               <p className="font-medium">{voteStatus.text}</p>
             </div>
+            
+            {validatorInfo.website && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Globe className="h-3.5 w-3.5 text-gojira-red" />
+                  <span className="text-sm text-muted-foreground">Website</span>
+                </div>
+                <a 
+                  href={validatorInfo.website} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-gojira-red hover:text-gojira-red-light transition-colors flex items-center gap-1"
+                >
+                  <Button variant="link" className="p-0 h-auto text-sm text-gojira-red hover:text-gojira-red-light">
+                    Visit website
+                  </Button>
+                </a>
+              </div>
+            )}
             
             <div className="flex items-center justify-between pt-2">
               <div className="space-y-2">

@@ -1,4 +1,3 @@
-
 // Types for the Solana API responses and data structures
 export interface ValidatorInfo {
   identity: string;
@@ -14,6 +13,7 @@ export interface ValidatorInfo {
   currentEpoch: number;
   name?: string;
   icon?: string | null;
+  website?: string | null;
 }
 
 export interface StakeHistoryItem {
@@ -89,6 +89,7 @@ export interface ValidatorSearchResult {
   activatedStake?: number;
   commission?: number;
   delinquent?: boolean;
+  website?: string | null;
 }
 
 // Add interface for on-chain validator config data
