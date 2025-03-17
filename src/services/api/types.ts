@@ -24,3 +24,15 @@ export interface ValidatorMetrics {
   activatingStake: number;
   commission: number;
 }
+
+// Raw RPC response interfaces
+export interface RpcVoteAccount {
+  votePubkey: string;
+  nodePubkey: string;
+  activatedStake: number;
+  epochVoteAccount: boolean;
+  commission: number;
+  lastVote: number;
+  epochCredits: [number, number, number][];
+  rootSlot?: number;
+}

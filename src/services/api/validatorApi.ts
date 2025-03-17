@@ -1,7 +1,7 @@
 
 import { toast } from "sonner";
 import { VALIDATOR_PUBKEY, VALIDATOR_IDENTITY } from "./constants";
-import { ValidatorInfo, ValidatorMetrics, StakeHistoryItem } from "./types";
+import { ValidatorInfo, ValidatorMetrics, StakeHistoryItem, RpcVoteAccount } from "./types";
 import { lamportsToSol } from "./utils";
 import { fetchVoteAccounts, fetchCurrentEpoch } from "./epochApi";
 import { fetchStakeHistory } from "./stakeApi";
@@ -27,11 +27,18 @@ export const fetchValidatorInfo = async (): Promise<ValidatorInfo | null> => {
     // Log the validator data for debugging purposes
     console.log("Raw validator data:", validator);
     
-    // Make sure to properly check for activatingStake and handle it correctly
-    const activatingStake = typeof validator.activatingStake === 'number' 
-      ? lamportsToSol(validator.activatingStake) 
-      : 0;
-      
+    // Extract activating stake properly 
+    // Note: In some Solana RPC responses, activatingStake might not be directly available,
+    // so we need to check if it exists and has the correct type
+    let activatingStake = 0;
+    
+    // Check if there's an activatingStake field in the response
+    if ('activatingStake' in validator && typeof validator.activatingStake === 'number') {
+      activatingStake = lamportsToSol(validator.activatingStake);
+    } else {
+      console.log("No activatingStake found in the response, defaulting to 0");
+    }
+    
     console.log("Processed activatingStake:", activatingStake);
     
     return {
