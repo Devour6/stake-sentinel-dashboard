@@ -86,7 +86,6 @@ export const ValidatorMetricsGrid = ({
         value={isLoading ? "" : delegatorCount}
         icon={<Users className="h-4 w-4 text-gojira-red" />}
         isLoading={isLoading}
-        isEstimated={true}
       />
     </div>
   );

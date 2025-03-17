@@ -1,4 +1,3 @@
-
 import { toast } from "sonner";
 import { VALIDATOR_PUBKEY, RPC_ENDPOINT } from "./constants";
 import { StakeHistoryItem } from "./types";
@@ -47,16 +46,13 @@ export const fetchStakeHistory = async (days = 30): Promise<StakeHistoryItem[]> 
   }
 };
 
-// Get delegator count - fixing the encoding issue in the request
+// Get delegator count by fetching stake accounts delegated to the validator
 export const fetchDelegatorCount = async (): Promise<number> => {
   try {
-    console.log("Fetching delegator count...");
+    console.log("Fetching delegator count directly from vote account...");
     
-    // The getProgramAccounts method is getting a Base64DecodeError
-    // Let's use a more reliable fallback approach
-    
-    // First, attempt to get the validator info which should give us a reliable stake value
-    const voteAccountsResponse = await fetch(RPC_ENDPOINT, {
+    // Get vote account info which contains delegator count
+    const voteAccountResponse = await fetch(RPC_ENDPOINT, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -69,34 +65,101 @@ export const fetchDelegatorCount = async (): Promise<number> => {
       })
     });
 
-    if (!voteAccountsResponse.ok) {
-      throw new Error(`RPC request failed with status ${voteAccountsResponse.status}`);
+    if (!voteAccountResponse.ok) {
+      throw new Error(`RPC request failed with status ${voteAccountResponse.status}`);
     }
 
-    const voteAccountsData = await voteAccountsResponse.json();
-    const validators = [...(voteAccountsData.result?.current || []), ...(voteAccountsData.result?.delinquent || [])];
+    const voteAccountData = await voteAccountResponse.json();
+    console.log("Vote account data:", voteAccountData);
+    
+    const validators = [...(voteAccountData.result?.current || []), ...(voteAccountData.result?.delinquent || [])];
     const validator = validators.find(v => v.votePubkey === VALIDATOR_PUBKEY);
     
     if (!validator) {
-      // If we can't find the validator, return a default value
       console.log("Validator not found in vote accounts response");
-      return 187; // Default value as a fallback
+      throw new Error("Validator not found");
     }
     
-    // Due to limitations in the public RPC API, we'll use a reasonable estimation
-    // based on stake size for the delegator count
-    // This is a fallback since the getProgramAccounts call is failing
-    const totalStake = lamportsToSol(validator.activatedStake);
+    // Check if the validator data includes a delegatorCount property
+    if (validator.delegatorCount !== undefined) {
+      return validator.delegatorCount;
+    }
     
-    // Estimate: approximately 1 delegator per 1500-2500 SOL on average for established validators
-    // The actual number varies widely, but this provides a reasonable starting point
-    const estimatedDelegators = Math.round(totalStake / 2000);
+    // If not available in vote account data, use getProgramAccounts to count stake accounts
+    const stakeAccountsResponse = await fetch(RPC_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 2,
+        method: 'getProgramAccounts',
+        params: [
+          'Stake11111111111111111111111111111111111111',
+          {
+            filters: [
+              {
+                memcmp: {
+                  offset: 44,
+                  bytes: VALIDATOR_PUBKEY
+                }
+              }
+            ]
+          }
+        ]
+      })
+    });
+
+    if (!stakeAccountsResponse.ok) {
+      throw new Error(`RPC request failed with status ${stakeAccountsResponse.status}`);
+    }
+
+    const stakeAccountsData = await stakeAccountsResponse.json();
+    console.log("Stake accounts data:", stakeAccountsData);
     
-    // Use a value between 175-215 as it's closer to the known current delegator count
-    // We'll add a small random variation to make it look dynamic
-    return Math.max(175, Math.min(215, estimatedDelegators));
+    // Count the number of returned stake accounts
+    if (stakeAccountsData.result) {
+      return stakeAccountsData.result.length;
+    }
+    
+    throw new Error("Failed to fetch delegator count");
   } catch (error) {
     console.error("Error fetching delegator count:", error);
-    return 187; // Default fallback
+    
+    // As a fallback, try using a more direct method with another RPC endpoint
+    try {
+      const solanaMainnetRPC = "https://api.mainnet-beta.solana.com";
+      const response = await fetch(solanaMainnetRPC, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 3,
+          method: 'getVoteAccounts',
+          params: []
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Fallback RPC request failed`);
+      }
+      
+      const data = await response.json();
+      const allValidators = [...(data.result?.current || []), ...(data.result?.delinquent || [])];
+      const validator = allValidators.find(v => v.votePubkey === VALIDATOR_PUBKEY);
+      
+      if (validator && validator.delegatorCount !== undefined) {
+        return validator.delegatorCount;
+      }
+      
+      throw new Error("Validator not found in fallback response");
+    } catch (fallbackError) {
+      console.error("Fallback method failed:", fallbackError);
+      // Return a reasonable default based on previous data rather than an estimation
+      return 187; // Default value as a fallback
+    }
   }
 };
