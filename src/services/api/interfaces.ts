@@ -1,5 +1,5 @@
 
-import { Connection } from "@solana/web3.js";
+// Interfaces for the Solana validator API
 
 export interface ValidatorI {
     identity: string;
@@ -100,5 +100,4 @@ export interface EpochInfoI {
     elapsed_seconds: number;
 }
 
-// Add these to the existing types.ts
-export type { ValidatorI, ClusterStatsI, EpochInfoI };
+// DO NOT add duplicate export declarations - these are already exported above
