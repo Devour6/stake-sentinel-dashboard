@@ -6,6 +6,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { useValidatorSearch } from "@/hooks/useValidatorSearch";
 
 interface ValidatorHeaderProps {
   validatorPubkey: string;
@@ -29,6 +30,16 @@ export const ValidatorHeader = ({
   const [searchInput, setSearchInput] = useState('');
   const navigate = useNavigate();
   const searchInputRef = useRef<HTMLInputElement>(null);
+  
+  // Import the same search functionality used on the home page
+  const {
+    filteredValidators,
+    showSuggestions,
+    setShowSuggestions,
+    isLoadingValidators,
+    handleSearch,
+    handleSelectValidator
+  } = useValidatorSearch();
 
   const truncateAddress = (address: string, length = 8) => {
     if (!address) return "";
@@ -57,11 +68,22 @@ export const ValidatorHeader = ({
     });
   };
   
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchInput && searchInput.trim()) {
-      navigate(`/validator/${searchInput.trim()}`);
+      handleSearch(e);
       setSearchInput('');
+    }
+  };
+  
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchInput(value);
+    
+    if (value.length > 2) {
+      setShowSuggestions(true);
+    } else {
+      setShowSuggestions(false);
     }
   };
 
@@ -181,16 +203,74 @@ export const ValidatorHeader = ({
         </div>
         
         <div className="flex flex-col md:flex-row items-center gap-2">
-          <form onSubmit={handleSearch} className="relative w-full md:w-auto">
-            <Input
-              type="text"
-              placeholder="Search validator..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="pl-8 h-9 md:w-64 bg-gojira-gray-dark border-gojira-gray-light"
-              ref={searchInputRef}
-            />
-            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <form onSubmit={handleSearchSubmit} className="relative w-full md:w-auto search-container">
+            <div className="relative">
+              <Input
+                type="text"
+                placeholder="Search validator..."
+                value={searchInput}
+                onChange={handleInputChange}
+                className="pl-8 h-9 md:w-64 bg-gojira-gray-dark border-gojira-gray-light"
+                ref={searchInputRef}
+                onFocus={() => {
+                  if (searchInput.length > 2 && filteredValidators.length > 0) {
+                    setShowSuggestions(true);
+                  }
+                }}
+                disabled={isLoadingValidators}
+              />
+              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              
+              {showSuggestions && filteredValidators.length > 0 && (
+                <div className="absolute z-50 w-full mt-1 bg-gojira-gray-dark border border-gojira-gray-light rounded-md shadow-lg max-h-[300px] overflow-y-auto">
+                  {filteredValidators.map((validator) => (
+                    <div
+                      key={validator.votePubkey}
+                      className="flex items-center justify-between p-3 hover:bg-accent cursor-pointer"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        handleSelectValidator(validator.votePubkey);
+                        setSearchInput('');
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        {validator.icon && (
+                          <img 
+                            src={validator.icon} 
+                            alt={`${validator.name || 'Validator'} logo`}
+                            className="w-6 h-6 rounded-full"
+                            onError={(e) => {
+                              // Hide broken images
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                        )}
+                        <div className="flex flex-col">
+                          <span className="font-medium">{validator.name || "Unknown Validator"}</span>
+                          {validator.commission !== undefined && (
+                            <span className="text-xs text-muted-foreground">
+                              Commission: {validator.commission}%
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end">
+                        <span className="text-xs text-muted-foreground truncate max-w-[180px]">
+                          {validator.votePubkey.slice(0, 6)}...{validator.votePubkey.slice(-6)}
+                        </span>
+                        {validator.activatedStake !== undefined && (
+                          <span className="text-xs text-muted-foreground">
+                            {validator.activatedStake > 0 
+                              ? `Stake: ${Math.floor(validator.activatedStake).toLocaleString()} SOL` 
+                              : ''}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </form>
           
           <Button 

@@ -7,20 +7,17 @@ export const fetchValidatorDetailsFromSolscan = async (votePubkey: string) => {
   try {
     console.log("Fetching Solscan page for validator:", votePubkey);
     
-    // Direct API access is limited, so we'll use a proxy or mock for development
-    // In production, you'd implement a proper backend proxy
-    
     // Simulate a delay to avoid rate limiting during development
     await new Promise(resolve => setTimeout(resolve, 500));
     
     try {
-      // Try to fetch from Solscan directly (note: this might not work in all environments due to CORS)
+      // Try to fetch from Solscan directly
       const response = await axios.get(`https://solscan.io/account/${votePubkey}`, {
         headers: {
           'Accept': 'text/html',
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         },
-        timeout: 5000
+        timeout: 10000
       });
       
       const html = response.data;
@@ -60,7 +57,11 @@ export const fetchValidatorDetailsFromSolscan = async (votePubkey: string) => {
         },
         'GoCwdN1C1WXXArrqoivMoaiqksR8QP79N1qoajbHrYG1': { 
           name: 'Triton', 
-          logo: null 
+          logo: 'https://triton.one/wp-content/uploads/fbrfg/apple-touch-icon.png'
+        },
+        'HeZU7mjJx9FFLX8ad4fErHhiTXNxwqLzW3AVUBCfXxT': {
+          name: 'Helius',
+          logo: 'https://raw.githubusercontent.com/helius-labs/helius-assets/master/helius-icon.png'
         },
         // Add more well-known validators as needed
       };
@@ -84,8 +85,8 @@ export const fetchValidatorDetailsFromSolscan = async (votePubkey: string) => {
 export const enhanceValidatorWithSolscanData = async (validators) => {
   const enhancedValidators = [...validators];
   
-  // Limit to 5 concurrent requests to avoid being rate-limited
-  const concurrentLimit = 5;
+  // Limit to 3 concurrent requests to avoid being rate-limited
+  const concurrentLimit = 3;
   const chunks = [];
   
   for (let i = 0; i < enhancedValidators.length; i += concurrentLimit) {
@@ -108,6 +109,9 @@ export const enhanceValidatorWithSolscanData = async (validators) => {
         console.error(`Error enhancing validator ${validator.votePubkey}:`, error);
       }
     }));
+    
+    // Add a small delay between chunks to avoid rate limiting
+    await new Promise(resolve => setTimeout(resolve, 1000));
   }
   
   return enhancedValidators;

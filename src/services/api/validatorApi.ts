@@ -24,6 +24,7 @@ export const fetchValidatorInfo = async (votePubkey = VALIDATOR_PUBKEY): Promise
     
     // Try to fetch validator details from Solscan
     const solscanDetails = await fetchValidatorDetailsFromSolscan(votePubkey);
+    console.log("Solscan details:", solscanDetails);
     
     if (!validator) {
       console.log(`Validator not found in vote accounts: ${votePubkey}`);
@@ -59,6 +60,10 @@ export const fetchValidatorInfo = async (votePubkey = VALIDATOR_PUBKEY): Promise
     const { activatingStake, deactivatingStake } = await fetchValidatorStake(validator.votePubkey);
     console.log("Stake changes:", { activatingStake, deactivatingStake });
     
+    // Determine the pending stake change and if it's deactivating
+    const pendingStakeChange = Math.max(activatingStake, deactivatingStake);
+    const isDeactivating = deactivatingStake > activatingStake;
+    
     // Get all validators to find the name of this one
     const allValidators = await fetchAllValidators();
     const searchResult = allValidators.find(v => v.votePubkey === votePubkey);
@@ -68,8 +73,8 @@ export const fetchValidatorInfo = async (votePubkey = VALIDATOR_PUBKEY): Promise
       votePubkey: validator.votePubkey,
       commission: validator.commission,
       activatedStake: lamportsToSol(validator.activatedStake),
-      pendingStakeChange: Math.max(activatingStake, deactivatingStake),
-      isDeactivating: deactivatingStake > activatingStake,
+      pendingStakeChange: pendingStakeChange,
+      isDeactivating: isDeactivating,
       delinquentStake: 0,
       epochCredits: validator.epochCredits[0]?.[0] || 0,
       lastVote: validator.lastVote,
