@@ -5,7 +5,8 @@ export interface ValidatorInfo {
   votePubkey: string;
   commission: number;
   activatedStake: number;
-  activatingStake: number;
+  pendingStakeChange: number;
+  isDeactivating: boolean;
   delinquentStake: number;
   epochCredits: number;
   lastVote: number;
@@ -23,7 +24,8 @@ export interface StakeHistoryItem {
 
 export interface ValidatorMetrics {
   totalStake: number;
-  activatingStake: number;
+  pendingStakeChange: number;
+  isDeactivating?: boolean;
   commission: number;
 }
 
@@ -96,4 +98,14 @@ export interface ValidatorConfigData {
   website?: string;
   details?: string;
   [key: string]: any; // For any other properties that might be in the JSON
+}
+
+// Interface for epoch information
+export interface EpochInfo {
+  epoch: number;
+  slotIndex: number;
+  slotsInEpoch: number;
+  absoluteSlot: number;
+  blockHeight?: number;
+  transactionCount?: number;
 }

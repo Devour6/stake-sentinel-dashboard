@@ -1,10 +1,10 @@
-
 import { toast } from "sonner";
 import { RPC_ENDPOINT } from "./constants";
 import { ValidatorSearchResult } from "./types";
 import { lamportsToSol } from "./utils";
 import { fetchVoteAccounts } from "./epochApi";
 import { fetchValidatorConfig } from "./validatorConfigApi";
+import { enhanceValidatorWithSolscanData } from "./solscanApi";
 
 // Well-known validators as a fallback mechanism
 const WELL_KNOWN_VALIDATORS = [
@@ -225,6 +225,27 @@ export const fetchAllValidators = async (): Promise<ValidatorSearchResult[]> => 
       if (newValidator.identity) {
         identityToValidator.set(newValidator.identity, newValidator);
       }
+    }
+    
+    // Try to enhance data with Solscan for popular validators (limit to reduce API load)
+    try {
+      const topValidators = allValidators
+        .filter(v => v.activatedStake > 1000 && (!v.name || v.name.startsWith('Validator ')))
+        .slice(0, 25);
+      
+      console.log(`Enhancing ${topValidators.length} top validators with Solscan data`);
+      const enhancedTopValidators = await enhanceValidatorWithSolscanData(topValidators);
+      
+      // Update the name and icon for enhanced validators
+      enhancedTopValidators.forEach(validator => {
+        const existingValidator = votePubkeyToValidator.get(validator.votePubkey);
+        if (existingValidator) {
+          if (validator.name) existingValidator.name = validator.name;
+          if (validator.icon) existingValidator.icon = validator.icon;
+        }
+      });
+    } catch (error) {
+      console.error("Error enhancing validators with Solscan data:", error);
     }
     
     // Fill missing names with first characters of vote pubkey

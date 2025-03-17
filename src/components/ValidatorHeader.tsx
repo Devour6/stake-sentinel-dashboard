@@ -1,11 +1,16 @@
 
-import { ExternalLink, Info, Copy, RefreshCw, ArrowLeft } from "lucide-react";
+import { useState, useRef } from "react";
+import { ExternalLink, Info, Copy, RefreshCw, ArrowLeft, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 interface ValidatorHeaderProps {
   validatorPubkey: string;
+  validatorName?: string;
+  validatorIcon?: string | null;
   identityPubkey?: string;
   isLoading?: boolean;
   onRefresh: () => void;
@@ -14,11 +19,17 @@ interface ValidatorHeaderProps {
 
 export const ValidatorHeader = ({ 
   validatorPubkey, 
+  validatorName,
+  validatorIcon,
   identityPubkey,
   isLoading = false,
   onRefresh,
   onBack
 }: ValidatorHeaderProps) => {
+  const [searchInput, setSearchInput] = useState('');
+  const navigate = useNavigate();
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
   const truncateAddress = (address: string, length = 8) => {
     if (!address) return "";
     return `${address.slice(0, length)}...${address.slice(-length)}`;
@@ -45,10 +56,18 @@ export const ValidatorHeader = ({
       position: "top-center"
     });
   };
+  
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchInput && searchInput.trim()) {
+      navigate(`/validator/${searchInput.trim()}`);
+      setSearchInput('');
+    }
+  };
 
   return (
     <div className="animate-slide-down">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
         <div className="flex items-center gap-3">
           {onBack && (
             <Button 
@@ -61,15 +80,33 @@ export const ValidatorHeader = ({
             </Button>
           )}
           <div className="w-12 h-12 md:w-16 md:h-16 relative animate-pulse-subtle">
-            <img 
-              src="/lovable-uploads/31314417-ef5b-4d58-ac5e-91a2ab487110.png" 
-              alt="Gojira Logo" 
-              className="object-contain w-full h-full animate-roar"
-            />
+            {validatorIcon ? (
+              <img 
+                src={validatorIcon} 
+                alt={validatorName || "Validator Logo"}
+                className="object-contain w-full h-full rounded-full"
+                onError={(e) => {
+                  // Fallback to Gojira logo on error
+                  (e.target as HTMLImageElement).src = "/lovable-uploads/31314417-ef5b-4d58-ac5e-91a2ab487110.png";
+                }}
+              />
+            ) : (
+              <img 
+                src="/lovable-uploads/31314417-ef5b-4d58-ac5e-91a2ab487110.png" 
+                alt="Gojira Logo" 
+                className="object-contain w-full h-full animate-roar"
+              />
+            )}
           </div>
           <div>
             <p className="text-sm uppercase tracking-widest text-gojira-red mb-1">Solana Validator</p>
-            <h1 className="text-3xl font-bold tracking-tight mb-2 text-white">Validator Dashboard</h1>
+            <h1 className="text-3xl font-bold tracking-tight mb-2 text-white">
+              {isLoading ? (
+                <div className="h-8 w-64 bg-muted/30 rounded animate-pulse"></div>
+              ) : (
+                validatorName || "Validator Dashboard"
+              )}
+            </h1>
             <div className="flex flex-col sm:flex-row gap-2 sm:items-center text-muted-foreground">
               <div className="flex items-center gap-1">
                 <span className="text-sm">Vote Account:</span>
@@ -143,7 +180,19 @@ export const ValidatorHeader = ({
           </div>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col md:flex-row items-center gap-2">
+          <form onSubmit={handleSearch} className="relative w-full md:w-auto">
+            <Input
+              type="text"
+              placeholder="Search validator..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="pl-8 h-9 md:w-64 bg-gojira-gray-dark border-gojira-gray-light"
+              ref={searchInputRef}
+            />
+            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          </form>
+          
           <Button 
             variant="destructive" 
             size="sm"

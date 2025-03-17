@@ -62,14 +62,16 @@ export const StakingMetricsCard = ({
 
 interface ValidatorMetricsProps {
   totalStake: number;
-  activatingStake?: number;
+  pendingStakeChange?: number;
+  isDeactivating?: boolean;
   commission: number;
   isLoading?: boolean;
 }
 
 export const ValidatorMetricsGrid = ({
   totalStake,
-  activatingStake = 0,
+  pendingStakeChange = 0,
+  isDeactivating = false,
   commission,
   isLoading = false,
 }: ValidatorMetricsProps) => {
@@ -82,11 +84,13 @@ export const ValidatorMetricsGrid = ({
         isLoading={isLoading}
       />
       <StakingMetricsCard
-        title="Activating Stake"
-        value={isLoading ? "" : formatSol(activatingStake)}
+        title="Pending Change in Stake"
+        value={isLoading ? "" : formatSol(pendingStakeChange)}
         icon={<Clock className="h-4 w-4 text-gojira-red" />}
-        trend={activatingStake > 0 ? "up" : "neutral"}
-        description={activatingStake > 0 ? "Activating" : "No new stake"}
+        trend={pendingStakeChange > 0 ? (isDeactivating ? "down" : "up") : "neutral"}
+        description={pendingStakeChange > 0 
+          ? (isDeactivating ? "Deactivating" : "Activating") 
+          : "No pending change"}
         isLoading={isLoading}
       />
       <StakingMetricsCard

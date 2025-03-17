@@ -5,6 +5,7 @@ import SearchBar from "@/components/search/SearchBar";
 import { useValidatorSearch } from "@/hooks/useValidatorSearch";
 import Footer from "@/components/layout/Footer";
 import StakeModal from "@/components/StakeModal";
+import { EpochStatusCard } from "@/components/EpochStatusCard";
 
 const Home = () => {
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -33,6 +34,11 @@ const Home = () => {
             <p className="text-lg md:text-xl text-gray-200 max-w-2xl mx-auto">
               Find information about Solana validators, their performance, and stake distribution.
             </p>
+          </div>
+          
+          {/* Epoch Status Card */}
+          <div className="w-full max-w-2xl mb-4">
+            <EpochStatusCard />
           </div>
           
           <div className="w-full max-w-2xl">

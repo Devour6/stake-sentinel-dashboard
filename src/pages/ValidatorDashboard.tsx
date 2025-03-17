@@ -5,6 +5,7 @@ import { ValidatorHeader } from "@/components/ValidatorHeader";
 import { ValidatorMetricsGrid } from "@/components/StakingMetricsCard";
 import { StakeChart } from "@/components/StakeChart";
 import { ValidatorInfoCard } from "@/components/ValidatorInfoCard";
+import { EpochStatusCard } from "@/components/EpochStatusCard";
 import { 
   fetchValidatorInfo, 
   fetchValidatorMetrics, 
@@ -99,6 +100,8 @@ const ValidatorDashboard = () => {
       <div className="container max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <ValidatorHeader 
           validatorPubkey={votePubkey || ""}
+          validatorName={validatorInfo?.name}
+          validatorIcon={validatorInfo?.icon}
           identityPubkey={validatorInfo?.identity}
           isLoading={isLoading}
           onRefresh={handleRefresh}
@@ -109,14 +112,15 @@ const ValidatorDashboard = () => {
         {validatorMetrics ? (
           <ValidatorMetricsGrid
             totalStake={validatorMetrics.totalStake}
-            activatingStake={validatorMetrics.activatingStake}
+            pendingStakeChange={validatorMetrics.pendingStakeChange}
+            isDeactivating={validatorMetrics.isDeactivating}
             commission={validatorMetrics.commission}
             isLoading={isLoading}
           />
         ) : (
           <ValidatorMetricsGrid
             totalStake={0}
-            activatingStake={0}
+            pendingStakeChange={0}
             commission={0}
             isLoading={true}
           />
@@ -130,8 +134,9 @@ const ValidatorDashboard = () => {
           </div>
           
           {/* Validator info card takes 1/3 of the space */}
-          <div>
+          <div className="space-y-6">
             <ValidatorInfoCard validatorInfo={validatorInfo} isLoading={isLoading} />
+            <EpochStatusCard />
           </div>
         </div>
         
