@@ -27,10 +27,10 @@ export {
   VALIDATOR_PUBKEY,
   VALIDATOR_IDENTITY,
   
-  // Types
-  ValidatorInfo,
-  ValidatorMetrics,
-  StakeHistoryItem,
+  // Types - use 'export type' for TypeScript types
+  type ValidatorInfo,
+  type ValidatorMetrics,
+  type StakeHistoryItem,
   
   // API methods
   fetchValidatorInfo,
