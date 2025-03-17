@@ -29,6 +29,14 @@ const Home = () => {
     <PageLayout onStakeModalOpen={handleStakeModalOpen}>
       <div className="container mx-auto px-4 py-8 md:py-12">
         <div className="flex flex-col items-center justify-center space-y-8 max-w-4xl mx-auto">
+          <div className="text-center mb-8">
+            <p className="text-lg md:text-xl text-gray-200 max-w-2xl mx-auto">
+              Solana Validators Explorer
+              <br />
+              Find information about Solana validators, their performance, and stake distribution.
+            </p>
+          </div>
+          
           <div className="w-full max-w-2xl">
             <SearchBar
               ref={searchInputRef}
