@@ -24,6 +24,7 @@ export {
   // Constants
   VALIDATOR_PUBKEY,
   VALIDATOR_IDENTITY,
+  RPC_ENDPOINT,
   
   // Types - use 'export type' for TypeScript types
   type ValidatorInfo,

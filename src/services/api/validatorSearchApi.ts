@@ -110,8 +110,12 @@ export const fetchAllValidators = async (): Promise<ValidatorSearchResult[]> => 
     const votePubkeyToValidator = new Map<string, ValidatorSearchResult>();
     
     allValidators.forEach(validator => {
-      identityToValidator.set(validator.identity, validator);
-      votePubkeyToValidator.set(validator.votePubkey, validator);
+      if (validator.identity) {
+        identityToValidator.set(validator.identity, validator);
+      }
+      if (validator.votePubkey) {
+        votePubkeyToValidator.set(validator.votePubkey, validator);
+      }
     });
     
     // Fetch on-chain validator info for names and websites
@@ -122,15 +126,21 @@ export const fetchAllValidators = async (): Promise<ValidatorSearchResult[]> => 
       
       // Match on-chain config with validators by identity key
       for (const configValidator of onChainValidators) {
+        if (!configValidator.identity) continue;
+        
         const validator = identityToValidator.get(configValidator.identity);
         if (validator) {
           validator.name = configValidator.name;
           if (configValidator.icon) validator.icon = configValidator.icon;
           console.log(`Matched on-chain name for identity ${validator.identity}: ${validator.name}`);
+          
+          // Since we matched by identity, we might need to update our maps
+          if (validator.votePubkey) {
+            votePubkeyToValidator.set(validator.votePubkey, validator);
+          }
         } else {
           // If we have on-chain info but no matching validator in our list, add it
-          // This might happen for validators not currently active
-          console.log(`Found on-chain validator with no matching identity: ${configValidator.name}`);
+          console.log(`Found on-chain validator with no matching identity: ${configValidator.name} (${configValidator.identity})`);
           
           // Check if we have a matching vote pubkey even though identity doesn't match
           if (configValidator.votePubkey && votePubkeyToValidator.has(configValidator.votePubkey)) {
@@ -140,19 +150,21 @@ export const fetchAllValidators = async (): Promise<ValidatorSearchResult[]> => 
             console.log(`Matched on-chain name by vote pubkey: ${voteValidator.votePubkey} -> ${voteValidator.name}`);
           } else {
             // Add as a new validator
-            allValidators.push({
+            const newValidator = {
               ...configValidator,
               activatedStake: 0,
               commission: 0,
               delinquent: false
-            });
+            };
+            
+            allValidators.push(newValidator);
             
             // Update maps
-            if (configValidator.identity) {
-              identityToValidator.set(configValidator.identity, allValidators[allValidators.length - 1]);
+            if (newValidator.identity) {
+              identityToValidator.set(newValidator.identity, newValidator);
             }
-            if (configValidator.votePubkey) {
-              votePubkeyToValidator.set(configValidator.votePubkey, allValidators[allValidators.length - 1]);
+            if (newValidator.votePubkey) {
+              votePubkeyToValidator.set(newValidator.votePubkey, newValidator);
             }
           }
         }
@@ -167,7 +179,9 @@ export const fetchAllValidators = async (): Promise<ValidatorSearchResult[]> => 
     const combinedWellKnown = [...WELL_KNOWN_VALIDATORS, ...ADDITIONAL_VALIDATORS];
     
     for (const known of combinedWellKnown) {
-      // Check by vote pubkey first
+      if (!known.votePubkey) continue;
+      
+      // Check by vote pubkey first (more reliable)
       const existingByVote = votePubkeyToValidator.get(known.votePubkey);
       
       if (existingByVote) {
@@ -180,29 +194,37 @@ export const fetchAllValidators = async (): Promise<ValidatorSearchResult[]> => 
       }
       
       // If not found by vote pubkey, try by identity
-      const existingByIdentity = identityToValidator.get(known.identity);
-      
-      if (existingByIdentity) {
-        if (!existingByIdentity.name || existingByIdentity.name === '') {
-          existingByIdentity.name = known.name;
-          if (known.icon) existingByIdentity.icon = known.icon;
-          console.log(`Added well-known name by identity for ${known.name} (${known.identity})`);
+      if (known.identity) {
+        const existingByIdentity = identityToValidator.get(known.identity);
+        
+        if (existingByIdentity) {
+          if (!existingByIdentity.name || existingByIdentity.name === '') {
+            existingByIdentity.name = known.name;
+            if (known.icon) existingByIdentity.icon = known.icon;
+            console.log(`Added well-known name by identity for ${known.name} (${known.identity})`);
+          }
+          continue; // Skip to next known validator
         }
-        continue; // Skip to next known validator
       }
       
       // If not found at all, add it
       console.log(`Adding missing well-known validator: ${known.name} (${known.votePubkey})`);
-      allValidators.push({
+      const newValidator = {
         ...known,
         activatedStake: 0,
         commission: 0,
         delinquent: false
-      });
+      };
+      
+      allValidators.push(newValidator);
       
       // Update maps
-      votePubkeyToValidator.set(known.votePubkey, allValidators[allValidators.length - 1]);
-      identityToValidator.set(known.identity, allValidators[allValidators.length - 1]);
+      if (newValidator.votePubkey) {
+        votePubkeyToValidator.set(newValidator.votePubkey, newValidator);
+      }
+      if (newValidator.identity) {
+        identityToValidator.set(newValidator.identity, newValidator);
+      }
     }
     
     // Fill missing names with first characters of vote pubkey

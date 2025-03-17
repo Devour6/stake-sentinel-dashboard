@@ -54,15 +54,16 @@ export const fetchValidatorConfig = async (): Promise<ValidatorSearchResult[]> =
         const parsedData = account.account.data.parsed;
         
         // Skip if we don't have what we need
-        if (!parsedData.info || !parsedData.info.configData || !parsedData.info.configData.keys) {
+        if (!parsedData.info || !parsedData.info.configData || !parsedData.info.keys) {
           continue;
         }
         
         // The identity key should be in the first key (usually at index 0)
         const keys = parsedData.info.configData.keys;
-        if (keys.length < 1) continue;
+        if (!keys || keys.length < 1) continue;
         
         const identityPubkey = keys[0].pubkey;
+        if (!identityPubkey) continue;
         
         // Extract the validator info JSON from the data
         const configData = parsedData.info.configData.configData;
@@ -78,30 +79,28 @@ export const fetchValidatorConfig = async (): Promise<ValidatorSearchResult[]> =
             let cleanedData = configData;
             
             try {
-              // Sometimes config data is double-encoded or has escape characters
-              if (cleanedData.startsWith('"') && cleanedData.endsWith('"')) {
-                // Remove enclosing quotes and handle escaped quotes
-                cleanedData = cleanedData.slice(1, -1).replace(/\\"/g, '"');
-              }
-              
-              // Try to parse the JSON data
+              // Try to parse directly first
               validatorInfo = JSON.parse(cleanedData);
             } catch (e) {
               console.log("First parsing attempt failed, trying alternative method:", e);
               
               try {
-                // Try removing all backslashes and parse again
-                cleanedData = cleanedData.replace(/\\/g, '');
+                // Sometimes config data is double-encoded or has escape characters
+                if (cleanedData.startsWith('"') && cleanedData.endsWith('"')) {
+                  // Remove enclosing quotes and handle escaped quotes
+                  cleanedData = cleanedData.slice(1, -1).replace(/\\"/g, '"');
+                }
+                
                 validatorInfo = JSON.parse(cleanedData);
               } catch (e2) {
-                console.log("Second parsing attempt failed, trying final method:", e2);
+                console.log("Second parsing attempt failed, trying another method:", e2);
                 
                 try {
-                  // Last attempt using eval (only safe because we know this is validator data)
-                  // Use Function constructor instead of eval for better security
-                  validatorInfo = Function('"use strict";return (' + cleanedData + ')')();
+                  // Try removing all backslashes and parse again
+                  cleanedData = cleanedData.replace(/\\/g, '');
+                  validatorInfo = JSON.parse(cleanedData);
                 } catch (e3) {
-                  console.error("All parsing attempts failed:", e3, "Raw data:", configData);
+                  console.log("All parsing attempts failed:", e3, "Raw data:", configData);
                   continue; // Skip this validator if we can't parse the data
                 }
               }
@@ -121,6 +120,8 @@ export const fetchValidatorConfig = async (): Promise<ValidatorSearchResult[]> =
               icon = validatorInfo.website;
             } else if (validatorInfo.keybaseUsername) {
               icon = `https://keybase.io/${validatorInfo.keybaseUsername}`;
+            } else if (validatorInfo.iconUrl) {
+              icon = validatorInfo.iconUrl;
             }
             
             validatorConfigs.push({

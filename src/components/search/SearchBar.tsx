@@ -1,5 +1,5 @@
 
-import { useState, useRef, forwardRef } from "react";
+import { useState, useRef, forwardRef, useEffect } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -28,12 +28,36 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(({
   onSearch,
   onSelectValidator
 }, ref) => {
+  const [menuOpen, setMenuOpen] = useState(false);
+  
+  // Close the dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.search-container')) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [setShowSuggestions]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchInput(e.target.value);
+    const value = e.target.value;
+    setSearchInput(value);
+    
+    if (value.length > 2) {
+      setShowSuggestions(true);
+    } else {
+      setShowSuggestions(false);
+    }
   };
 
   return (
-    <form onSubmit={onSearch} className="flex gap-2">
+    <form onSubmit={onSearch} className="flex gap-2 relative search-container">
       <div className="relative flex-1">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
         
@@ -45,10 +69,10 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(({
             value={searchInput}
             onChange={handleInputChange}
             ref={ref}
-            onFocus={() => filteredValidators.length > 0 && setShowSuggestions(true)}
-            onBlur={() => {
-              // Delayed hide of suggestions to allow for clicks
-              setTimeout(() => setShowSuggestions(false), 200);
+            onFocus={() => {
+              if (searchInput.length > 2 && filteredValidators.length > 0) {
+                setShowSuggestions(true);
+              }
             }}
             disabled={isLoadingValidators}
           />

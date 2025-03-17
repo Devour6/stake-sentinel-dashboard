@@ -23,7 +23,7 @@ export async function fetchActivatingStake(voteAccount: string): Promise<number>
             filters: [
               {
                 memcmp: {
-                  offset: 124,
+                  offset: 124,  // Offset for vote account in stake delegation
                   bytes: voteAccount
                 }
               }
@@ -48,9 +48,17 @@ export async function fetchActivatingStake(voteAccount: string): Promise<number>
       // Sum up the stake that's still activating (activation epoch >= current epoch)
       for (const account of data.result) {
         try {
-          const stakeAccount = account as StakeAccountInfo;
-          const activationEpoch = Number(stakeAccount.account.data.parsed.info.stake.delegation.activationEpoch);
-          const stake = Number(stakeAccount.account.data.parsed.info.stake.delegation.stake);
+          if (!account.account?.data?.parsed?.info?.stake?.delegation) {
+            continue;
+          }
+          
+          const stakeAccount = account;
+          const delegation = stakeAccount.account.data.parsed.info.stake.delegation;
+          
+          if (!delegation) continue;
+          
+          const activationEpoch = Number(delegation.activationEpoch);
+          const stake = Number(delegation.stake);
           
           if (activationEpoch >= currentEpoch) {
             console.log(`Found activating stake: ${lamportsToSol(stake)} SOL, activation epoch: ${activationEpoch}, current epoch: ${currentEpoch}`);
