@@ -1,13 +1,7 @@
 
-// This file now re-exports from the refactored modules
-import { toast } from "sonner";
+// This file re-exports from the refactored modules
 import { VALIDATOR_PUBKEY, VALIDATOR_IDENTITY } from "./api/constants";
-import { 
-  ValidatorInfo, 
-  ValidatorMetrics, 
-  StakeHistoryItem 
-} from "./api/types";
-import { 
+import {
   validateVotePubkey,
   formatSol,
   formatCommission,
@@ -20,6 +14,9 @@ import {
   fetchValidatorMetrics,
   fetchStakeHistory
 } from "./api/validatorApi";
+
+// Type imports
+import type { ValidatorInfo, ValidatorMetrics, StakeHistoryItem } from "./api/types";
 
 // Re-export everything
 export {
