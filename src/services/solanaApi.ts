@@ -3,6 +3,7 @@ import { toast } from "sonner";
 
 // Constants
 const VALIDATOR_PUBKEY = "goJiRADNdmfnJ4iWEyft7KaYMPTVsRba2Ee1akDEBXb";
+const VALIDATOR_IDENTITY = "gojir4WnhS7VS1JdbnanJMzaMfr4UD7KeX1ixWAHEmw";
 const SOLANA_RPC_URL = "https://api.mainnet-beta.solana.com";
 
 // Types
@@ -76,7 +77,7 @@ export const fetchValidatorInfo = async (): Promise<ValidatorInfo | null> => {
     }
 
     return {
-      identity: validator.nodePubkey,
+      identity: VALIDATOR_IDENTITY, // Use provided identity
       votePubkey: validator.votePubkey,
       commission: validator.commission,
       activatedStake: lamportsToSol(validator.activatedStake),

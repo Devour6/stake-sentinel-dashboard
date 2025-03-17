@@ -62,6 +62,14 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				gojira: {
+					red: '#DD0817',
+					gray: '#282828',
+					'red-light': '#FF1F2E',
+					'red-dark': '#B50613',
+					'gray-light': '#3A3A3A',
+					'gray-dark': '#1A1A1A',
 				}
 			},
 			borderRadius: {
@@ -101,6 +109,11 @@ export default {
 				'float': {
 					'0%, 100%': { transform: 'translateY(0)' },
 					'50%': { transform: 'translateY(-5px)' }
+				},
+				'roar': {
+					'0%': { transform: 'scale(1)' },
+					'50%': { transform: 'scale(1.05)' },
+					'100%': { transform: 'scale(1)' }
 				}
 			},
 			animation: {
@@ -111,7 +124,8 @@ export default {
 				'slide-up': 'slide-up 0.4s ease-out',
 				'slide-down': 'slide-down 0.4s ease-out',
 				'pulse-subtle': 'pulse-subtle 3s infinite ease-in-out',
-				'float': 'float 3s infinite ease-in-out'
+				'float': 'float 3s infinite ease-in-out',
+				'roar': 'roar 2s infinite ease-in-out'
 			},
 			backdropFilter: {
 				'none': 'none',
@@ -120,7 +134,8 @@ export default {
 			boxShadow: {
 				'glass': '0 4px 30px rgba(0, 0, 0, 0.1)',
 				'glass-hover': '0 8px 32px rgba(0, 0, 0, 0.15)',
-				'card-hover': '0 8px 30px rgba(0, 0, 0, 0.12)'
+				'card-hover': '0 8px 30px rgba(0, 0, 0, 0.12)',
+				'gojira': '0 4px 20px rgba(221, 8, 23, 0.3)'
 			}
 		}
 	},

@@ -42,6 +42,8 @@ const Index = () => {
           toast({
             title: "Data refreshed",
             description: "Validator information updated successfully",
+            variant: "default",
+            className: "bg-gojira-gray-light border-gojira-red text-white",
           });
         }
       } catch (error) {
@@ -65,7 +67,7 @@ const Index = () => {
   }, [toast]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/30">
+    <div className="min-h-screen bg-gradient-to-br from-gojira-gray to-gojira-gray-dark">
       {/* Glass container */}
       <div className="container max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <ValidatorHeader 
@@ -111,6 +113,15 @@ const Index = () => {
         {/* Footer */}
         <div className="mt-12 text-center text-sm text-muted-foreground">
           <p>Data refreshes automatically every 5 minutes. Last updated: {new Date().toLocaleTimeString()}</p>
+          <div className="mt-2 flex justify-center gap-1 items-center">
+            <span>Powered by</span>
+            <span className="text-gojira-red font-semibold">Gojira</span>
+            <img 
+              src="/lovable-uploads/31314417-ef5b-4d58-ac5e-91a2ab487110.png" 
+              alt="Gojira Logo" 
+              className="w-4 h-4"
+            />
+          </div>
         </div>
       </div>
     </div>

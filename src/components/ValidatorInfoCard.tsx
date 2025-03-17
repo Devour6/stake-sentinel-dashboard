@@ -20,12 +20,12 @@ export const ValidatorInfoCard = ({
   };
 
   return (
-    <Card className="glass-card animate-fade-in">
+    <Card className="glass-card animate-fade-in border-gojira-gray-light">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <Server className="h-4 w-4 text-primary" />
+              <Server className="h-4 w-4 text-gojira-red" />
               Validator Status
             </CardTitle>
             <CardDescription>Current validator information</CardDescription>
@@ -60,7 +60,7 @@ export const ValidatorInfoCard = ({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <Vote className="h-3.5 w-3.5 text-primary" />
+                  <Vote className="h-3.5 w-3.5 text-gojira-red" />
                   <span className="text-sm text-muted-foreground">Last Vote</span>
                 </div>
                 <p className="font-medium">{validatorInfo.lastVote.toLocaleString()}</p>
@@ -68,7 +68,7 @@ export const ValidatorInfoCard = ({
               
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <ArrowUpDown className="h-3.5 w-3.5 text-primary" />
+                  <ArrowUpDown className="h-3.5 w-3.5 text-gojira-red" />
                   <span className="text-sm text-muted-foreground">Root Slot</span>
                 </div>
                 <p className="font-medium">{validatorInfo.rootSlot.toLocaleString()}</p>
@@ -81,7 +81,7 @@ export const ValidatorInfoCard = ({
                 <div className="font-medium">{validatorInfo.epochCredits.toLocaleString()}</div>
               </div>
               
-              <Badge variant="outline" className="flex items-center gap-1 px-2 py-1 bg-green-500/10">
+              <Badge variant="outline" className="flex items-center gap-1 px-2 py-1 bg-green-500/10 border-green-500/30">
                 <Check className="h-3 w-3" />
                 <span>Healthy</span>
               </Badge>

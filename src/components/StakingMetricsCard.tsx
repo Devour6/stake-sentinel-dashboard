@@ -21,7 +21,7 @@ export const StakingMetricsCard = ({
   isLoading = false,
 }: StakingMetricsCardProps) => {
   return (
-    <Card className="overflow-hidden glass-card animate-fade-in">
+    <Card className="overflow-hidden glass-card animate-fade-in border-gojira-gray-light">
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
           {icon}
@@ -36,7 +36,7 @@ export const StakingMetricsCard = ({
         )}
         {description && (
           <CardDescription className={`mt-1 flex items-center gap-1 ${
-            trend === "up" ? "text-green-500" : 
+            trend === "up" ? "text-gojira-red" : 
             trend === "down" ? "text-red-500" : ""
           }`}>
             {trend === "up" && <ArrowUpRight className="h-3 w-3" />}
@@ -71,27 +71,27 @@ export const ValidatorMetricsGrid = ({
       <StakingMetricsCard
         title="Total Stake"
         value={isLoading ? "" : formatSol(totalStake)}
-        icon={<div className="w-4 h-4 bg-blue-500 rounded-full"></div>}
+        icon={<div className="w-4 h-4 bg-gojira-red rounded-full"></div>}
         isLoading={isLoading}
       />
       <StakingMetricsCard
         title="24h Change"
         value={isLoading ? "" : formatSol(stakeChange24h)}
         description={isLoading ? "" : `${stakeChangePercentage.toFixed(2)}%`}
-        icon={<div className="w-4 h-4 bg-green-500 rounded-full"></div>}
+        icon={<div className="w-4 h-4 bg-gojira-red rounded-full"></div>}
         trend={stakeChange24h >= 0 ? "up" : "down"}
         isLoading={isLoading}
       />
       <StakingMetricsCard
         title="Commission"
         value={isLoading ? "" : formatCommission(commission)}
-        icon={<Percent className="h-4 w-4 text-purple-500" />}
+        icon={<Percent className="h-4 w-4 text-gojira-red" />}
         isLoading={isLoading}
       />
       <StakingMetricsCard
         title="Delegators"
         value={isLoading ? "" : delegatorCount}
-        icon={<Users className="h-4 w-4 text-amber-500" />}
+        icon={<Users className="h-4 w-4 text-gojira-red" />}
         isLoading={isLoading}
       />
     </div>

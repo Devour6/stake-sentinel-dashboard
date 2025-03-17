@@ -1,2 +1,30 @@
 
-/* This file is intentionally left empty - we use Tailwind CSS for styling */
+/* Custom styles for Gojira theme */
+
+/* Gojira red glow effect for buttons */
+.gojira-glow {
+  box-shadow: 0 0 15px rgba(221, 8, 23, 0.5);
+}
+
+/* Customize button */
+.button-gojira {
+  background-color: #DD0817;
+  color: white;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.button-gojira:hover {
+  background-color: #B50613;
+  box-shadow: 0 0 10px rgba(221, 8, 23, 0.7);
+}
+
+/* Custom animation for the Gojira logo */
+@keyframes breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.gojira-logo {
+  animation: breathe 4s infinite ease-in-out;
+}

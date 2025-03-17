@@ -12,9 +12,9 @@ interface StakeChartProps {
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="glass-effect p-3 border border-border rounded-lg shadow-sm">
+      <div className="glass-effect p-3 border border-gojira-gray-light rounded-lg shadow-sm">
         <p className="font-medium">{label}</p>
-        <p className="text-primary font-bold">{`${new Intl.NumberFormat().format(Math.round(payload[0].value * 100) / 100)} SOL`}</p>
+        <p className="text-gojira-red font-bold">{`${new Intl.NumberFormat().format(Math.round(payload[0].value * 100) / 100)} SOL`}</p>
       </div>
     );
   }
@@ -33,7 +33,7 @@ export const StakeChart = ({ data, isLoading = false }: StakeChartProps) => {
   }, [data]);
 
   return (
-    <Card className="glass-card animate-fade-in">
+    <Card className="glass-card animate-fade-in border-gojira-gray-light">
       <CardHeader>
         <div className="flex items-start justify-between">
           <div>
@@ -64,8 +64,8 @@ export const StakeChart = ({ data, isLoading = false }: StakeChartProps) => {
               >
                 <defs>
                   <linearGradient id="colorStake" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#DD0817" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#DD0817" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} />
@@ -94,11 +94,11 @@ export const StakeChart = ({ data, isLoading = false }: StakeChartProps) => {
                 <Area
                   type="monotone"
                   dataKey="stake"
-                  stroke="hsl(var(--primary))"
+                  stroke="#DD0817"
                   strokeWidth={2}
                   fillOpacity={1}
                   fill="url(#colorStake)"
-                  activeDot={{ r: 6, strokeWidth: 0 }}
+                  activeDot={{ r: 6, strokeWidth: 0, fill: "#DD0817" }}
                 />
               </AreaChart>
             </ResponsiveContainer>
