@@ -1,5 +1,5 @@
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import PageLayout from "@/components/layout/PageLayout";
 import SearchBar from "@/components/search/SearchBar";
 import { useValidatorSearch } from "@/hooks/useValidatorSearch";
@@ -9,6 +9,7 @@ import { Link } from "react-router-dom";
 
 const Home = () => {
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const [isStakeModalOpen, setIsStakeModalOpen] = useState(false);
   const {
     searchInput,
     setSearchInput,
@@ -27,8 +28,12 @@ const Home = () => {
     }
   };
 
+  const handleStakeModalOpen = () => {
+    setIsStakeModalOpen(true);
+  };
+
   return (
-    <PageLayout>
+    <PageLayout onStakeModalOpen={handleStakeModalOpen}>
       <div className="container mx-auto px-4 py-8 md:py-12">
         <div className="flex flex-col items-center justify-center space-y-8 max-w-4xl mx-auto">
           <div className="text-center space-y-4">
