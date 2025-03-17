@@ -42,7 +42,7 @@ const StakeModal = ({ isOpen, setIsOpen }: StakeModalProps) => {
   useEffect(() => {
     const checkWalletConnection = async () => {
       // This is a simplified check - in a real app, use proper wallet adapters
-      if (window.solana?.isPhantom || window.solflare) {
+      if ((window.solana && window.solana.isPhantom) || window.solflare) {
         try {
           // Check if already connected
           const walletPubkey = localStorage.getItem("walletPubkey");
