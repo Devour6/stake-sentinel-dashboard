@@ -10,21 +10,23 @@ type WalletType = {
 };
 
 const DEFAULT_WALLETS: WalletType[] = [
-  { name: "Phantom", icon: "https://phantom.app/img/logo.png", installUrl: "https://phantom.app/" },
+  { name: "Phantom", icon: "https://cdn.jsdelivr.net/gh/phantom-labs/website-assets@main/src/img/logo-dark.svg", installUrl: "https://phantom.app/" },
   { name: "Solflare", icon: "https://solflare.com/favicon.ico", installUrl: "https://solflare.com/" },
   { name: "Backpack", icon: "https://backpack.app/favicon.ico", installUrl: "https://backpack.app/" },
-  { name: "MagicEden", icon: "https://cdn.magiceden.io/renderer/images/logo/icon-light.png", installUrl: "https://magiceden.io/wallet" },
+  { name: "MagicEden", icon: "https://magiceden.io/img/favicon.ico", installUrl: "https://magiceden.io/wallet" },
 ];
 
-// Known wallets for icon mapping
+// Known wallets for icon mapping with reliable CDN URLs
 const WALLET_ICONS: Record<string, string> = {
-  "phantom": "https://phantom.app/img/logo.png",
+  "phantom": "https://cdn.jsdelivr.net/gh/phantom-labs/website-assets@main/src/img/logo-dark.svg",
   "solflare": "https://solflare.com/favicon.ico",
   "backpack": "https://backpack.app/favicon.ico",
-  "magiceden": "https://cdn.magiceden.io/renderer/images/logo/icon-light.png",
-  "coinbase": "https://www.coinbase.com/assets/favicon-c208bf2c08f08e2f28bb3b21550cedd2e0581be6e7d02dcfcf8bfa7580494256.ico",
-  "slope": "https://slope.finance/favicons/favicon.ico",
+  "magiceden": "https://magiceden.io/img/favicon.ico",
+  "coinbase": "https://www.coinbase.com/img/favicon/favicon.ico",
+  "slope": "https://slope.finance/favicon.ico",
   "brave": "https://brave.com/static-assets/images/brave-favicon.png",
+  "exodus": "https://www.exodus.com/favicon.ico",
+  "glow": "https://glow.app/favicon.ico",
 };
 
 interface WalletSelectorProps {
@@ -51,66 +53,137 @@ const WalletSelector = ({ onWalletSelect, isConnecting, selectedWallet }: Wallet
       }
     });
 
-    // Add other detected wallets that aren't in our default list
-    if (window.solana && !detected.some(w => w.name === "Phantom")) {
-      detected.push({
-        name: "Phantom",
-        icon: WALLET_ICONS["phantom"],
-        installUrl: "https://phantom.app/"
-      });
-    }
-
-    // Add any other wallets detected in the window object
-    const walletKeywords = ["wallet", "solana", "sol"];
-    
-    // Filter window object for potential wallet providers
-    const otherWalletKeys = Object.keys(window).filter(key => {
-      const lowercaseKey = key.toLowerCase();
-      // Check if it contains wallet keywords but is not already in detected wallets
-      return (
-        walletKeywords.some(keyword => lowercaseKey.includes(keyword)) && 
-        !detected.some(w => w.name.toLowerCase() === lowercaseKey)
-      );
-    });
-
-    // Process each found wallet key
-    otherWalletKeys.forEach(key => {
-      // Format the wallet name nicely
-      let formattedName = key;
-      
-      // Remove common suffixes for cleaner display
-      if (formattedName.toLowerCase().endsWith("wallet")) {
-        formattedName = formattedName.slice(0, -6);
-      }
-      if (formattedName.toLowerCase().endsWith("walletsdk")) {
-        formattedName = formattedName.slice(0, -9);
-      }
-      
-      // Capitalize first letter
-      formattedName = formattedName.charAt(0).toUpperCase() + formattedName.slice(1);
-      
-      // Find an appropriate icon
-      let icon = "/placeholder.svg"; // Default fallback
-      
-      // Check if we have a known icon for this wallet
-      const walletLower = formattedName.toLowerCase();
-      for (const [knownWallet, iconUrl] of Object.entries(WALLET_ICONS)) {
-        if (walletLower.includes(knownWallet)) {
-          icon = iconUrl;
-          break;
-        }
-      }
-      
-      detected.push({
-        name: formattedName,
-        icon: icon,
-        installUrl: undefined
-      });
-    });
+    // Try to detect additional wallets
+    detectAdditionalWallets(detected);
 
     setDetectedWallets(detected);
     setDefaultWallets(remaining);
   }, []);
+
+  const detectAdditionalWallets = (detected: WalletType[]) => {
+    // Check for standard Solana wallets first
+    const standardWallets = [
+      { key: "solana", name: "Phantom", condition: (w: any) => w.isPhantom },
+      { key: "solflare", name: "Solflare", condition: (w: any) => true },
+      { key: "backpack", name: "Backpack", condition: (w: any) => true },
+      { key: "magicEden", name: "Magic Eden", condition: (w: any) => true },
+    ];
+
+    // Check standard wallet patterns
+    standardWallets.forEach(({ key, name, condition }) => {
+      const wallet = (window as any)[key];
+      if (wallet && condition(wallet) && !detected.some(w => w.name.toLowerCase() === name.toLowerCase())) {
+        detected.push({
+          name,
+          icon: WALLET_ICONS[name.toLowerCase()] || "/placeholder.svg",
+          installUrl: undefined
+        });
+      }
+    });
+
+    // Check for other wallet patterns in window
+    const walletPatterns = ["wallet", "sol", "solana", "adapter"];
+    const existingNames = new Set(detected.map(w => w.name.toLowerCase()));
+    
+    // Find potential wallet keys in window object
+    Object.keys(window).forEach(key => {
+      const keyLower = key.toLowerCase();
+      
+      // Skip if we've already detected this wallet
+      if ([...existingNames].some(name => keyLower.includes(name))) {
+        return;
+      }
+      
+      // Check if this key might be a wallet
+      if (walletPatterns.some(pattern => keyLower.includes(pattern)) &&
+          typeof (window as any)[key] === 'object') {
+        
+        // Format wallet name properly
+        let walletName = formatWalletName(key);
+        
+        // Find appropriate icon
+        let iconUrl = findWalletIcon(walletName);
+        
+        // Add to detected wallets if not already present
+        if (!detected.some(w => w.name.toLowerCase() === walletName.toLowerCase())) {
+          detected.push({
+            name: walletName,
+            icon: iconUrl,
+            installUrl: undefined
+          });
+        }
+      }
+    });
+  };
+
+  const formatWalletName = (key: string): string => {
+    // Remove common patterns
+    let name = key;
+    const patternsToRemove = [
+      "wallet", "Wallet", "WALLET",
+      "sdk", "SDK", "Sdk",
+      "provider", "Provider", "PROVIDER",
+      "adapter", "Adapter", "ADAPTER",
+      "extension", "Extension", "EXTENSION",
+      "request", "Request", "REQUEST"
+    ];
+    
+    // Try to find known wallet names within the key
+    for (const [knownWallet] of Object.entries(WALLET_ICONS)) {
+      if (name.toLowerCase().includes(knownWallet.toLowerCase())) {
+        // Extract just the wallet name part
+        const matches = new RegExp(`(${knownWallet})`, 'i').exec(name);
+        if (matches && matches[1]) {
+          const walletPart = matches[1];
+          // Capitalize properly
+          return walletPart.charAt(0).toUpperCase() + walletPart.slice(1).toLowerCase();
+        }
+      }
+    }
+    
+    // If no known wallet found, clean up the name
+    patternsToRemove.forEach(pattern => {
+      name = name.replace(new RegExp(pattern, 'gi'), '');
+    });
+    
+    // Remove any remaining non-alphabetic characters
+    name = name.replace(/[^a-zA-Z0-9]/g, ' ').trim();
+    
+    // Handle CamelCase
+    name = name.replace(/([a-z])([A-Z])/g, '$1 $2');
+    
+    // Capitalize each word
+    name = name.split(' ')
+      .filter(word => word.length > 0)
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+    
+    // If name is empty after all processing, use a generic name
+    if (!name) name = "Solana Wallet";
+    
+    return name;
+  };
+
+  const findWalletIcon = (walletName: string): string => {
+    const walletLower = walletName.toLowerCase();
+    
+    // Check for exact matches first
+    for (const [key, url] of Object.entries(WALLET_ICONS)) {
+      if (walletLower === key || walletLower.includes(key)) {
+        return url;
+      }
+    }
+    
+    // Check for partial matches
+    for (const [key, url] of Object.entries(WALLET_ICONS)) {
+      if (walletLower.includes(key) || key.includes(walletLower)) {
+        return url;
+      }
+    }
+    
+    // Default fallback
+    return "/placeholder.svg";
+  };
 
   const checkWalletInstalled = (name: string): boolean => {
     if (name === "Phantom") return !!window.solana?.isPhantom;
