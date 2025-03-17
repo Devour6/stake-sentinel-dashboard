@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock, CalendarClock } from "lucide-react";
 import { EpochTimer } from "./EpochTimer";
+import { fetchEpochInfo, estimateEpochTimeRemaining } from "@/services/api/epochApi";
 
 interface EpochInfo {
   epoch: number;
@@ -16,27 +17,42 @@ interface EpochStatusCardProps {
 
 export const EpochStatusCard = ({ compact = false }: EpochStatusCardProps) => {
   const [epochInfo, setEpochInfo] = useState<EpochInfo | null>(null);
+  const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchEpochInfo = async () => {
+    const fetchEpochData = async () => {
       try {
-        // Simulate fetching epoch data
-        const mockEpochInfo = {
-          epoch: 757, // This would come from an actual API
-          slot: 428451,
-          slotsInEpoch: 432000
-        };
+        // Fetch real epoch data
+        const epochData = await fetchEpochInfo();
         
-        setEpochInfo(mockEpochInfo);
+        // Set the time remaining
+        const remaining = estimateEpochTimeRemaining(epochData);
+        
+        setEpochInfo({
+          epoch: epochData.epoch,
+          slot: epochData.slotIndex,
+          slotsInEpoch: epochData.slotsInEpoch
+        });
+        
+        setTimeRemaining(remaining);
       } catch (error) {
         console.error("Failed to fetch epoch info:", error);
+        
+        // Fallback to mock data
+        setEpochInfo({
+          epoch: 757,
+          slot: 428451,
+          slotsInEpoch: 432000
+        });
+        
+        setTimeRemaining(86400); // 1 day fallback
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchEpochInfo();
+    fetchEpochData();
     // In real implementation, you might want to poll this data periodically
   }, []);
 
@@ -52,7 +68,12 @@ export const EpochStatusCard = ({ compact = false }: EpochStatusCardProps) => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <EpochTimer compact={true} />
+            <EpochTimer 
+              currentEpoch={epochInfo?.epoch || 0}
+              timeRemaining={timeRemaining}
+              isLoading={isLoading}
+              compact={true} 
+            />
           </div>
         </CardContent>
       </Card>
@@ -90,7 +111,11 @@ export const EpochStatusCard = ({ compact = false }: EpochStatusCardProps) => {
             
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Time Remaining</span>
-              <EpochTimer />
+              <EpochTimer 
+                currentEpoch={epochInfo?.epoch || 0}
+                timeRemaining={timeRemaining}
+                isLoading={isLoading}
+              />
             </div>
           </div>
         )}

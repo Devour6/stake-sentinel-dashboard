@@ -1,18 +1,19 @@
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock } from "lucide-react";
 
 interface EpochTimerProps {
   currentEpoch: number;
   timeRemaining?: number; // in seconds
   isLoading?: boolean;
+  compact?: boolean; // Add compact prop
 }
 
 export const EpochTimer = ({ 
   currentEpoch, 
   timeRemaining = 0,
-  isLoading = false 
+  isLoading = false,
+  compact = false // Default to false
 }: EpochTimerProps) => {
   const [remainingTime, setRemainingTime] = useState(timeRemaining);
 
@@ -38,32 +39,28 @@ export const EpochTimer = ({
     const hours = Math.floor((remainingTime % 86400) / 3600);
     const minutes = Math.floor((remainingTime % 3600) / 60);
     
+    if (compact) {
+      return `${days}d ${hours}h ${minutes}m`;
+    }
     return `${days}d ${hours}h ${minutes}m`;
   };
 
+  if (compact) {
+    return (
+      <div className="flex items-center gap-1">
+        <Clock className="h-4 w-4 text-gojira-red" />
+        <span className="text-sm whitespace-nowrap">
+          {isLoading ? "..." : formatTimeRemaining()}
+        </span>
+      </div>
+    );
+  }
+
   return (
-    <Card className="overflow-hidden glass-card animate-fade-in border-gojira-gray-light">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-          <Clock className="h-4 w-4 text-gojira-red" />
-          Epoch Status
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="space-y-2">
-            <div className="h-7 w-24 bg-muted/30 rounded animate-pulse"></div>
-            <div className="h-4 w-32 bg-muted/30 rounded animate-pulse"></div>
-          </div>
-        ) : (
-          <div className="space-y-1">
-            <div className="text-2xl font-bold">Epoch {currentEpoch}</div>
-            <CardDescription className="flex items-center gap-1">
-              {formatTimeRemaining()} until next epoch
-            </CardDescription>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+    <div className="flex items-center gap-2">
+      <div className="text-md font-semibold whitespace-nowrap">
+        {isLoading ? "..." : formatTimeRemaining()}
+      </div>
+    </div>
   );
 };
