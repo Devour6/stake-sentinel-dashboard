@@ -10,6 +10,7 @@ interface StakingMetricsCardProps {
   icon: React.ReactNode;
   trend?: "up" | "down" | "neutral";
   isLoading?: boolean;
+  isEstimated?: boolean;
 }
 
 export const StakingMetricsCard = ({
@@ -19,6 +20,7 @@ export const StakingMetricsCard = ({
   icon,
   trend = "neutral",
   isLoading = false,
+  isEstimated = false,
 }: StakingMetricsCardProps) => {
   return (
     <Card className="overflow-hidden glass-card animate-fade-in border-gojira-gray-light">
@@ -26,6 +28,9 @@ export const StakingMetricsCard = ({
         <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
           {icon}
           {title}
+          {isEstimated && (
+            <span className="text-xs bg-gojira-gray-dark/50 px-1 py-0.5 rounded">est.</span>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -81,6 +86,7 @@ export const ValidatorMetricsGrid = ({
         value={isLoading ? "" : delegatorCount}
         icon={<Users className="h-4 w-4 text-gojira-red" />}
         isLoading={isLoading}
+        isEstimated={true}
       />
     </div>
   );

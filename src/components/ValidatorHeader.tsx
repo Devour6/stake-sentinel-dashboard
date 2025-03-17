@@ -1,7 +1,8 @@
 
-import { ExternalLink, Info } from "lucide-react";
+import { ExternalLink, Info, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { toast } from "sonner";
 
 interface ValidatorHeaderProps {
   validatorPubkey: string;
@@ -19,8 +20,19 @@ export const ValidatorHeader = ({
     return `${address.slice(0, length)}...${address.slice(-length)}`;
   };
 
-  const explorerUrl = `https://explorer.solana.com/vote-account/${validatorPubkey}`;
-  const identityUrl = identityPubkey ? `https://explorer.solana.com/address/${identityPubkey}` : null;
+  const copyToClipboard = (text: string, type: string) => {
+    navigator.clipboard.writeText(text)
+      .then(() => {
+        toast.success(`${type} copied to clipboard`);
+      })
+      .catch((err) => {
+        toast.error(`Failed to copy: ${err}`);
+      });
+  };
+
+  // Solscan URLs instead of Explorer
+  const solscanUrl = `https://solscan.io/account/${validatorPubkey}`;
+  const identitySolscanUrl = identityPubkey ? `https://solscan.io/account/${identityPubkey}` : null;
 
   return (
     <div className="animate-slide-down">
@@ -42,30 +54,40 @@ export const ValidatorHeader = ({
                 {isLoading ? (
                   <div className="h-5 w-32 bg-muted/30 rounded animate-pulse"></div>
                 ) : (
-                  <code className="bg-gojira-gray-dark/50 px-2 py-0.5 rounded text-sm font-mono">
-                    {truncateAddress(validatorPubkey, 6)}
-                  </code>
+                  <div className="flex items-center gap-1">
+                    <code className="bg-gojira-gray-dark/50 px-2 py-0.5 rounded text-sm font-mono">
+                      {truncateAddress(validatorPubkey, 6)}
+                    </code>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="p-0 h-auto hover:bg-transparent text-gojira-red hover:text-gojira-red-light"
+                      onClick={() => copyToClipboard(validatorPubkey, "Vote Account")}
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </Button>
+                    <a 
+                      href={solscanUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gojira-red hover:text-gojira-red-light transition-colors"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                    <TooltipProvider delayDuration={300}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="sm" className="p-0 h-auto hover:bg-transparent">
+                            <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent className="glass-effect">
+                          <p>Validator vote account on Solana blockchain</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                 )}
-                <a 
-                  href={explorerUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gojira-red hover:text-gojira-red-light transition-colors"
-                >
-                  <ExternalLink className="h-3.5 w-3.5" />
-                </a>
-                <TooltipProvider delayDuration={300}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="ghost" size="sm" className="p-0 h-auto hover:bg-transparent">
-                        <Info className="h-3.5 w-3.5 text-muted-foreground" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent className="glass-effect">
-                      <p>Validator vote account on Solana blockchain</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
               </div>
               
               {identityPubkey && !isLoading && (
@@ -76,8 +98,16 @@ export const ValidatorHeader = ({
                     <code className="bg-gojira-gray-dark/50 px-2 py-0.5 rounded text-sm font-mono">
                       {truncateAddress(identityPubkey, 6)}
                     </code>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="p-0 h-auto hover:bg-transparent text-gojira-red hover:text-gojira-red-light"
+                      onClick={() => copyToClipboard(identityPubkey, "Identity")}
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </Button>
                     <a 
-                      href={identityUrl}
+                      href={identitySolscanUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-gojira-red hover:text-gojira-red-light transition-colors"
