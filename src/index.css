@@ -119,3 +119,30 @@
   transform: translateY(-10px);
   transition: opacity 400ms, transform 400ms;
 }
+
+/* Smooth refresh transition */
+.refresh-overlay {
+  @apply fixed inset-0 z-50 bg-gojira-gray-dark/70 backdrop-blur-sm 
+         flex items-center justify-center transition-all duration-300;
+  animation: fadeIn 300ms ease-in-out;
+}
+
+.refresh-spinner {
+  @apply w-12 h-12 border-4 border-gojira-red/20 border-t-gojira-red rounded-full;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

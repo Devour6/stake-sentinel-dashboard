@@ -1,5 +1,5 @@
 
-import { ExternalLink, Info, Copy } from "lucide-react";
+import { ExternalLink, Info, Copy, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
@@ -8,12 +8,14 @@ interface ValidatorHeaderProps {
   validatorPubkey: string;
   identityPubkey?: string;
   isLoading?: boolean;
+  onRefresh: () => void;
 }
 
 export const ValidatorHeader = ({ 
   validatorPubkey, 
   identityPubkey,
-  isLoading = false 
+  isLoading = false,
+  onRefresh 
 }: ValidatorHeaderProps) => {
   const truncateAddress = (address: string, length = 8) => {
     if (!address) return "";
@@ -33,6 +35,14 @@ export const ValidatorHeader = ({
   // Solscan URLs instead of Explorer
   const solscanUrl = `https://solscan.io/account/${validatorPubkey}`;
   const identitySolscanUrl = identityPubkey ? `https://solscan.io/account/${identityPubkey}` : null;
+
+  const handleRefresh = () => {
+    onRefresh();
+    toast.info("Refreshing data...", {
+      duration: 1500,
+      position: "top-center"
+    });
+  };
 
   return (
     <div className="animate-slide-down">
@@ -125,9 +135,11 @@ export const ValidatorHeader = ({
           <Button 
             variant="destructive" 
             size="sm"
-            className="rounded-full bg-gojira-red hover:bg-gojira-red-dark"
-            onClick={() => window.location.reload()}
+            className="rounded-full bg-gojira-red hover:bg-gojira-red-dark transition-all duration-300 flex items-center gap-2"
+            onClick={handleRefresh}
+            disabled={isLoading}
           >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
         </div>
