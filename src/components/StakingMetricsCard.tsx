@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatSol, formatCommission } from "@/services/solanaApi";
-import { ArrowUpRight, ArrowDownRight, Percent, Users } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Percent, Users, Clock } from "lucide-react";
 
 interface StakingMetricsCardProps {
   title: string;
@@ -51,6 +51,7 @@ export const StakingMetricsCard = ({
 
 interface ValidatorMetricsProps {
   totalStake: number;
+  activatingStake: number; // New field
   stakeChange24h: number;
   stakeChangePercentage: number;
   commission: number;
@@ -60,6 +61,7 @@ interface ValidatorMetricsProps {
 
 export const ValidatorMetricsGrid = ({
   totalStake,
+  activatingStake,
   stakeChange24h,
   stakeChangePercentage,
   commission,
@@ -67,11 +69,19 @@ export const ValidatorMetricsGrid = ({
   isLoading = false,
 }: ValidatorMetricsProps) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-slide-up">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 animate-slide-up">
       <StakingMetricsCard
         title="Total Stake"
         value={isLoading ? "" : formatSol(totalStake)}
         icon={<div className="w-4 h-4 bg-gojira-red rounded-full"></div>}
+        isLoading={isLoading}
+      />
+      <StakingMetricsCard
+        title="Activating Stake"
+        value={isLoading ? "" : formatSol(activatingStake)}
+        description="Active next epoch"
+        icon={<Clock className="h-4 w-4 text-gojira-red" />}
+        trend="up"
         isLoading={isLoading}
       />
       <StakingMetricsCard
