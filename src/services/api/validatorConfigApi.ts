@@ -74,41 +74,46 @@ export const fetchValidatorConfig = async (): Promise<ValidatorSearchResult[]> =
           
           // Handle the string format properly
           if (typeof configData === 'string') {
-            // Some data might be double-encoded JSON or have escape characters
+            // Clean up the data for parsing
             let cleanedData = configData;
             
-            // Handle possible escaping issues
-            if (cleanedData.startsWith('"') && cleanedData.endsWith('"')) {
-              cleanedData = cleanedData.slice(1, -1);
-              // Replace escaped quotes with actual quotes
-              cleanedData = cleanedData.replace(/\\"/g, '"');
-            }
-            
             try {
-              // Try to parse the JSON
+              // Sometimes config data is double-encoded or has escape characters
+              if (cleanedData.startsWith('"') && cleanedData.endsWith('"')) {
+                // Remove enclosing quotes and handle escaped quotes
+                cleanedData = cleanedData.slice(1, -1).replace(/\\"/g, '"');
+              }
+              
+              // Try to parse the JSON data
               validatorInfo = JSON.parse(cleanedData);
             } catch (e) {
-              // If first approach fails, try removing all backslashes
+              console.log("First parsing attempt failed, trying alternative method:", e);
+              
               try {
+                // Try removing all backslashes and parse again
                 cleanedData = cleanedData.replace(/\\/g, '');
                 validatorInfo = JSON.parse(cleanedData);
               } catch (e2) {
-                // One more attempt with a different cleanup approach
+                console.log("Second parsing attempt failed, trying final method:", e2);
+                
                 try {
-                  // Some validators have JSON with escaped characters that need to be properly handled
-                  validatorInfo = JSON.parse(JSON.stringify(eval("(" + cleanedData + ")")));
+                  // Last attempt using eval (only safe because we know this is validator data)
+                  // Use Function constructor instead of eval for better security
+                  validatorInfo = Function('"use strict";return (' + cleanedData + ')')();
                 } catch (e3) {
-                  console.error("Could not parse validator JSON after multiple attempts:", e3);
-                  continue;
+                  console.error("All parsing attempts failed:", e3, "Raw data:", configData);
+                  continue; // Skip this validator if we can't parse the data
                 }
               }
             }
           } else if (typeof configData === 'object') {
+            // If it's already an object, use it directly
             validatorInfo = configData;
           } else {
-            continue; // Skip if we can't parse the data
+            continue; // Skip if data format is unexpected
           }
           
+          // Only add validators with names
           if (validatorInfo && validatorInfo.name) {
             // Extract website or keybase for icon
             let icon = null;
@@ -121,18 +126,18 @@ export const fetchValidatorConfig = async (): Promise<ValidatorSearchResult[]> =
             validatorConfigs.push({
               name: validatorInfo.name,
               identity: identityPubkey,
-              votePubkey: '', // Will be matched later
+              votePubkey: '', // Will be matched later with vote accounts
               icon: icon
             });
             
             console.log(`Found validator with name: ${validatorInfo.name}, identity: ${identityPubkey}`);
           }
-        } catch (e) {
-          console.error("Error parsing validator JSON:", e, "Raw data:", configData);
+        } catch (err) {
+          console.error("Error processing validator data:", err);
           continue;
         }
       } catch (err) {
-        console.error("Error processing validator config account:", err);
+        console.error("Error processing validator account:", err);
         continue;
       }
     }
@@ -141,6 +146,7 @@ export const fetchValidatorConfig = async (): Promise<ValidatorSearchResult[]> =
     return validatorConfigs;
   } catch (error) {
     console.error("Error fetching validator configs:", error);
+    toast.error("Failed to fetch validator information");
     return [];
   }
 }

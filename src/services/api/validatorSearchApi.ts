@@ -1,3 +1,4 @@
+
 import { toast } from "sonner";
 import { RPC_ENDPOINT } from "./constants";
 import { ValidatorSearchResult } from "./types";
@@ -52,13 +53,14 @@ const WELL_KNOWN_VALIDATORS = [
   { name: "P2P.ORG", votePubkey: "FC8bhGCso5sJRxGXT5JbMDm7J9KaRvQzSXYMtongBZ33", identity: "6kDyGMHbuGGHvuq71DyqR6V8N4maLBx8pGiA2L2aKv3R", icon: null },
   { name: "Kysenpool.io | Staking", votePubkey: "5NH47Zk9NAzfbtqNpUtn8CQgNZeZE88aa2NRpfe7DyTD", identity: "CjhKCjNC1WUgBjAGst3D2XmSsWHvt3zGasasmogPTY6J", icon: null },
   { name: "InfStones", votePubkey: "9HSjDs6MBGZrZRJBLnCqrRAVxpwq6JQW3PrBa6qEsTYF", identity: "DbF7QuF8NNWgV3Vj6Z8qaHvZj6QZv9Xm5t3EptfzN76d", icon: null },
+  // Additional Chorus One entry
   { name: "Chorus One", votePubkey: "EoK33UHJHPRodKxaVsU5pKxuGCNiLBW4GK7QKUMpHP9s", identity: "FQsr4BVWy8H1qo3b1Cv79bZ5NcbQwiKeCfbNm9ducpvw", icon: null },
   { name: "Chainode Tech (node)", votePubkey: "12oWRNKrW8eXvVxLX7cMHWrnJMqZaZK8gxLNkFgbVf3n", identity: "FHf7WtMZLkNYq7NGGBAF78ZKzKZ7oBbGbAEZR5c6J8eZ", icon: null },
   { name: "POS Bakerz", votePubkey: "3SpZRJQcQ4rJynvCGNRBbQjkHGXEMpVsJvTWKvR17gZN", identity: "8c5ZTPGQxEQyZ1Kg7vRGZmQVvAwmRmeGjBPE3VnZjxTh", icon: null },
   { name: "Gunstar DAO", votePubkey: "5kgFd4N82ZbX8HpmCpX3kRgLTaBcNTkpmJmzigpzLiS6", identity: "8WwMJ2X5RYvbiXqLaRWv7tQJbJnHWY2LFxsKCVwuTVUc", icon: null }
 ];
 
-// Extra well-known validators to ensure we have the major ones covered
+// Additional well-known validators to ensure we have the major ones covered
 const ADDITIONAL_VALIDATORS = [
   { name: "Helius", votePubkey: "HeZU7mjJx9FFLX8ad4fErHhiTXNxwqLzW3AVUBCfXxT", identity: "7TMu26hC7sfyEqmA8aXGLLx66JD8WMuKQkExW2K8rfwx", icon: "https://helius.xyz" },
   { name: "Triton", votePubkey: "GoCwdN1C1WXXArrqoivMoaiqksR8QP79N1qoajbHrYG1", identity: "5GKFxHSZrJ4KgErXGNdXEJwvS59W2a2j59V3Xex6P3ow", icon: null },
@@ -103,10 +105,13 @@ export const fetchAllValidators = async (): Promise<ValidatorSearchResult[]> => 
     
     console.log(`Processed ${allValidators.length} total validators`);
     
-    // Create a map of identities to vote accounts for easy lookup
+    // Create maps for easy lookup by identity and vote pubkey
     const identityToValidator = new Map<string, ValidatorSearchResult>();
+    const votePubkeyToValidator = new Map<string, ValidatorSearchResult>();
+    
     allValidators.forEach(validator => {
       identityToValidator.set(validator.identity, validator);
+      votePubkeyToValidator.set(validator.votePubkey, validator);
     });
     
     // Fetch on-chain validator info for names and websites
@@ -121,65 +126,88 @@ export const fetchAllValidators = async (): Promise<ValidatorSearchResult[]> => 
         if (validator) {
           validator.name = configValidator.name;
           if (configValidator.icon) validator.icon = configValidator.icon;
-          console.log(`Matched on-chain name for ${validator.votePubkey}: ${validator.name}`);
+          console.log(`Matched on-chain name for identity ${validator.identity}: ${validator.name}`);
         } else {
           // If we have on-chain info but no matching validator in our list, add it
           // This might happen for validators not currently active
-          console.log(`Found on-chain validator with no vote account: ${configValidator.name}`);
-          allValidators.push({
-            ...configValidator,
-            activatedStake: 0,
-            commission: 0,
-            delinquent: false
-          });
-          // Add to map for future lookups
-          identityToValidator.set(configValidator.identity, allValidators[allValidators.length - 1]);
+          console.log(`Found on-chain validator with no matching identity: ${configValidator.name}`);
+          
+          // Check if we have a matching vote pubkey even though identity doesn't match
+          if (configValidator.votePubkey && votePubkeyToValidator.has(configValidator.votePubkey)) {
+            const voteValidator = votePubkeyToValidator.get(configValidator.votePubkey);
+            voteValidator.name = configValidator.name;
+            if (configValidator.icon) voteValidator.icon = configValidator.icon;
+            console.log(`Matched on-chain name by vote pubkey: ${voteValidator.votePubkey} -> ${voteValidator.name}`);
+          } else {
+            // Add as a new validator
+            allValidators.push({
+              ...configValidator,
+              activatedStake: 0,
+              commission: 0,
+              delinquent: false
+            });
+            
+            // Update maps
+            if (configValidator.identity) {
+              identityToValidator.set(configValidator.identity, allValidators[allValidators.length - 1]);
+            }
+            if (configValidator.votePubkey) {
+              votePubkeyToValidator.set(configValidator.votePubkey, allValidators[allValidators.length - 1]);
+            }
+          }
         }
       }
     } catch (error) {
       console.error("Error fetching validator on-chain info:", error);
       // Continue with fallback names
     }
-    
-    // Create a map of vote pubkeys to validators for easy lookup
-    const votePubkeyToValidator = new Map<string, ValidatorSearchResult>();
-    allValidators.forEach(validator => {
-      votePubkeyToValidator.set(validator.votePubkey, validator);
-    });
 
-    // Add all well-known validators if they're not already in the list
-    // and update names for existing validators
+    // Add well-known validators if they're not already in the list
+    // or update names for existing validators
     const combinedWellKnown = [...WELL_KNOWN_VALIDATORS, ...ADDITIONAL_VALIDATORS];
+    
     for (const known of combinedWellKnown) {
+      // Check by vote pubkey first
       const existingByVote = votePubkeyToValidator.get(known.votePubkey);
+      
+      if (existingByVote) {
+        if (!existingByVote.name || existingByVote.name === '') {
+          existingByVote.name = known.name;
+          if (known.icon) existingByVote.icon = known.icon;
+          console.log(`Added well-known name by vote pubkey for ${known.name} (${known.votePubkey})`);
+        }
+        continue; // Skip to next known validator
+      }
+      
+      // If not found by vote pubkey, try by identity
       const existingByIdentity = identityToValidator.get(known.identity);
       
-      if (existingByVote && !existingByVote.name) {
-        existingByVote.name = known.name;
-        if (known.icon) existingByVote.icon = known.icon;
-        console.log(`Added well-known name for ${known.name} (${known.votePubkey})`);
-      } else if (existingByIdentity && !existingByIdentity.name) {
-        existingByIdentity.name = known.name;
-        if (known.icon) existingByIdentity.icon = known.icon;
-        console.log(`Added well-known name for ${known.name} (${known.identity})`);
-      } else if (!existingByVote && !existingByIdentity) {
-        // Add missing well-known validator
-        console.log(`Adding missing well-known validator: ${known.name}`);
-        allValidators.push({
-          ...known,
-          activatedStake: 0,
-          commission: 0,
-          delinquent: false
-        });
-        // Add to maps for future lookups
-        votePubkeyToValidator.set(known.votePubkey, allValidators[allValidators.length - 1]);
-        identityToValidator.set(known.identity, allValidators[allValidators.length - 1]);
+      if (existingByIdentity) {
+        if (!existingByIdentity.name || existingByIdentity.name === '') {
+          existingByIdentity.name = known.name;
+          if (known.icon) existingByIdentity.icon = known.icon;
+          console.log(`Added well-known name by identity for ${known.name} (${known.identity})`);
+        }
+        continue; // Skip to next known validator
       }
+      
+      // If not found at all, add it
+      console.log(`Adding missing well-known validator: ${known.name} (${known.votePubkey})`);
+      allValidators.push({
+        ...known,
+        activatedStake: 0,
+        commission: 0,
+        delinquent: false
+      });
+      
+      // Update maps
+      votePubkeyToValidator.set(known.votePubkey, allValidators[allValidators.length - 1]);
+      identityToValidator.set(known.identity, allValidators[allValidators.length - 1]);
     }
     
     // Fill missing names with first characters of vote pubkey
     allValidators.forEach(validator => {
-      if (!validator.name) {
+      if (!validator.name || validator.name === '') {
         validator.name = `Validator ${validator.votePubkey.substring(0, 6)}...${validator.votePubkey.substring(validator.votePubkey.length - 4)}`;
       }
     });
