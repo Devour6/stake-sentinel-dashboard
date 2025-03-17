@@ -1,3 +1,4 @@
+
 import { toast } from "sonner";
 
 // Constants
@@ -117,9 +118,10 @@ export const fetchValidatorMetrics = async (): Promise<ValidatorMetrics | null> 
     const stakeChange = validatorInfo.activatedStake - previousStake;
     const stakeChangePercentage = (stakeChange / previousStake) * 100;
     
-    // For delegator count, we need to make another RPC call
+    // For delegator count, we need to fetch stake accounts that delegate to this validator
     let delegatorCount = 0;
     try {
+      console.log("Fetching stakes for validator...");
       const response = await fetch(RPC_ENDPOINT, {
         method: 'POST',
         headers: {
@@ -128,18 +130,43 @@ export const fetchValidatorMetrics = async (): Promise<ValidatorMetrics | null> 
         body: JSON.stringify({
           jsonrpc: '2.0',
           id: 2,
-          method: 'getStakeActivation',
-          params: []
+          method: 'getProgramAccounts',
+          params: [
+            'Stake11111111111111111111111111111111111111',
+            {
+              filters: [
+                {
+                  memcmp: {
+                    offset: 124,
+                    bytes: VALIDATOR_PUBKEY
+                  }
+                }
+              ]
+            }
+          ]
         })
       });
       
-      if (response.ok) {
-        const data = await response.json();
-        delegatorCount = data.result?.delegations?.length || 187; // fallback to mock count
+      if (!response.ok) {
+        throw new Error(`RPC request failed with status ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log("Stakes response:", data);
+      
+      if (data.result) {
+        delegatorCount = data.result.length;
+        console.log(`Found ${delegatorCount} delegators`);
+      } else {
+        throw new Error("No result field in RPC response");
       }
     } catch (error) {
-      console.warn("Could not fetch delegator count:", error);
-      delegatorCount = 187; // fallback to mock count
+      console.error("Error fetching delegator count:", error);
+      // If we can't get the delegator count, use a more conservative estimate
+      // based on total stake divided by average stake size
+      const avgStakeSizeEstimate = 10000; // 10,000 SOL average stake size
+      delegatorCount = Math.floor(validatorInfo.activatedStake / avgStakeSizeEstimate);
+      console.log(`Estimated ${delegatorCount} delegators based on average stake size`);
     }
     
     return {
@@ -147,7 +174,7 @@ export const fetchValidatorMetrics = async (): Promise<ValidatorMetrics | null> 
       stakeChange24h: stakeChange,
       stakeChangePercentage: stakeChangePercentage,
       commission: validatorInfo.commission,
-      delegatorCount: delegatorCount,
+      delegatorCount: delegatorCount || 0,
     };
   } catch (error) {
     console.error("Error fetching validator metrics:", error);
