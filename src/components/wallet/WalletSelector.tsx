@@ -10,11 +10,22 @@ type WalletType = {
 };
 
 const DEFAULT_WALLETS: WalletType[] = [
-  { name: "Phantom", icon: "https://www.phantom.app/img/logo.png", installUrl: "https://phantom.app/" },
+  { name: "Phantom", icon: "https://phantom.app/img/logo.png", installUrl: "https://phantom.app/" },
   { name: "Solflare", icon: "https://solflare.com/favicon.ico", installUrl: "https://solflare.com/" },
   { name: "Backpack", icon: "https://backpack.app/favicon.ico", installUrl: "https://backpack.app/" },
   { name: "MagicEden", icon: "https://cdn.magiceden.io/renderer/images/logo/icon-light.png", installUrl: "https://magiceden.io/wallet" },
 ];
+
+// Known wallets for icon mapping
+const WALLET_ICONS: Record<string, string> = {
+  "phantom": "https://phantom.app/img/logo.png",
+  "solflare": "https://solflare.com/favicon.ico",
+  "backpack": "https://backpack.app/favicon.ico",
+  "magiceden": "https://cdn.magiceden.io/renderer/images/logo/icon-light.png",
+  "coinbase": "https://www.coinbase.com/assets/favicon-c208bf2c08f08e2f28bb3b21550cedd2e0581be6e7d02dcfcf8bfa7580494256.ico",
+  "slope": "https://slope.finance/favicons/favicon.ico",
+  "brave": "https://brave.com/static-assets/images/brave-favicon.png",
+};
 
 interface WalletSelectorProps {
   onWalletSelect: (walletName: string) => Promise<void>;
@@ -44,22 +55,55 @@ const WalletSelector = ({ onWalletSelect, isConnecting, selectedWallet }: Wallet
     if (window.solana && !detected.some(w => w.name === "Phantom")) {
       detected.push({
         name: "Phantom",
-        icon: "https://www.phantom.app/img/logo.png",
+        icon: WALLET_ICONS["phantom"],
         installUrl: "https://phantom.app/"
       });
     }
 
     // Add any other wallets detected in the window object
-    // For example, if there are other Solana wallets installed but not in our default list
-    const otherWalletKeys = Object.keys(window).filter(key => 
-      key.toLowerCase().includes('wallet') && 
-      !detected.some(w => w.name.toLowerCase() === key.toLowerCase())
-    );
+    const walletKeywords = ["wallet", "solana", "sol"];
+    
+    // Filter window object for potential wallet providers
+    const otherWalletKeys = Object.keys(window).filter(key => {
+      const lowercaseKey = key.toLowerCase();
+      // Check if it contains wallet keywords but is not already in detected wallets
+      return (
+        walletKeywords.some(keyword => lowercaseKey.includes(keyword)) && 
+        !detected.some(w => w.name.toLowerCase() === lowercaseKey)
+      );
+    });
 
+    // Process each found wallet key
     otherWalletKeys.forEach(key => {
+      // Format the wallet name nicely
+      let formattedName = key;
+      
+      // Remove common suffixes for cleaner display
+      if (formattedName.toLowerCase().endsWith("wallet")) {
+        formattedName = formattedName.slice(0, -6);
+      }
+      if (formattedName.toLowerCase().endsWith("walletsdk")) {
+        formattedName = formattedName.slice(0, -9);
+      }
+      
+      // Capitalize first letter
+      formattedName = formattedName.charAt(0).toUpperCase() + formattedName.slice(1);
+      
+      // Find an appropriate icon
+      let icon = "/placeholder.svg"; // Default fallback
+      
+      // Check if we have a known icon for this wallet
+      const walletLower = formattedName.toLowerCase();
+      for (const [knownWallet, iconUrl] of Object.entries(WALLET_ICONS)) {
+        if (walletLower.includes(knownWallet)) {
+          icon = iconUrl;
+          break;
+        }
+      }
+      
       detected.push({
-        name: key,
-        icon: "/placeholder.svg", // Use a placeholder for unknown wallets
+        name: formattedName,
+        icon: icon,
         installUrl: undefined
       });
     });
@@ -88,6 +132,12 @@ const WalletSelector = ({ onWalletSelect, isConnecting, selectedWallet }: Wallet
     await onWalletSelect(wallet.name);
   };
 
+  // Helper function to handle image loading errors
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>, walletName: string) => {
+    e.currentTarget.src = "/placeholder.svg";
+    console.log(`Failed to load icon for ${walletName}, using placeholder`);
+  };
+
   return (
     <div className="py-4 space-y-4">
       {detectedWallets.length > 0 && (
@@ -107,7 +157,12 @@ const WalletSelector = ({ onWalletSelect, isConnecting, selectedWallet }: Wallet
                 {isConnecting && selectedWallet === wallet.name ? (
                   <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                 ) : (
-                  <img src={wallet.icon} alt={wallet.name} className="h-5 w-5 object-contain" />
+                  <img 
+                    src={wallet.icon} 
+                    alt={wallet.name} 
+                    className="h-5 w-5 object-contain" 
+                    onError={(e) => handleImageError(e, wallet.name)}
+                  />
                 )}
                 <span>{wallet.name}</span>
               </Button>
@@ -131,7 +186,12 @@ const WalletSelector = ({ onWalletSelect, isConnecting, selectedWallet }: Wallet
             {isConnecting && selectedWallet === wallet.name ? (
               <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
             ) : (
-              <img src={wallet.icon} alt={wallet.name} className="h-5 w-5 object-contain" />
+              <img 
+                src={wallet.icon} 
+                alt={wallet.name} 
+                className="h-5 w-5 object-contain" 
+                onError={(e) => handleImageError(e, wallet.name)}
+              />
             )}
             <span>{wallet.name}</span>
             
