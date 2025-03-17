@@ -90,6 +90,8 @@ const Index = () => {
       <div className="container max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <ValidatorHeader 
           validatorPubkey={VALIDATOR_PUBKEY}
+          validatorName={validatorInfo?.name}
+          validatorIcon={validatorInfo?.icon}
           identityPubkey={validatorInfo?.identity}
           isLoading={isLoading}
           onRefresh={handleRefresh}

@@ -1,100 +1,100 @@
 
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock } from "lucide-react";
-import { EpochInfo } from "@/services/api/types";
-import { fetchEpochInfo, estimateEpochTimeRemaining } from "@/services/api/epochApi";
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Clock, CalendarClock } from "lucide-react";
+import { EpochTimer } from "./EpochTimer";
 
-export function EpochStatusCard() {
+interface EpochInfo {
+  epoch: number;
+  slot: number;
+  slotsInEpoch: number;
+}
+
+interface EpochStatusCardProps {
+  compact?: boolean;
+}
+
+export const EpochStatusCard = ({ compact = false }: EpochStatusCardProps) => {
   const [epochInfo, setEpochInfo] = useState<EpochInfo | null>(null);
-  const [timeRemaining, setTimeRemaining] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch epoch info
   useEffect(() => {
-    async function loadEpochInfo() {
+    const fetchEpochInfo = async () => {
       try {
-        setIsLoading(true);
-        const info = await fetchEpochInfo();
-        setEpochInfo(info);
+        // Simulate fetching epoch data
+        const mockEpochInfo = {
+          epoch: 757, // This would come from an actual API
+          slot: 428451,
+          slotsInEpoch: 432000
+        };
         
-        // Calculate time remaining
-        const remaining = estimateEpochTimeRemaining(info);
-        setTimeRemaining(remaining);
+        setEpochInfo(mockEpochInfo);
       } catch (error) {
-        console.error("Error loading epoch info:", error);
+        console.error("Failed to fetch epoch info:", error);
       } finally {
         setIsLoading(false);
       }
-    }
-    
-    loadEpochInfo();
-    
-    // Refresh every minute
-    const intervalId = setInterval(loadEpochInfo, 60000);
-    return () => clearInterval(intervalId);
+    };
+
+    fetchEpochInfo();
+    // In real implementation, you might want to poll this data periodically
   }, []);
-  
-  // Countdown timer
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeRemaining(prev => Math.max(0, prev - 1));
-    }, 1000);
-    
-    return () => clearInterval(timer);
-  }, []);
-  
-  // Format time remaining
-  const formatTimeRemaining = (seconds: number) => {
-    if (seconds <= 0) return "Epoch change imminent";
-    
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
-    
-    return `${hours}h ${minutes}m ${secs}s`;
-  };
-  
-  // Calculate progress percentage
-  const calculateProgress = () => {
-    if (!epochInfo) return 0;
-    return (epochInfo.slotIndex / epochInfo.slotsInEpoch) * 100;
-  };
+
+  if (compact) {
+    return (
+      <Card className="overflow-hidden bg-gojira-gray-dark/50 shadow-md border-gojira-gray-light">
+        <CardContent className="p-3 flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-gojira-red" />
+            <div>
+              <span className="text-sm font-medium">Current Epoch: </span>
+              <span className="text-sm font-bold">{isLoading ? "..." : epochInfo?.epoch}</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <EpochTimer compact={true} />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <Card className="glass-card border-gojira-gray-light">
+    <Card className="glass-card animate-fade-in border-gojira-gray-light">
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-          <Clock className="h-4 w-4 text-gojira-red" />
-          Current Epoch
+        <CardTitle className="flex items-center gap-2">
+          <CalendarClock className="h-5 w-5 text-gojira-red" />
+          Epoch Status
         </CardTitle>
+        <CardDescription>Current Solana blockchain epoch information</CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="space-y-2">
-            <div className="h-7 w-24 bg-muted/30 rounded animate-pulse"></div>
-            <div className="h-4 w-32 bg-muted/30 rounded animate-pulse"></div>
+          <div className="space-y-4">
+            <div className="h-6 w-32 bg-muted/30 rounded animate-pulse"></div>
+            <div className="h-6 w-40 bg-muted/30 rounded animate-pulse"></div>
           </div>
         ) : (
-          <div className="space-y-2">
-            <div className="text-2xl font-bold">Epoch {epochInfo?.epoch}</div>
-            <div className="text-sm text-muted-foreground">
-              {formatTimeRemaining(timeRemaining)} remaining
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Current Epoch</span>
+              <span className="font-semibold">{epochInfo?.epoch}</span>
             </div>
             
-            {/* Progress bar */}
-            <div className="w-full bg-gojira-gray-dark/50 h-1.5 rounded-full mt-2">
-              <div 
-                className="bg-gojira-red h-1.5 rounded-full" 
-                style={{ width: `${calculateProgress()}%` }}
-              ></div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Slot Progress</span>
+              <span className="font-semibold">
+                {epochInfo?.slot} / {epochInfo?.slotsInEpoch}
+              </span>
             </div>
-            <div className="text-xs text-muted-foreground mt-1">
-              {epochInfo?.slotIndex.toLocaleString()} / {epochInfo?.slotsInEpoch.toLocaleString()} slots
+            
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Time Remaining</span>
+              <EpochTimer />
             </div>
           </div>
         )}
       </CardContent>
     </Card>
   );
-}
+};
