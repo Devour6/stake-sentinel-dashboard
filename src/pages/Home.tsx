@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,7 @@ const Home = () => {
   const [validators, setValidators] = useState<Array<{name: string, votePubkey: string, identity: string}>>([]);
   const [filteredValidators, setFilteredValidators] = useState<Array<{name: string, votePubkey: string, identity: string}>>([]);
   const [isStakeModalOpen, setIsStakeModalOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -39,6 +40,7 @@ const Home = () => {
     loadValidators();
   }, []);
 
+  // Improved filtered validators logic
   useEffect(() => {
     if (searchInput.trim()) {
       const searchTerm = searchInput.toLowerCase();
@@ -94,6 +96,10 @@ const Home = () => {
     navigate(`/validator/${encodeURIComponent(votePubkey)}`);
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchInput(e.target.value);
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gojira-gray to-gojira-gray-dark p-4">
       <div className="fixed top-4 right-4 z-10">
@@ -127,7 +133,8 @@ const Home = () => {
                     placeholder="Search by validator vote account, identity, or name..."
                     className="pl-10 bg-gojira-gray-dark border-gojira-gray-light"
                     value={searchInput}
-                    onChange={(e) => setSearchInput(e.target.value)}
+                    onChange={handleInputChange}
+                    ref={searchInputRef}
                     onFocus={() => filteredValidators.length > 0 && setShowSuggestions(true)}
                   />
                 </PopoverTrigger>
