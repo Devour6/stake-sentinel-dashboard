@@ -70,7 +70,7 @@ export const fetchValidatorMetrics = async (): Promise<ValidatorMetrics | null> 
     return {
       totalStake: validatorInfo.activatedStake,
       commission: validatorInfo.commission,
-      delegatorCount: delegatorCount || Math.floor(validatorInfo.activatedStake / 10000), // Fallback estimation
+      delegatorCount: delegatorCount,
     };
   } catch (error) {
     console.error("Error fetching validator metrics:", error);
@@ -80,7 +80,7 @@ export const fetchValidatorMetrics = async (): Promise<ValidatorMetrics | null> 
     return {
       totalStake: 345678.9012,
       commission: 7,
-      delegatorCount: 187,
+      delegatorCount: null,
     };
   }
 };

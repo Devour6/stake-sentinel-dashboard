@@ -1,16 +1,17 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatSol, formatCommission } from "@/services/solanaApi";
-import { ArrowUpRight, ArrowDownRight, Percent, Users, Clock } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Percent, Users, Clock, AlertTriangle } from "lucide-react";
 
 interface StakingMetricsCardProps {
   title: string;
-  value: string | number;
+  value: string | number | null;
   description?: string;
   icon: React.ReactNode;
   trend?: "up" | "down" | "neutral";
   isLoading?: boolean;
   isEstimated?: boolean;
+  isError?: boolean;
 }
 
 export const StakingMetricsCard = ({
@@ -21,6 +22,7 @@ export const StakingMetricsCard = ({
   trend = "neutral",
   isLoading = false,
   isEstimated = false,
+  isError = false,
 }: StakingMetricsCardProps) => {
   return (
     <Card className="overflow-hidden glass-card animate-fade-in border-gojira-gray-light">
@@ -36,6 +38,11 @@ export const StakingMetricsCard = ({
       <CardContent>
         {isLoading ? (
           <div className="h-7 w-24 bg-muted/30 rounded animate-pulse"></div>
+        ) : isError ? (
+          <div className="text-red-500 flex items-center gap-1">
+            <AlertTriangle className="h-4 w-4" />
+            <span className="text-sm">Error loading data</span>
+          </div>
         ) : (
           <div className="text-2xl font-bold">{value}</div>
         )}
@@ -57,7 +64,7 @@ export const StakingMetricsCard = ({
 interface ValidatorMetricsProps {
   totalStake: number;
   commission: number;
-  delegatorCount: number;
+  delegatorCount: number | null;
   isLoading?: boolean;
 }
 
@@ -86,6 +93,7 @@ export const ValidatorMetricsGrid = ({
         value={isLoading ? "" : delegatorCount}
         icon={<Users className="h-4 w-4 text-gojira-red" />}
         isLoading={isLoading}
+        isError={delegatorCount === null}
       />
     </div>
   );

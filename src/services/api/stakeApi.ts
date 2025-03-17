@@ -1,3 +1,4 @@
+
 import { toast } from "sonner";
 import { VALIDATOR_PUBKEY, RPC_ENDPOINT } from "./constants";
 import { StakeHistoryItem } from "./types";
@@ -47,7 +48,7 @@ export const fetchStakeHistory = async (days = 30): Promise<StakeHistoryItem[]> 
 };
 
 // Get delegator count by fetching stake accounts delegated to the validator
-export const fetchDelegatorCount = async (): Promise<number> => {
+export const fetchDelegatorCount = async (): Promise<number | null> => {
   try {
     console.log("Fetching delegator count directly from vote account...");
     
@@ -158,8 +159,9 @@ export const fetchDelegatorCount = async (): Promise<number> => {
       throw new Error("Validator not found in fallback response");
     } catch (fallbackError) {
       console.error("Fallback method failed:", fallbackError);
-      // Return a reasonable default based on previous data rather than an estimation
-      return 187; // Default value as a fallback
+      // Return null to indicate error instead of a default value
+      toast.error("Could not fetch delegator count");
+      return null;
     }
   }
 };
