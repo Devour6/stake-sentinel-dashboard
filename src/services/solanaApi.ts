@@ -17,7 +17,7 @@ import {
 } from "./api/validatorApi";
 
 // Type imports
-import type { ValidatorInfo, ValidatorMetrics, StakeHistoryItem } from "./api/types";
+import type { ValidatorInfo, ValidatorMetrics, StakeHistoryItem, ValidatorSearchResult } from "./api/types";
 
 // Re-export everything
 export {
@@ -29,6 +29,7 @@ export {
   type ValidatorInfo,
   type ValidatorMetrics,
   type StakeHistoryItem,
+  type ValidatorSearchResult,
   
   // API methods
   fetchValidatorInfo,
