@@ -1,3 +1,4 @@
+
 // Types for the Solana API responses and data structures
 export interface ValidatorInfo {
   identity: string;
@@ -86,4 +87,13 @@ export interface ValidatorSearchResult {
   activatedStake?: number;
   commission?: number;
   delinquent?: boolean;
+}
+
+// Add interface for on-chain validator config data
+export interface ValidatorConfigData {
+  name?: string;
+  keybaseUsername?: string;
+  website?: string;
+  details?: string;
+  [key: string]: any; // For any other properties that might be in the JSON
 }

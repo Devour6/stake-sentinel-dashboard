@@ -1,12 +1,13 @@
+
 import { toast } from "sonner";
 import { VALIDATOR_PUBKEY, VALIDATOR_IDENTITY, RPC_ENDPOINT } from "./constants";
-import { ValidatorInfo, ValidatorMetrics, StakeHistoryItem, RpcVoteAccount, StakeAccountInfo } from "./types";
+import { ValidatorInfo, ValidatorMetrics, StakeHistoryItem, RpcVoteAccount, StakeAccountInfo, ValidatorSearchResult, ValidatorConfigData } from "./types";
 import { lamportsToSol } from "./utils";
 import { fetchVoteAccounts, fetchCurrentEpoch } from "./epochApi";
 import { fetchStakeHistory } from "./stakeApi";
 
 // Fetch all validators for the search function
-export const fetchAllValidators = async () => {
+export const fetchAllValidators = async (): Promise<ValidatorSearchResult[]> => {
   try {
     console.log("Fetching all validators...");
     
@@ -14,10 +15,11 @@ export const fetchAllValidators = async () => {
     const { current, delinquent } = await fetchVoteAccounts();
     
     // We'll focus on current validators and ignore delinquent ones
-    const allValidators = [...current].map(validator => ({
+    const allValidators: ValidatorSearchResult[] = [...current].map(validator => ({
       name: null, // We'll fill this with on-chain name data
       votePubkey: validator.votePubkey,
       identity: validator.nodePubkey,
+      icon: null, // Initialize with null, will be populated later
       activatedStake: lamportsToSol(validator.activatedStake),
       commission: validator.commission,
       delinquent: false
@@ -49,7 +51,7 @@ export const fetchAllValidators = async () => {
     }
     
     // Add well-known validators with proper names if they weren't already in the list
-    const knownValidators = [
+    const knownValidators: ValidatorSearchResult[] = [
       { name: "Gojira", votePubkey: "CcaHc2L43ZWjwCHART3oZoJvHLAe9hzT2DJNUpBzoTN1", identity: "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM", icon: null, activatedStake: 0, commission: 10, delinquent: false },
       { name: "Solana Foundation", votePubkey: "GhBd6sozvfR9F2YwHVj2tAHbGyzQSuHxWNn5K8ofuYkx", identity: "7BJUCjD9sMQQ3LXeNZ3j8FQmJxMS1hC9t5S2g4gtLQBJ", icon: null, activatedStake: 0, commission: 10, delinquent: false },
       { name: "Jito", votePubkey: "E5ruSVxEKrAoXAcuMaAfcN5tX6bUYK6ouJcS5yAbs6Zh", identity: "88E5dLt2WQ6WNbQTXoZYwywickdGF9U5e3tbeYxQmHJx", icon: null, activatedStake: 0, commission: 10, delinquent: false },
@@ -127,7 +129,7 @@ export const fetchAllValidators = async () => {
 };
 
 // Function to fetch on-chain validator names and logos
-export const fetchValidatorConfig = async () => {
+export const fetchValidatorConfig = async (): Promise<ValidatorSearchResult[]> => {
   try {
     console.log("Fetching on-chain validator config...");
     
@@ -163,7 +165,7 @@ export const fetchValidatorConfig = async () => {
     
     console.log(`Received ${data.result.length} validator config accounts`);
     
-    const validatorConfigs = [];
+    const validatorConfigs: ValidatorSearchResult[] = [];
     
     for (const account of data.result) {
       try {
@@ -178,14 +180,14 @@ export const fetchValidatorConfig = async () => {
           const configData = info.info.configData;
           
           // Extract keys
-          const keys = configData.keys.map(key => key.pubkey);
+          const keys = configData.keys.map((key: any) => key.pubkey);
           if (!keys || keys.length < 1) continue;
           
           // The identity key is always the first key
           const identityPubkey = keys[0];
           
           // Extract the JSON data
-          let validatorInfo = {};
+          let validatorInfo: ValidatorConfigData = {};
           try {
             if (configData.value) {
               validatorInfo = JSON.parse(configData.value);
