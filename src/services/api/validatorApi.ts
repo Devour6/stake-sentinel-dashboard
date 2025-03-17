@@ -6,6 +6,49 @@ import { lamportsToSol } from "./utils";
 import { fetchVoteAccounts, fetchCurrentEpoch } from "./epochApi";
 import { fetchStakeHistory } from "./stakeApi";
 
+// Fetch all validators for the search function
+export const fetchAllValidators = async () => {
+  try {
+    console.log("Fetching all validators...");
+    
+    // Use the existing fetchVoteAccounts function to get all validators
+    const { current, delinquent } = await fetchVoteAccounts();
+    
+    // Combine current and delinquent validators
+    const allValidators = [...current, ...delinquent].map(validator => ({
+      name: validator.nodePubkey.slice(0, 6), // Placeholder name (in a real app, you'd fetch these from an API)
+      votePubkey: validator.votePubkey,
+      identity: validator.nodePubkey
+    }));
+    
+    console.log(`Fetched ${allValidators.length} validators`);
+    
+    // Add some known validators with proper names
+    const knownValidators = [
+      { name: "Gojira", votePubkey: "CcaHc2L43ZWjwCHART3oZoJvHLAe9hzT2DJNUpBzoTN1", identity: "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM" },
+      { name: "Solana Foundation", votePubkey: "GhBd6sozvfR9F2YwHVj2tAHbGyzQSuHxWNn5K8ofuYkx", identity: "7BJUCjD9sMQQ3LXeNZ3j8FQmJxMS1hC9t5S2g4gtLQBJ" },
+      { name: "Jito", votePubkey: "E5ruSVxEKrAoXAcuMaAfcN5tX6bUYK6ouJcS5yAbs6Zh", identity: "88E5dLt2WQ6WNbQTXoZYwywickdGF9U5e3tbeYxQmHJx" },
+      { name: "Marinade", votePubkey: "DQ7D6ZRtKbBSxCcAunEkoTzQhCBKLPdzTjJRoFBDkntj", identity: "HxkZUjg1RnCUTJ8j1Lc9J4xzQXGbQMY8kqbAMU4rMDKr" },
+    ];
+    
+    // Replace any matching validators with the known ones that have proper names
+    knownValidators.forEach(known => {
+      const index = allValidators.findIndex(v => v.votePubkey === known.votePubkey);
+      if (index >= 0) {
+        allValidators[index] = known;
+      } else {
+        allValidators.push(known);
+      }
+    });
+    
+    return allValidators;
+  } catch (error) {
+    console.error("Error fetching validators:", error);
+    toast.error("Failed to fetch validators");
+    return [];
+  }
+};
+
 // Fetch stake accounts for a specific validator to determine activating stake
 async function fetchActivatingStake(voteAccount: string): Promise<number> {
   try {

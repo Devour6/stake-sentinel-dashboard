@@ -1,60 +1,56 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { validateVotePubkey } from "@/services/solanaApi";
 import { 
-  CommandDialog,
-  CommandInput,
-  CommandList,
-  CommandEmpty,
-  CommandGroup,
-  CommandItem
-} from "@/components/ui/command";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { validateVotePubkey } from "@/services/solanaApi";
 import { toast } from "sonner";
-
-// Mock validator list for autocomplete - this would be replaced with API data
-const VALIDATOR_SUGGESTIONS = [
-  { name: "Gojira", votePubkey: "CcaHc2L43ZWjwCHART3oZoJvHLAe9hzT2DJNUpBzoTN1", identity: "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM" },
-  { name: "Solana Foundation", votePubkey: "GhBd6sozvfR9F2YwHVj2tAHbGyzQSuHxWNn5K8ofuYkx", identity: "7BJUCjD9sMQQ3LXeNZ3j8FQmJxMS1hC9t5S2g4gtLQBJ" },
-  { name: "Jito", votePubkey: "E5ruSVxEKrAoXAcuMaAfcN5tX6bUYK6ouJcS5yAbs6Zh", identity: "88E5dLt2WQ6WNbQTXoZYwywickdGF9U5e3tbeYxQmHJx" },
-  { name: "Marinade", votePubkey: "DQ7D6ZRtKbBSxCcAunEkoTzQhCBKLPdzTjJRoFBDkntj", identity: "HxkZUjg1RnCUTJ8j1Lc9J4xzQXGbQMY8kqbAMU4rMDKr" },
-];
+import { fetchAllValidators } from "@/services/api/validatorApi";
+import StakeModal from "@/components/StakeModal";
 
 const Home = () => {
   const [searchInput, setSearchInput] = useState("");
   const [isSearching, setIsSearching] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [filteredSuggestions, setFilteredSuggestions] = useState(VALIDATOR_SUGGESTIONS);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [validators, setValidators] = useState<Array<{name: string, votePubkey: string, identity: string}>>([]);
+  const [filteredValidators, setFilteredValidators] = useState<Array<{name: string, votePubkey: string, identity: string}>>([]);
+  const [isStakeModalOpen, setIsStakeModalOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const down = (e: KeyboardEvent) => {
-      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        setOpen((open) => !open);
+    const loadValidators = async () => {
+      try {
+        const allValidators = await fetchAllValidators();
+        setValidators(allValidators);
+      } catch (error) {
+        console.error("Failed to load validators:", error);
+        toast.error("Failed to load validator list");
       }
     };
-    document.addEventListener("keydown", down);
-    return () => document.removeEventListener("keydown", down);
+    
+    loadValidators();
   }, []);
 
   useEffect(() => {
     if (searchInput.trim()) {
-      const filtered = VALIDATOR_SUGGESTIONS.filter(
+      const searchTerm = searchInput.toLowerCase();
+      const filtered = validators.filter(
         (validator) => 
-          validator.name.toLowerCase().includes(searchInput.toLowerCase()) ||
-          validator.votePubkey.toLowerCase().includes(searchInput.toLowerCase()) ||
-          validator.identity.toLowerCase().includes(searchInput.toLowerCase())
-      );
-      setFilteredSuggestions(filtered);
+          (validator.name?.toLowerCase().includes(searchTerm)) ||
+          validator.votePubkey.toLowerCase().includes(searchTerm) ||
+          validator.identity.toLowerCase().includes(searchTerm)
+      ).slice(0, 5);
+      setFilteredValidators(filtered);
     } else {
-      setFilteredSuggestions(VALIDATOR_SUGGESTIONS);
+      setFilteredValidators([]);
     }
-  }, [searchInput]);
+  }, [searchInput, validators]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,15 +60,13 @@ const Home = () => {
     setIsSearching(true);
     
     try {
-      // For now just validate the pubkey format
       const isValid = validateVotePubkey(searchInput.trim());
       
       if (isValid) {
         navigate(`/validator/${encodeURIComponent(searchInput.trim())}`);
       } else {
-        // Check if we have a suggestion that matches the search
-        const matchedValidator = VALIDATOR_SUGGESTIONS.find(v => 
-          v.name.toLowerCase() === searchInput.toLowerCase() ||
+        const matchedValidator = validators.find(v => 
+          (v.name?.toLowerCase() === searchInput.toLowerCase()) ||
           v.votePubkey.toLowerCase() === searchInput.toLowerCase() ||
           v.identity.toLowerCase() === searchInput.toLowerCase()
         );
@@ -80,10 +74,7 @@ const Home = () => {
         if (matchedValidator) {
           navigate(`/validator/${encodeURIComponent(matchedValidator.votePubkey)}`);
         } else {
-          // If not a valid pubkey and no match, show an error
           toast.error("No validator found matching your search");
-          // We'll still navigate, and let the validator page handle errors
-          navigate(`/validator/${encodeURIComponent(searchInput.trim())}`);
         }
       }
     } catch (error) {
@@ -95,20 +86,13 @@ const Home = () => {
   };
 
   const handleSelectValidator = (votePubkey: string) => {
-    setOpen(false);
+    setShowSuggestions(false);
     navigate(`/validator/${encodeURIComponent(votePubkey)}`);
   };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gojira-gray to-gojira-gray-dark p-4">
       <div className="w-full max-w-3xl mx-auto text-center mb-12 animate-fade-in">
-        <div className="flex justify-center mb-6">
-          <img 
-            src="/lovable-uploads/31314417-ef5b-4d58-ac5e-91a2ab487110.png" 
-            alt="hiStake Logo" 
-            className="w-24 h-24 object-contain gojira-logo"
-          />
-        </div>
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 text-white">
           hiStake
         </h1>
@@ -122,14 +106,40 @@ const Home = () => {
           <form onSubmit={handleSearch} className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
-              <Input
-                type="text"
-                placeholder="Search by validator vote account, identity, or name..."
-                className="pl-10 bg-gojira-gray-dark border-gojira-gray-light"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                onFocus={() => setOpen(true)}
-              />
+              <Popover open={showSuggestions && filteredValidators.length > 0} onOpenChange={setShowSuggestions}>
+                <PopoverTrigger asChild>
+                  <Input
+                    type="text"
+                    placeholder="Search by validator vote account, identity, or name..."
+                    className="pl-10 bg-gojira-gray-dark border-gojira-gray-light"
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    onFocus={() => setShowSuggestions(true)}
+                  />
+                </PopoverTrigger>
+                <PopoverContent 
+                  className="p-0 w-[var(--radix-popover-trigger-width)] mt-1" 
+                  align="start"
+                  sideOffset={5}
+                >
+                  <div className="max-h-[300px] overflow-y-auto">
+                    {filteredValidators.map((validator) => (
+                      <div
+                        key={validator.votePubkey}
+                        className="flex items-center justify-between p-3 hover:bg-accent cursor-pointer"
+                        onClick={() => handleSelectValidator(validator.votePubkey)}
+                      >
+                        <div className="flex items-center">
+                          <span>{validator.name || "Unknown"}</span>
+                        </div>
+                        <span className="text-xs text-muted-foreground truncate max-w-[180px]">
+                          {validator.votePubkey.slice(0, 8)}...{validator.votePubkey.slice(-8)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
             <Button 
               type="submit" 
@@ -146,6 +156,16 @@ const Home = () => {
         </CardContent>
       </Card>
 
+      <div className="mt-8 flex justify-center">
+        <Button 
+          variant="outline" 
+          className="border-gojira-red text-gojira-red hover:bg-gojira-red/10"
+          onClick={() => setIsStakeModalOpen(true)}
+        >
+          Stake to Gojira Validator
+        </Button>
+      </div>
+
       <div className="mt-16 text-center text-sm text-muted-foreground">
         <div className="flex justify-center gap-1 items-center">
           <span>Powered by</span>
@@ -158,32 +178,7 @@ const Home = () => {
         </div>
       </div>
 
-      <CommandDialog open={open} onOpenChange={setOpen}>
-        <CommandInput 
-          placeholder="Search validators..." 
-          value={searchInput}
-          onValueChange={setSearchInput}
-        />
-        <CommandList>
-          <CommandEmpty>No validators found.</CommandEmpty>
-          <CommandGroup heading="Suggestions">
-            {filteredSuggestions.map((validator) => (
-              <CommandItem
-                key={validator.votePubkey}
-                onSelect={() => handleSelectValidator(validator.votePubkey)}
-                className="flex items-center justify-between"
-              >
-                <div className="flex items-center">
-                  <span>{validator.name}</span>
-                </div>
-                <span className="text-xs text-muted-foreground truncate max-w-[180px]">
-                  {validator.votePubkey.slice(0, 8)}...{validator.votePubkey.slice(-8)}
-                </span>
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        </CommandList>
-      </CommandDialog>
+      {isStakeModalOpen && <StakeModal isOpen={isStakeModalOpen} setIsOpen={setIsStakeModalOpen} />}
     </div>
   );
 };

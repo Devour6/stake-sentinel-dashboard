@@ -12,7 +12,8 @@ import {
 import {
   fetchValidatorInfo,
   fetchValidatorMetrics,
-  fetchStakeHistory
+  fetchStakeHistory,
+  fetchAllValidators
 } from "./api/validatorApi";
 
 // Type imports
@@ -33,6 +34,7 @@ export {
   fetchValidatorInfo,
   fetchValidatorMetrics,
   fetchStakeHistory,
+  fetchAllValidators,
   
   // Utils
   validateVotePubkey,
