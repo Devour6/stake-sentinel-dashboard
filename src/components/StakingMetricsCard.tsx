@@ -86,6 +86,7 @@ export const ValidatorMetricsGrid = ({
         value={isLoading ? "" : formatSol(activatingStake)}
         icon={<Clock className="h-4 w-4 text-gojira-red" />}
         trend={activatingStake > 0 ? "up" : "neutral"}
+        description={activatingStake > 0 ? "Warming up" : "No new stake"}
         isLoading={isLoading}
       />
       <StakingMetricsCard

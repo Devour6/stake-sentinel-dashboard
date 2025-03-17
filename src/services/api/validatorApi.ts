@@ -1,10 +1,75 @@
 
 import { toast } from "sonner";
-import { VALIDATOR_PUBKEY, VALIDATOR_IDENTITY } from "./constants";
-import { ValidatorInfo, ValidatorMetrics, StakeHistoryItem, RpcVoteAccount } from "./types";
+import { VALIDATOR_PUBKEY, VALIDATOR_IDENTITY, RPC_ENDPOINT } from "./constants";
+import { ValidatorInfo, ValidatorMetrics, StakeHistoryItem, RpcVoteAccount, StakeAccountInfo } from "./types";
 import { lamportsToSol } from "./utils";
 import { fetchVoteAccounts, fetchCurrentEpoch } from "./epochApi";
 import { fetchStakeHistory } from "./stakeApi";
+
+// Fetch stake accounts for a specific validator to determine activating stake
+async function fetchActivatingStake(voteAccount: string): Promise<number> {
+  try {
+    console.log(`Fetching activating stake for vote account: ${voteAccount}`);
+    
+    const response = await fetch(RPC_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 'activating-stake',
+        method: 'getProgramAccounts',
+        params: [
+          'Stake11111111111111111111111111111111111111',
+          {
+            encoding: 'jsonParsed',
+            filters: [
+              {
+                memcmp: {
+                  offset: 124,
+                  bytes: voteAccount
+                }
+              }
+            ]
+          }
+        ]
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch stake accounts: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log("Stake accounts response:", data);
+
+    let activatingStake = 0;
+    
+    if (data.result && Array.isArray(data.result)) {
+      const currentEpoch = await fetchCurrentEpoch();
+      
+      // Sum up the stake that's still activating (activation epoch >= current epoch)
+      for (const account of data.result) {
+        try {
+          const stakeAccount = account as StakeAccountInfo;
+          const activationEpoch = Number(stakeAccount.account.data.parsed.info.stake.delegation.activationEpoch);
+          const stake = Number(stakeAccount.account.data.parsed.info.stake.delegation.stake);
+          
+          if (activationEpoch >= currentEpoch) {
+            console.log(`Found activating stake: ${lamportsToSol(stake)} SOL, activation epoch: ${activationEpoch}, current epoch: ${currentEpoch}`);
+            activatingStake += stake;
+          }
+        } catch (err) {
+          console.error("Error processing stake account:", err);
+        }
+      }
+    }
+    
+    return lamportsToSol(activatingStake);
+  } catch (error) {
+    console.error("Error fetching activating stake:", error);
+    return 0;
+  }
+}
 
 // API methods using real RPC endpoint
 export const fetchValidatorInfo = async (): Promise<ValidatorInfo | null> => {
@@ -27,18 +92,8 @@ export const fetchValidatorInfo = async (): Promise<ValidatorInfo | null> => {
     // Log the validator data for debugging purposes
     console.log("Raw validator data:", validator);
     
-    // Extract activating stake properly 
-    // Note: In some Solana RPC responses, activatingStake might not be directly available,
-    // so we need to check if it exists and has the correct type
-    let activatingStake = 0;
-    
-    // Check if there's an activatingStake field in the response
-    if ('activatingStake' in validator && typeof validator.activatingStake === 'number') {
-      activatingStake = lamportsToSol(validator.activatingStake);
-    } else {
-      console.log("No activatingStake found in the response, defaulting to 0");
-    }
-    
+    // Fetch activating stake from stake accounts
+    const activatingStake = await fetchActivatingStake(validator.votePubkey);
     console.log("Processed activatingStake:", activatingStake);
     
     return {

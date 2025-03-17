@@ -36,3 +36,42 @@ export interface RpcVoteAccount {
   epochCredits: [number, number, number][];
   rootSlot?: number;
 }
+
+// Interface for stake accounts response
+export interface StakeAccountInfo {
+  pubkey: string;
+  account: {
+    data: {
+      parsed: {
+        type: string;
+        info: {
+          meta: {
+            authorized: {
+              staker: string;
+              withdrawer: string;
+            };
+            lockup: {
+              custodian: string;
+              epoch: number;
+              unixTimestamp: number;
+            };
+            rentExemptReserve: string;
+          };
+          stake: {
+            creditsObserved: number;
+            delegation: {
+              activationEpoch: string;
+              deactivationEpoch: string;
+              stake: string;
+              voter: string;
+            };
+          };
+        };
+      };
+    };
+    executable: boolean;
+    lamports: number;
+    owner: string;
+    rentEpoch: number;
+  };
+}
