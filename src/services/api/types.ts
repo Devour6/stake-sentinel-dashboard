@@ -1,3 +1,4 @@
+
 // Types for the Solana API responses and data structures
 export interface ValidatorInfo {
   identity: string;
