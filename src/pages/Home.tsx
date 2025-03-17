@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
@@ -8,19 +9,22 @@ import { validateVotePubkey } from "@/services/solanaApi";
 import { toast } from "sonner";
 import { fetchAllValidators } from "@/services/api/validatorApi";
 import StakeModal from "@/components/StakeModal";
+import { ValidatorSearchResult } from "@/services/api/types";
 
 const Home = () => {
   const [searchInput, setSearchInput] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [validators, setValidators] = useState<Array<{name: string, votePubkey: string, identity: string}>>([]);
-  const [filteredValidators, setFilteredValidators] = useState<Array<{name: string, votePubkey: string, identity: string}>>([]);
+  const [validators, setValidators] = useState<ValidatorSearchResult[]>([]);
+  const [filteredValidators, setFilteredValidators] = useState<ValidatorSearchResult[]>([]);
   const [isStakeModalOpen, setIsStakeModalOpen] = useState(false);
+  const [isLoadingValidators, setIsLoadingValidators] = useState(true);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const loadValidators = async () => {
+      setIsLoadingValidators(true);
       try {
         const allValidators = await fetchAllValidators();
         setValidators(allValidators);
@@ -28,6 +32,8 @@ const Home = () => {
       } catch (error) {
         console.error("Failed to load validators:", error);
         toast.error("Failed to load validator list");
+      } finally {
+        setIsLoadingValidators(false);
       }
     };
     
@@ -37,17 +43,22 @@ const Home = () => {
   useEffect(() => {
     if (searchInput.trim()) {
       const searchTerm = searchInput.toLowerCase();
+      
+      // First, find exact name matches (prioritize these)
       const exactNameMatches = validators.filter(
         (validator) => validator.name?.toLowerCase() === searchTerm
       );
       
+      // Then find partial matches in name, vote pubkey, or identity
       const partialMatches = validators.filter(
         (validator) => 
-          (validator.name?.toLowerCase().includes(searchTerm) && validator.name?.toLowerCase() !== searchTerm) ||
+          (validator.name?.toLowerCase().includes(searchTerm) && 
+           validator.name?.toLowerCase() !== searchTerm) ||
           validator.votePubkey.toLowerCase().includes(searchTerm) ||
           validator.identity.toLowerCase().includes(searchTerm)
       );
       
+      // Combine and limit to top 10 results
       const filtered = [...exactNameMatches, ...partialMatches].slice(0, 10);
       
       setFilteredValidators(filtered);
@@ -66,11 +77,13 @@ const Home = () => {
     setIsSearching(true);
     
     try {
+      // First check if input is a valid vote pubkey
       if (validateVotePubkey(searchInput.trim())) {
         navigate(`/validator/${encodeURIComponent(searchInput.trim())}`);
         return;
       }
       
+      // Then check for exact name match
       const nameMatch = validators.find(v => 
         v.name?.toLowerCase() === searchInput.toLowerCase()
       );
@@ -80,6 +93,7 @@ const Home = () => {
         return;
       }
       
+      // Then check for partial matches
       const matchedValidator = validators.find(v => 
         v.votePubkey.toLowerCase() === searchInput.toLowerCase() ||
         v.identity.toLowerCase() === searchInput.toLowerCase() ||
@@ -140,15 +154,17 @@ const Home = () => {
               <div className="relative">
                 <Input
                   type="text"
-                  placeholder="Search by validator vote account, identity, or name..."
+                  placeholder={isLoadingValidators ? "Loading validators..." : "Search by validator name, vote account, or identity..."}
                   className="pl-10 bg-gojira-gray-dark border-gojira-gray-light"
                   value={searchInput}
                   onChange={handleInputChange}
                   ref={searchInputRef}
                   onFocus={() => filteredValidators.length > 0 && setShowSuggestions(true)}
                   onBlur={() => {
+                    // Delayed hide of suggestions to allow for clicks
                     setTimeout(() => setShowSuggestions(false), 200);
                   }}
+                  disabled={isLoadingValidators}
                 />
                 
                 {showSuggestions && filteredValidators.length > 0 && (
@@ -162,8 +178,19 @@ const Home = () => {
                           handleSelectValidator(validator.votePubkey);
                         }}
                       >
-                        <div className="flex items-center">
-                          <span className="font-medium">{validator.name || "Unknown"}</span>
+                        <div className="flex items-center gap-3">
+                          {validator.icon && (
+                            <img 
+                              src={validator.icon} 
+                              alt={`${validator.name || 'Validator'} logo`}
+                              className="w-6 h-6 rounded-full"
+                              onError={(e) => {
+                                // Hide broken images
+                                (e.target as HTMLImageElement).style.display = 'none';
+                              }}
+                            />
+                          )}
+                          <span className="font-medium">{validator.name || "Unknown Validator"}</span>
                         </div>
                         <span className="text-xs text-muted-foreground truncate max-w-[180px]">
                           {validator.votePubkey.slice(0, 8)}...{validator.votePubkey.slice(-8)}
@@ -178,7 +205,7 @@ const Home = () => {
               type="submit" 
               variant="destructive"
               className="bg-gojira-red hover:bg-gojira-red-dark"
-              disabled={isSearching || !searchInput.trim()}
+              disabled={isSearching || isLoadingValidators || !searchInput.trim()}
             >
               {isSearching ? (
                 <div className="h-5 w-5 border-2 border-white/20 border-t-white rounded-full animate-spin mr-2" />
