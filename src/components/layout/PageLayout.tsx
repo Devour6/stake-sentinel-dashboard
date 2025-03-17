@@ -21,8 +21,8 @@ const PageLayout = ({ children, onStakeModalOpen }: PageLayoutProps) => {
         </Button>
       </div>
 
-      <div className="w-full max-w-3xl mx-auto text-center mb-12 animate-fade-in">
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 text-white">
+      <div className="w-full max-w-3xl mx-auto text-center mb-6 animate-fade-in">
+        <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-2 text-white">
           NodeScan
         </h1>
       </div>
