@@ -60,21 +60,51 @@ export function useWallet() {
           throw new Error("Connection rejected");
         }
       }
+      else if (walletName === "MagicEden") {
+        const magicEden = (window as any).magicEden;
+        if (!magicEden) {
+          window.open("https://magiceden.io/wallet", "_blank");
+          throw new Error("MagicEden wallet is not installed");
+        }
+        
+        try {
+          const resp = await magicEden.connect();
+          walletPublicKey = resp.publicKey.toString();
+        } catch (error) {
+          console.error("User rejected the connection request", error);
+          throw new Error("Connection rejected");
+        }
+      }
       else {
-        // For Backpack, Glow, and other wallets - in a real app, 
+        // For Backpack and other wallets - in a real app, 
         // you'd implement proper connection logic for each
         const openLinks: Record<string, string> = {
           "Backpack": "https://backpack.app/",
-          "Glow": "https://glow.app/"
+          "MagicEden": "https://magiceden.io/wallet"
         };
         
-        if (openLinks[walletName]) {
+        // Check if we have a window property for this wallet
+        const walletKey = walletName.toLowerCase();
+        const walletProvider = Object.keys(window).find(key => 
+          key.toLowerCase() === walletKey || 
+          key.toLowerCase().includes(walletKey)
+        );
+        
+        if (walletProvider && (window as any)[walletProvider]?.connect) {
+          try {
+            const resp = await (window as any)[walletProvider].connect();
+            walletPublicKey = resp.publicKey.toString();
+          } catch (error) {
+            console.error(`User rejected the ${walletName} connection request`, error);
+            throw new Error("Connection rejected");
+          }
+        } else if (openLinks[walletName]) {
           window.open(openLinks[walletName], "_blank");
           throw new Error(`${walletName} wallet is not installed or not supported yet`);
+        } else {
+          // Mock connection for development
+          walletPublicKey = "5pV7aBJyZcEXPGGENNWzANkdShxf8RQEKfRHMQB8Lc9x";
         }
-        
-        // Mock connection for development
-        walletPublicKey = "5pV7aBJyZcEXPGGENNWzANkdShxf8RQEKfRHMQB8Lc9x";
       }
       
       if (walletPublicKey) {
@@ -97,12 +127,39 @@ export function useWallet() {
   };
 
   const disconnectWallet = () => {
-    // In a real implementation, you would also disconnect from the actual wallet
+    // Disconnect from the actual wallet
     if (window.solana && selectedWallet === "Phantom") {
       try {
         window.solana.disconnect();
       } catch (error) {
         console.error("Error disconnecting from Phantom:", error);
+      }
+    } else if (window.solflare && selectedWallet === "Solflare") {
+      try {
+        window.solflare.disconnect();
+      } catch (error) {
+        console.error("Error disconnecting from Solflare:", error);
+      }
+    } else if ((window as any).magicEden && selectedWallet === "MagicEden") {
+      try {
+        (window as any).magicEden.disconnect();
+      } catch (error) {
+        console.error("Error disconnecting from MagicEden:", error);
+      }
+    } else {
+      // Try to find other wallet providers
+      const walletKey = selectedWallet?.toLowerCase() || '';
+      const walletProvider = Object.keys(window).find(key => 
+        key.toLowerCase() === walletKey || 
+        key.toLowerCase().includes(walletKey)
+      );
+      
+      if (walletProvider && (window as any)[walletProvider]?.disconnect) {
+        try {
+          (window as any)[walletProvider].disconnect();
+        } catch (error) {
+          console.error(`Error disconnecting from ${selectedWallet}:`, error);
+        }
       }
     }
     

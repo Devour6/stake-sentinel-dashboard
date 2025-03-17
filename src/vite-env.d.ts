@@ -11,4 +11,16 @@ interface Window {
     connect?: () => Promise<{ publicKey: { toString: () => string } }>;
     disconnect?: () => Promise<void>;
   };
+  // Add definition for MagicEden wallet
+  magicEden?: {
+    connect?: () => Promise<{ publicKey: { toString: () => string } }>;
+    disconnect?: () => Promise<void>;
+  };
+  // Add definition for Backpack wallet
+  backpack?: {
+    connect?: () => Promise<{ publicKey: { toString: () => string } }>;
+    disconnect?: () => Promise<void>;
+  };
+  // Generic interface for other wallets
+  [key: string]: any;
 }
