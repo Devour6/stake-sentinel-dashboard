@@ -1,6 +1,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
+import Footer from "@/components/layout/Footer";
 
 interface PageLayoutProps {
   children: React.ReactNode;
@@ -24,9 +25,6 @@ const PageLayout = ({ children, onStakeModalOpen }: PageLayoutProps) => {
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 text-white">
           NodeScan
         </h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Search for any Solana validator by vote account address, identity, or name to view detailed performance metrics.
-        </p>
       </div>
 
       {children}
