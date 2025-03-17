@@ -18,6 +18,7 @@ import {
 
 // Type imports
 import type { ValidatorInfo, ValidatorMetrics, StakeHistoryItem, ValidatorSearchResult } from "./api/types";
+import type { ValidatorI, ClusterStatsI, EpochInfoI } from "./api/interfaces";
 
 // Re-export everything
 export {
@@ -31,6 +32,9 @@ export {
   type ValidatorMetrics,
   type StakeHistoryItem,
   type ValidatorSearchResult,
+  type ValidatorI,
+  type ClusterStatsI,
+  type EpochInfoI,
   
   // API methods
   fetchValidatorInfo,
