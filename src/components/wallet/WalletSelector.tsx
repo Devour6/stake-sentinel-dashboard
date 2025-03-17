@@ -2,36 +2,12 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Wallet } from "lucide-react";
 
 type WalletType = {
   name: string;
-  icon: string;
-  installUrl?: string;
   providerName?: string;
   isDetected: boolean;
-};
-
-// Safe, reliable wallet icon URLs that won't break
-const WALLET_ICONS: Record<string, string> = {
-  "phantom": "https://static.phantom.app/phantomlogo.svg",
-  "solflare": "https://solflare.com/icons/logo-icon.svg",
-  "backpack": "https://cdn.backpack.exchange/images/logos/backpack.svg",
-  "magiceden": "https://content.magiceden.io/icons/me-logo.svg",
-  "coinbase": "https://static.cdnlogo.com/logos/c/62/coinbase.svg",
-  "slope": "https://slope.finance/_next/static/media/slope-icon-circle.51688911.svg",
-  "brave": "https://brave.com/static-assets/images/brave-logo-color.svg",
-  "exodus": "https://www.exodus.com/img/logos/exodus-logo-white.svg",
-  "glow": "https://glow.app/icons/logo.svg",
-  "mathwallet": "https://mathwallet.org/assets/images/logo.svg",
-  "clover": "https://clv.org/wp-content/themes/rtasmarttheme/img/clover-icon.svg",
-  "coin98": "https://coin98.s3.ap-southeast-1.amazonaws.com/Logo-coin98.svg",
-  "bitkeep": "https://bitkeep.com/img/logo.svg",
-  "sollet": "https://sollet.io/logo.svg",
-  "torus": "https://tor.us/assets/images/torus-brand-logo.svg",
-  "nightly": "https://nightly.app/static/logo.svg",
-  "defi wallet": "https://crypto.com/eea/nft/assets/images/logo-crypto.svg",
-  "strike": "https://strike.me/share-images/strike_logo_icon.svg",
+  installUrl?: string;
 };
 
 // Wallet display names mappings
@@ -144,11 +120,9 @@ const WalletSelector = ({ onWalletSelect, isConnecting, selectedWallet }: Wallet
     // First add detected wallets
     for (const [id, provider] of Object.entries(detectedProviders)) {
       const displayName = getDisplayNameForProvider(id);
-      const iconUrl = getIconForWallet(displayName);
       
       walletList.push({
         name: displayName,
-        icon: iconUrl,
         providerName: id,
         isDetected: true
       });
@@ -166,12 +140,10 @@ const WalletSelector = ({ onWalletSelect, isConnecting, selectedWallet }: Wallet
         return;
       }
       
-      const iconUrl = getIconForWallet(name);
       const installUrl = getInstallUrlForWallet(name);
       
       walletList.push({
         name,
-        icon: iconUrl,
         installUrl,
         isDetected: false
       });
@@ -241,20 +213,6 @@ const WalletSelector = ({ onWalletSelect, isConnecting, selectedWallet }: Wallet
     return name;
   };
 
-  const getIconForWallet = (walletName: string): string => {
-    const walletLower = walletName.toLowerCase();
-    
-    // Check for exact matches in our icon mapping
-    for (const [key, url] of Object.entries(WALLET_ICONS)) {
-      if (walletLower === key || walletLower.includes(key) || key.includes(walletLower)) {
-        return url;
-      }
-    }
-    
-    // Fallback to generic wallet icon hosted locally (should be 100% reliable)
-    return "/placeholder.svg";
-  };
-
   const handleWalletClick = async (wallet: WalletType) => {
     // For detected wallets, try to connect directly
     if (wallet.isDetected) {
@@ -273,12 +231,6 @@ const WalletSelector = ({ onWalletSelect, isConnecting, selectedWallet }: Wallet
     await onWalletSelect(wallet.name);
   };
 
-  // Helper function to handle image loading errors
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>, walletName: string) => {
-    e.currentTarget.src = "/placeholder.svg"; 
-    console.log(`Failed to load icon for ${walletName}, using placeholder`);
-  };
-
   return (
     <div className="py-4 space-y-4">
       {wallets.filter(w => w.isDetected).length > 0 && (
@@ -289,24 +241,15 @@ const WalletSelector = ({ onWalletSelect, isConnecting, selectedWallet }: Wallet
               <Button
                 key={wallet.name}
                 variant="outline"
-                className="flex items-center justify-start gap-2 py-5 border-gojira-gray-light hover:bg-gojira-gray-light relative"
+                className="flex items-center justify-center py-5 border-gojira-gray-light hover:bg-gojira-gray-light relative"
                 disabled={isConnecting}
                 onClick={() => handleWalletClick(wallet)}
                 onMouseEnter={() => setHoveredWallet(wallet.name)}
                 onMouseLeave={() => setHoveredWallet(null)}
               >
                 {isConnecting && selectedWallet === wallet.name ? (
-                  <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <div className="h-5 w-5 flex items-center justify-center">
-                    <img 
-                      src={wallet.icon} 
-                      alt={wallet.name} 
-                      className="h-5 w-5 object-contain" 
-                      onError={(e) => handleImageError(e, wallet.name)}
-                    />
-                  </div>
-                )}
+                  <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin mr-2" />
+                ) : null}
                 <span>{wallet.name}</span>
               </Button>
             ))}
@@ -322,24 +265,15 @@ const WalletSelector = ({ onWalletSelect, isConnecting, selectedWallet }: Wallet
               <Button
                 key={wallet.name}
                 variant="outline"
-                className="flex items-center justify-start gap-2 py-5 border-gojira-gray-light hover:bg-gojira-gray-light relative"
+                className="flex items-center justify-center py-5 border-gojira-gray-light hover:bg-gojira-gray-light relative"
                 disabled={isConnecting}
                 onClick={() => handleWalletClick(wallet)}
                 onMouseEnter={() => setHoveredWallet(wallet.name)}
                 onMouseLeave={() => setHoveredWallet(null)}
               >
                 {isConnecting && selectedWallet === wallet.name ? (
-                  <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <div className="h-5 w-5 flex items-center justify-center">
-                    <img 
-                      src={wallet.icon} 
-                      alt={wallet.name} 
-                      className="h-5 w-5 object-contain" 
-                      onError={(e) => handleImageError(e, wallet.name)}
-                    />
-                  </div>
-                )}
+                  <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin mr-2" />
+                ) : null}
                 <span>{wallet.name}</span>
                 
                 {hoveredWallet === wallet.name && (
