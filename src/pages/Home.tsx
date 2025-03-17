@@ -120,15 +120,30 @@ const Home = () => {
       }
       
       // Partial matches - try to find the best match
-      const matchedValidator = validators.find(v => 
-        v.votePubkey.toLowerCase().includes(searchInput.toLowerCase()) ||
-        v.identity.toLowerCase().includes(searchInput.toLowerCase()) ||
+      const partialNameMatches = validators.filter(v => 
         v.name?.toLowerCase().includes(searchInput.toLowerCase())
       );
+      
+      if (partialNameMatches.length > 0) {
+        // Sort by length of name (shorter names usually indicate better matches)
+        const bestMatch = partialNameMatches.sort((a, b) => 
+          (a.name?.length || 0) - (b.name?.length || 0)
+        )[0];
+        navigate(`/validator/${encodeURIComponent(bestMatch.votePubkey)}`);
+        return;
+      }
+      
+      const partialPubkeyMatch = validators.find(v => 
+        v.votePubkey.toLowerCase().includes(searchInput.toLowerCase()) ||
+        v.identity.toLowerCase().includes(searchInput.toLowerCase())
+      );
 
-      if (matchedValidator) {
-        navigate(`/validator/${encodeURIComponent(matchedValidator.votePubkey)}`);
-      } else if (filteredValidators.length > 0) {
+      if (partialPubkeyMatch) {
+        navigate(`/validator/${encodeURIComponent(partialPubkeyMatch.votePubkey)}`);
+        return;
+      }
+      
+      if (filteredValidators.length > 0) {
         navigate(`/validator/${encodeURIComponent(filteredValidators[0].votePubkey)}`);
       } else {
         toast.error("No validator found matching your search");

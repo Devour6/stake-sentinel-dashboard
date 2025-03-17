@@ -1,4 +1,3 @@
-
 import { toast } from "sonner";
 import { RPC_ENDPOINT } from "./constants";
 import { ValidatorSearchResult } from "./types";
@@ -6,7 +5,56 @@ import { lamportsToSol } from "./utils";
 import { fetchVoteAccounts } from "./epochApi";
 import { fetchValidatorConfig } from "./validatorConfigApi";
 
-// Fetch all validators for the search function with more comprehensive results
+const WELL_KNOWN_VALIDATORS = [
+  { name: "Helius", votePubkey: "HeZU7mjJx9FFLX8ad4fErHhiTXNxwqLzW3AVUBCfXxT", identity: "7TMu26hC7sfyEqmA8aXGLLx66JD8WMuKQkExW2K8rfwx", icon: null },
+  { name: "Gojira", votePubkey: "goJiRADNdmfnJ4iWEyft7KaYMPTVsRba2Ee1akDEBXb", identity: "gojir4WnhS7VS1JdbnanJMzaMfr4UD7KeX1ixWAHEmw", icon: null },
+  { name: "Solana Foundation", votePubkey: "GhBd6sozvfR9F2YwHVj2tAHbGyzQSuHxWNn5K8ofuYkx", identity: "7BJUCjD9sMQQ3LXeNZ3j8FQmJxMS1hC9t5S2g4gtLQBJ", icon: null },
+  { name: "Jito", votePubkey: "E5ruSVxEKrAoXAcuMaAfcN5tX6bUYK6ouJcS5yAbs6Zh", identity: "88E5dLt2WQ6WNbQTXoZYwywickdGF9U5e3tbeYxQmHJx", icon: null },
+  { name: "Marinade", votePubkey: "DQ7D6ZRtKbBSxCcAunEkoTzQhCBKLPdzTjJRoFBDkntj", identity: "HxkZUjg1RnCUTJ8j1Lc9J4xzQXGbQMY8kqbAMU4rMDKr", icon: null },
+  { name: "Laine", votePubkey: "9QU2QSxhb24FUX3Tu2FpczXjpK3VYrvRudywSZaM29mF", identity: "GE6atKoWiQ2pt3zL7N13pjNHjdLVys8LinG8qeJLcAiL", icon: null },
+  { name: "GenesysGo", votePubkey: "4BXYNuSEqM5HLJYonvgwe2ZLQV1RAGmkZYsG9BV6vYVW", identity: "3xpDCC4XtxAUTgXBHyuNKkzU2HZU3p2NT2XuUWk5LKWr", icon: null },
+  { name: "Chorus One", votePubkey: "CZ8HVPSQhtXHSsK1j2L5tYXHCb2qrPQ5re2xMYhSMUAg", identity: "67Xdd5GF5oYdGGGXK2L6YJ1syt97GXnGiM7m8ER2X6VP", icon: null },
+  { name: "Figment", votePubkey: "FBmNp4VBze47nQ3J3qeMboPdQfqRJzKp9kK6wLu7rhCG", identity: "5n8KCdzqtvTnhJHJVi8jgEJYJ1GiSXRrN6YbZN15h6g5", icon: null },
+  { name: "MF 64", votePubkey: "EuZ5JiQ2P2qjyRTQ5VqcJwPPt3z9cRC2gzAaVxVFiqvI", identity: "CG7zvuaN2x6ZcQKAMU6gehkLyEYEN9osYrZY4YJyVbCM", icon: null },
+  { name: "Staking Facilities", votePubkey: "8LULGgNdsY6gNMmEcezWQSZvE3HCCccTuGAa3JMx8XkL", identity: "5gKtgyjCNCBvD5qHzNdVMQQgBXXqQMYnzyG4bsC6syKS", icon: null },
+  { name: "P2P", votePubkey: "9NA5HZ3R2zz5Rjt6aBRgr1ZYwKJf1V9ndh9NnytRVVvt", identity: "Ft9LS8UFaD1Mi4mYnUVdmDFBMxpDjeMSKMbZSxHv2vCd", icon: null },
+  { name: "Everstake", votePubkey: "RxH2oHLtW9P6y3GSWfXjjgfA4qP5MZrFzpUCxkVdLhY", identity: "CRzMxdyS56N2vkb55X5q155sSdVkjZhiFedWzzhvBXSN", icon: null },
+  { name: "Certus One", votePubkey: "9SfKTdP5HLh3P4VP7eZ3houc5MP2ztGGJchKJ6U9XGbp", identity: "5vxoRv2P12q4K4cWPCJkvPjg1A4ZYANeFZdA2LCTV4uX", icon: null },
+  { name: "Blockdaemon", votePubkey: "3PdGUBtJK2k1FiMdX3QzEKMYZFcbgn7rGd3QMt5hPuHZ", identity: "EX73A5dC2LRSEGPvpWyeRvVxbH5JM7hf4rkBUxKcT3fj", icon: null },
+  { name: "Jump Crypto", votePubkey: "D8srGYyKYoXEyXfYHG3SahXjSUJxicFQYZKyXxJ7fGPf", identity: "DmRKm16KZDvSgwSfpPyejiFcQjZJ7N9myDmd7prXzLtY", icon: null },
+  { name: "Staked", votePubkey: "51JBzSTU5rAM8gLAVQKgp4WoLsNmozTw1GOX39UpsJtU", identity: "5R1aUGVRYYrvkGzcxJJCDVxnB3sMrWcJgAopVi8Vynzc", icon: null },
+  { name: "Coinbase Cloud", votePubkey: "EH6VQ9oE6HRvxWYeAUG4GiZFpZ3vb7j2fGquAktTsRQJ", identity: "7PdkaCviHKVo8ouPDWYZyt3VxQMxCTo9ZXYnGdKZj8J2", icon: null },
+  { name: "Binance Staking", votePubkey: "DMqoDi7N76DNS7dN2KYc8jYfY2Jg3VfdQyTMNYTmgX6t", identity: "dHchUWFdQzBTkBqwssCMipNLu8h3zuZh4gXNvqMsX9g", icon: null },
+  { name: "OKX", votePubkey: "HMU77m6WSL9Xew9YvVCgz1hLuhzamz74eD9avi4XPdr", identity: "11233QaJEMWWJC5VhYL8FeKWu7J7Z3CSZ1WCnB2wUqip", icon: null },
+  { name: "Kraken", votePubkey: "5NwYJ7pqtAzuJaQHQAhxMZHXG57VTqas3zXxmZQiuE2V", identity: "7VGU4ZwR1e1AFekqbqv2gvjeg47e1PwMPm4BfLtYE8x3", icon: null },
+  { name: "Anchorage Digital", votePubkey: "4qWoqt71j161Gg4YnYKEGrn5p7MjhLdKzzWmYDBxpwFE", identity: "GgUcGMbFY1FbRCpyMvZajnbfkEkJZgHXYSZwKxUTN7K8", icon: null },
+  { name: "ShineDAO", votePubkey: "8SQEcP4FaYQySktNQeyxF3w8pvArx3oMEh7fPrzkN9pu", identity: "9NFpWc1TJCne4xnGgJZHmyFNMnMeRkXv4FCAcqTs63W4", icon: null },
+  { name: "Dokia Capital", votePubkey: "H3GhqPMwvGLdxWg3QJGjXDSkFSJCsFk3Tx9pUTsh2h4W", identity: "dkCNBsnRkZBdQkAgdZxdbwJh6BY6VEK9hmZJ2rLmANv", icon: null },
+  { name: "Forbole", votePubkey: "AkVoTV59mjJ8r5KNrAFUtUhcH1RZ8Mmd7sDX3jJLxntg", identity: "CHnhV7WR5hJXLQNgvg3rx2TzpSeXmYC8QMkfvxvDQk8t", icon: null },
+  { name: "Stake.Fish", votePubkey: "D9CfRZohsSL2JhgQFGvRuu5q4wkuj6REu8GoGHYRN8My", identity: "AUgLtpPVvxnmIRUGDLqVGcnsX54gwuJ6JFij6stGECn2", icon: null },
+  { name: "Alameda Research", votePubkey: "GGiiHefWKXvXAdPwrw1asAKDY1fLcZZ6YGKZQkPYPMPr", identity: "37LWEXHXrCYBKf7S5SkKGrBm9isUhd4DyJ3NCchzWNyF", icon: null },
+  { name: "Coinlist", votePubkey: "6WL8u9FV3RmwvmWmZ5tTQxYKJ38Cf8RWdBcfnqG6eTXY", identity: "Gj9RdU3AvEBKLmsX3z39Dysso2VThRckvDRTURMyUuE2", icon: null },
+  { name: "melea", votePubkey: "DRp1Scxvq4ZoNbgHpNNTYVqsEja9jdA9bqUoFG7kWK6B", identity: "6Qr5qJ5sEPW3QymKcPVacKEGkvg1OZQQnEnTHRJkE9Bu", icon: null },
+  { name: "BL Staking", votePubkey: "EVd8FFVB54svYdZdG6hH4F4hTbqre5mpQ7XyF5rKUmes", identity: "Dm7qJrYWTLvk3dYX7UBCjKPBKpzQTL4wdGpwMNpcNBi2", icon: null },
+  { name: "Chainflow", votePubkey: "BLVJg8zgQnwVhxrxbRDzwXvcwsKzPLTQYWxo6V7W8jxJ", identity: "3TnVxcBwxASbCmeJ4mYVR7a9h9an94NvTY4RP8KVLCP7", icon: null },
+  { name: "Stakeconomy", votePubkey: "B24WAtQQyUrY3hLXKUMnCNgMvk9WR8xuU7uMYeJMYWQn", identity: "EYgUfznL7jQ2c3JCXgxc2s2qxsCxw9nxYJ7YVGKBT6R", icon: null },
+  { name: "mcf", votePubkey: "7mmRxJNttYcJVNsJmiLjTHYmNDt8xn3fQ8JnaNVahKUk", identity: "HWHvQhFmJB3NUcu1aihKmrKegfVxBEHzwVX6yZCKEsi1", icon: null },
+  { name: "Cosmostation", votePubkey: "9mbQ9mrRjBGiUVnz9Tdf7PuAkWomw3GLZ6Sup3R93Gf8", identity: "7y1f6Mih1gJhrpzPNSMDyTQd12MFQVvecUDHHY5yz2P1", icon: null },
+  { name: "HashQuark", votePubkey: "FdFYHNCyTJYeJ7MUhyjuSFnUy5RydfyZ6pjx7CDeBYMS", identity: "FiPmNbK38XWzFZhfBzPHRazh689gxZ4gqEDL8qEUQ8YV", icon: null },
+  { name: "Blockscope", votePubkey: "HrXWqaKF2NJUc5RUowzYJ5yX9y6AeZbJaAZdDtSZ8n6W", identity: "4t9em1dsapgBxhUhUJcKFHgwPJNnWDrNwAGJqqUQmPvY", icon: null },
+  { name: "01node.com", votePubkey: "DP7V5gZctCzBmf6DqsQXvBYrqWGUBZoufxUKzx5MgMew", identity: "DJv6YQV2tSpi7cMxJ3mCdYx9ySXwK6HdTF5BoXBfWVoW", icon: null },
+  { name: "Solstake", votePubkey: "49AqLYbpgHHdb3qWyPMAaZmwLVNTNsbxmBgVZdhoBQfF", identity: "GnLdRq6PFC4SX5fPRFbCsQEkUNrHr9mAgVXr1kDMU4qQ", icon: null },
+  { name: "Wanderer", votePubkey: "BxTUwfMiokzimVDLDupGfVPmWXfLSGVpkGr9TUmetn6b", identity: "BeGmyi98V9U8XrtCVo9KTgLNtnn1TjKmyVKKg7BuWSL", icon: null },
+  { name: "NTT DATA", votePubkey: "2qvEqds4ZVnkEpbiz8Hq3xt3UjRoGXGEaSKgzqb4D8J9", identity: "3oVexC5D5UwPTECRb142K6nU52HtJx1NHCY7+4aHGH+q", icon: null },
+  { name: "P2P.ORG", votePubkey: "FC8bhGCso5sJRxGXT5JbMDm7J9KaRvQzSXYMtongBZ33", identity: "6kDyGMHbuGGHvuq71DyqR6V8N4maLBx8pGiA2L2aKv3R", icon: null },
+  { name: "Kysenpool.io | Staking", votePubkey: "5NH47Zk9NAzfbtqNpUtn8CQgNZeZE88aa2NRpfe7DyTD", identity: "CjhKCjNC1WUgBjAGst3D2XmSsWHvt3zGasasmogPTY6J", icon: null },
+  { name: "InfStones", votePubkey: "9HSjDs6MBGZrZRJBLnCqrRAVxpwq6JQW3PrBa6qEsTYF", identity: "DbF7QuF8NNWgV3Vj6Z8qaHvZj6QZv9Xm5t3EptfzN76d", icon: null },
+  { name: "Chorus One", votePubkey: "EoK33UHJHPRodKxaVsU5pKxuGCNiLBW4GK7QKUMpHP9s", identity: "FQsr4BVWy8H1qo3b1Cv79bZ5NcbQwiKeCfbNm9ducpvw", icon: null },
+  { name: "Chainode Tech (node)", votePubkey: "12oWRNKrW8eXvVxLX7cMHWrnJMqZaZK8gxLNkFgbVf3n", identity: "FHf7WtMZLkNYq7NGGBAF78ZKzKZ7oBbGbAEZR5c6J8eZ", icon: null },
+  { name: "POS Bakerz", votePubkey: "3SpZRJQcQ4rJynvCGNRBbQjkHGXEMpVsJvTWKvR17gZN", identity: "8c5ZTPGQxEQyZ1Kg7vRGZmQVvAwmRmeGjBPE3VnZjxTh", icon: null },
+  { name: "Gunstar DAO", votePubkey: "5kgFd4N82ZbX8HpmCpX3kRgLTaBcNTkpmJmzigpzLiS6", identity: "8WwMJ2X5RYvbiXqLaRWv7tQJbJnHWY2LFxsKCVwuTVUc", icon: null }
+];
+
 export const fetchAllValidators = async (): Promise<ValidatorSearchResult[]> => {
   try {
     console.log("Fetching all validators...");
@@ -38,22 +86,36 @@ export const fetchAllValidators = async (): Promise<ValidatorSearchResult[]> => 
     
     console.log(`Fetched ${allValidators.length} total validators (${current.length} active, ${delinquent.length} delinquent)`);
     
+    // Add all well-known validators to ensure they're in the list
+    WELL_KNOWN_VALIDATORS.forEach(known => {
+      if (!allValidators.some(v => v.votePubkey === known.votePubkey)) {
+        allValidators.push({
+          ...known,
+          activatedStake: 0,
+          commission: 0,
+          delinquent: false
+        });
+      }
+    });
+    
     // Fetch on-chain validator info for proper names and logos
     try {
       const onChainValidators = await fetchValidatorConfig();
+      console.log(`Fetched ${onChainValidators.length} on-chain validator configurations`);
       
-      // Update validators with proper names from on-chain data
-      allValidators.forEach(validator => {
-        const onChainInfo = onChainValidators.find(v => 
-          v.identity === validator.identity || 
-          v.votePubkey === validator.votePubkey
-        );
-        
-        if (onChainInfo) {
-          validator.name = onChainInfo.name;
-          validator.icon = onChainInfo.icon;
-        }
-      });
+      // Match on-chain config with validators by identity key and update names
+      if (onChainValidators.length > 0) {
+        allValidators.forEach(validator => {
+          const onChainInfo = onChainValidators.find(v => 
+            v.identity === validator.identity
+          );
+          
+          if (onChainInfo && onChainInfo.name) {
+            validator.name = onChainInfo.name;
+            if (onChainInfo.icon) validator.icon = onChainInfo.icon;
+          }
+        });
+      }
       
       console.log("Updated validators with on-chain names");
     } catch (error) {
@@ -61,70 +123,17 @@ export const fetchAllValidators = async (): Promise<ValidatorSearchResult[]> => 
       // Continue with fallback names if this fails
     }
     
-    // Add well-known validators with proper names if they weren't already in the list
-    const knownValidators: ValidatorSearchResult[] = [
-      { name: "Gojira", votePubkey: "goJiRADNdmfnJ4iWEyft7KaYMPTVsRba2Ee1akDEBXb", identity: "gojir4WnhS7VS1JdbnanJMzaMfr4UD7KeX1ixWAHEmw", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "Solana Foundation", votePubkey: "GhBd6sozvfR9F2YwHVj2tAHbGyzQSuHxWNn5K8ofuYkx", identity: "7BJUCjD9sMQQ3LXeNZ3j8FQmJxMS1hC9t5S2g4gtLQBJ", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "Jito", votePubkey: "E5ruSVxEKrAoXAcuMaAfcN5tX6bUYK6ouJcS5yAbs6Zh", identity: "88E5dLt2WQ6WNbQTXoZYwywickdGF9U5e3tbeYxQmHJx", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "Marinade", votePubkey: "DQ7D6ZRtKbBSxCcAunEkoTzQhCBKLPdzTjJRoFBDkntj", identity: "HxkZUjg1RnCUTJ8j1Lc9J4xzQXGbQMY8kqbAMU4rMDKr", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "Laine", votePubkey: "9QU2QSxhb24FUX3Tu2FpczXjpK3VYrvRudywSZaM29mF", identity: "GE6atKoWiQ2pt3zL7N13pjNHjdLVys8LinG8qeJLcAiL", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "GenesysGo", votePubkey: "4BXYNuSEqM5HLJYonvgwe2ZLQV1RAGmkZYsG9BV6vYVW", identity: "3xpDCC4XtxAUTgXBHyuNKkzU2HZU3p2NT2XuUWk5LKWr", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "Chorus One", votePubkey: "CZ8HVPSQhtXHSsK1j2L5tYXHCb2qrPQ5re2xMYhSMUAg", identity: "67Xdd5GF5oYdGGGXK2L6YJ1syt97GXnGiM7m8ER2X6VP", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "Figment", votePubkey: "FBmNp4VBze47nQ3J3qeMboPdQfqRJzKp9kK6wLu7rhCG", identity: "5n8KCdzqtvTnhJHJVi8jgEJYJ1GiSXRrN6YbZN15h6g5", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "MF 64", votePubkey: "EuZ5JiQ2P2qjyRTQ5VqcJwPPt3z9cRC2gzAaVxVFiqvI", identity: "CG7zvuaN2x6ZcQKAMU6gehkLyEYEN9osYrZY4YJyVbCM", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "Staking Facilities", votePubkey: "8LULGgNdsY6gNMmEcezWQSZvE3HCCccTuGAa3JMx8XkL", identity: "5gKtgyjCNCBvD5qHzNdVMQQgBXXqQMYnzyG4bsC6syKS", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "P2P", votePubkey: "9NA5HZ3R2zz5Rjt6aBRgr1ZYwKJf1V9ndh9NnytRVVvt", identity: "Ft9LS8UFaD1Mi4mYnUVdmDFBMxpDjeMSKMbZSxHv2vCd", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "Everstake", votePubkey: "RxH2oHLtW9P6y3GSWfXjjgfA4qP5MZrFzpUCxkVdLhY", identity: "CRzMxdyS56N2vkb55X5q155sSdVkjZhiFedWzzhvBXSN", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "Certus One", votePubkey: "9SfKTdP5HLh3P4VP7eZ3houc5MP2ztGGJchKJ6U9XGbp", identity: "5vxoRv2P12q4K4cWPCJkvPjg1A4ZYANeFZdA2LCTV4uX", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "Blockdaemon", votePubkey: "3PdGUBtJK2k1FiMdX3QzEKMYZFcbgn7rGd3QMt5hPuHZ", identity: "EX73A5dC2LRSEGPvpWyeRvVxbH5JM7hf4rkBUxKcT3fj", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "Jump Crypto", votePubkey: "D8srGYyKYoXEyXfYHG3SahXjSUJxicFQYZKyXxJ7fGPf", identity: "DmRKm16KZDvSgwSfpPyejiFcQjZJ7N9myDmd7prXzLtY", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "Staked", votePubkey: "51JBzSTU5rAM8gLAVQKgp4WoLsNmozTw1GOX39UpsJtU", identity: "5R1aUGVRYYrvkGzcxJJCDVxnB3sMrWcJgAopVi8Vynzc", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "Coinbase Cloud", votePubkey: "EH6VQ9oE6HRvxWYeAUG4GiZFpZ3vb7j2fGquAktTsRQJ", identity: "7PdkaCviHKVo8ouPDWYZyt3VxQMxCTo9ZXYnGdKZj8J2", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "Binance Staking", votePubkey: "DMqoDi7N76DNS7dN2KYc8jYfY2Jg3VfdQyTMNYTmgX6t", identity: "dHchUWFdQzBTkBqwssCMipNLu8h3zuZh4gXNvqMsX9g", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "OKX", votePubkey: "HMU77m6WSL9Xew9YvVCgz1hLuhzamz74eD9avi4XPdr", identity: "11233QaJEMWWJC5VhYL8FeKWu7J7Z3CSZ1WCnB2wUqip", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "Kraken", votePubkey: "5NwYJ7pqtAzuJaQHQAhxMZHXG57VTqas3zXxmZQiuE2V", identity: "7VGU4ZwR1e1AFekqbqv2gvjeg47e1PwMPm4BfLtYE8x3", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "Anchorage Digital", votePubkey: "4qWoqt71j161Gg4YnYKEGrn5p7MjhLdKzzWmYDBxpwFE", identity: "GgUcGMbFY1FbRCpyMvZajnbfkEkJZgHXYSZwKxUTN7K8", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "ShineDAO", votePubkey: "8SQEcP4FaYQySktNQeyxF3w8pvArx3oMEh7fPrzkN9pu", identity: "9NFpWc1TJCne4xnGgJZHmyFNMnMeRkXv4FCAcqTs63W4", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "Dokia Capital", votePubkey: "H3GhqPMwvGLdxWg3QJGjXDSkFSJCsFk3Tx9pUTsh2h4W", identity: "dkCNBsnRkZBdQkAgdZxdbwJh6BY6VEK9hmZJ2rLmANv", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "Forbole", votePubkey: "AkVoTV59mjJ8r5KNrAFUtUhcH1RZ8Mmd7sDX3jJLxntg", identity: "CHnhV7WR5hJXLQNgvg3rx2TzpSeXmYC8QMkfvxvDQk8t", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "Stake.Fish", votePubkey: "D9CfRZohsSL2JhgQFGvRuu5q4wkuj6REu8GoGHYRN8My", identity: "AUgLtpPVvxnmIRUGDLqVGcnsX54gwuJ6JFij6stGECn2", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "Alameda Research", votePubkey: "GGiiHefWKXvXAdPwrw1asAKDY1fLcZZ6YGKZQkPYPMPr", identity: "37LWEXHXrCYBKf7S5SkKGrBm9isUhd4DyJ3NCchzWNyF", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "Coinlist", votePubkey: "6WL8u9FV3RmwvmWmZ5tTQxYKJ38Cf8RWdBcfnqG6eTXY", identity: "Gj9RdU3AvEBKLmsX3z39Dysso2VThRckvDRTURMyUuE2", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "melea", votePubkey: "DRp1Scxvq4ZoNbgHpNNTYVqsEja9jdA9bqUoFG7kWK6B", identity: "6Qr5qJ5sEPW3QymKcPVacKEGkvg1OZQQnEnTHRJkE9Bu", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "BL Staking", votePubkey: "EVd8FFVB54svYdZdG6hH4F4hTbqre5mpQ7XyF5rKUmes", identity: "Dm7qJrYWTLvk3dYX7UBCjKPBKpzQTL4wdGpwMNpcNBi2", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "Chainflow", votePubkey: "BLVJg8zgQnwVhxrxbRDzwXvcwsKzPLTQYWxo6V7W8jxJ", identity: "3TnVxcBwxASbCmeJ4mYVR7a9h9an94NvTY4RP8KVLCP7", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "Stakeconomy", votePubkey: "B24WAtQQyUrY3hLXKUMnCNgMvk9WR8xuU7uMYeJMYWQn", identity: "EYgUfznL7jQ2c3JCXgxc2s2qxsCxw9nxYJ7YVGKBT6R", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "mcf", votePubkey: "7mmRxJNttYcJVNsJmiLjTHYmNDt8xn3fQ8JnaNVahKUk", identity: "HWHvQhFmJB3NUcu1aihKmrKegfVxBEHzwVX6yZCKEsi1", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "Cosmostation", votePubkey: "9mbQ9mrRjBGiUVnz9Tdf7PuAkWomw3GLZ6Sup3R93Gf8", identity: "7y1f6Mih1gJhrpzPNSMDyTQd12MFQVvecUDHHY5yz2P1", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "HashQuark", votePubkey: "FdFYHNCyTJYeJ7MUhyjuSFnUy5RydfyZ6pjx7CDeBYMS", identity: "FiPmNbK38XWzFZhfBzPHRazh689gxZ4gqEDL8qEUQ8YV", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "Blockscope", votePubkey: "HrXWqaKF2NJUc5RUowzYJ5yX9y6AeZbJaAZdDtSZ8n6W", identity: "4t9em1dsapgBxhUhUJcKFHgwPJNnWDrNwAGJqqUQmPvY", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "01node.com", votePubkey: "DP7V5gZctCzBmf6DqsQXvBYrqWGUBZoufxUKzx5MgMew", identity: "DJv6YQV2tSpi7cMxJ3mCdYx9ySXwK6HdTF5BoXBfWVoW", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "Solstake", votePubkey: "49AqLYbpgHHdb3qWyPMAaZmwLVNTNsbxmBgVZdhoBQfF", identity: "GnLdRq6PFC4SX5fPRFbCsQEkUNrHr9mAgVXr1kDMU4qQ", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "Wanderer", votePubkey: "BxTUwfMiokzimVDLDupGfVPmWXfLSGVpkGr9TUmetn6b", identity: "BeGmyi98V9U8XrtCVo9KTgLNtnn1TjKmyVKKg7BuWSL", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "NTT DATA", votePubkey: "2qvEqds4ZVnkEpbiz8Hq3xt3UjRoGXGEaSKgzqb4D8J9", identity: "3oVexC5D5UwPTECRb142K6nU52HtJx1NHCY7+4aHGH+q", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "P2P.ORG", votePubkey: "FC8bhGCso5sJRxGXT5JbMDm7J9KaRvQzSXYMtongBZ33", identity: "6kDyGMHbuGGHvuq71DyqR6V8N4maLBx8pGiA2L2aKv3R", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "Kysenpool.io | Staking", votePubkey: "5NH47Zk9NAzfbtqNpUtn8CQgNZeZE88aa2NRpfe7DyTD", identity: "CjhKCjNC1WUgBjAGst3D2XmSsWHvt3zGasasmogPTY6J", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "InfStones", votePubkey: "9HSjDs6MBGZrZRJBLnCqrRAVxpwq6JQW3PrBa6qEsTYF", identity: "DbF7QuF8NNWgV3Vj6Z8qaHvZj6QZv9Xm5t3EptfzN76d", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "Chorus One", votePubkey: "EoK33UHJHPRodKxaVsU5pKxuGCNiLBW4GK7QKUMpHP9s", identity: "FQsr4BVWy8H1qo3b1Cv79bZ5NcbQwiKeCfbNm9ducpvw", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "Chainode Tech (node)", votePubkey: "12oWRNKrW8eXvVxLX7cMHWrnJMqZaZK8gxLNkFgbVf3n", identity: "FHf7WtMZLkNYq7NGGBAF78ZKzKZ7oBbGbAEZR5c6J8eZ", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "POS Bakerz", votePubkey: "3SpZRJQcQ4rJynvCGNRBbQjkHGXEMpVsJvTWKvR17gZN", identity: "8c5ZTPGQxEQyZ1Kg7vRGZmQVvAwmRmeGjBPE3VnZjxTh", icon: null, activatedStake: 0, commission: 10, delinquent: false },
-      { name: "Gunstar DAO", votePubkey: "5kgFd4N82ZbX8HpmCpX3kRgLTaBcNTkpmJmzigpzLiS6", identity: "8WwMJ2X5RYvbiXqLaRWv7tQJbJnHWY2LFxsKCVwuTVUc", icon: null, activatedStake: 0, commission: 10, delinquent: false }
-    ];
-    
-    // Update or add known validators
-    knownValidators.forEach(known => {
-      const existingIndex = allValidators.findIndex(v => v.votePubkey === known.votePubkey);
-      if (existingIndex >= 0) {
-        // Update name and icon if not already set
-        if (!allValidators[existingIndex].name) {
-          allValidators[existingIndex].name = known.name;
+    // Update names from well-known validators list for any that weren't found on-chain
+    allValidators.forEach(validator => {
+      if (!validator.name) {
+        const knownValidator = WELL_KNOWN_VALIDATORS.find(
+          known => known.votePubkey === validator.votePubkey || known.identity === validator.identity
+        );
+        
+        if (knownValidator) {
+          validator.name = knownValidator.name;
+          if (knownValidator.icon) validator.icon = knownValidator.icon;
         }
-        if (!allValidators[existingIndex].icon) {
-          allValidators[existingIndex].icon = known.icon;
-        }
-      } else {
-        // Add new validator if not in the list
-        allValidators.push(known);
       }
     });
     
@@ -143,6 +152,11 @@ export const fetchAllValidators = async (): Promise<ValidatorSearchResult[]> => 
   } catch (error) {
     console.error("Error fetching validators:", error);
     toast.error("Failed to fetch validators");
-    return [];
+    return WELL_KNOWN_VALIDATORS.map(v => ({
+      ...v,
+      activatedStake: 0,
+      commission: 0,
+      delinquent: false
+    }));
   }
 };
