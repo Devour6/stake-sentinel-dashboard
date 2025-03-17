@@ -6,21 +6,41 @@ interface Window {
     isPhantom?: boolean;
     connect?: () => Promise<{ publicKey: { toString: () => string } }>;
     disconnect?: () => Promise<void>;
+    signTransaction?: () => Promise<any>;
+    signAllTransactions?: () => Promise<any>;
+    signMessage?: () => Promise<any>;
   };
   solflare?: {
     connect?: () => Promise<{ publicKey: { toString: () => string } }>;
     disconnect?: () => Promise<void>;
+    signTransaction?: () => Promise<any>;
+    signAllTransactions?: () => Promise<any>;
+    signMessage?: () => Promise<any>;
   };
-  // Add definition for MagicEden wallet
+  // Magic Eden wallet
   magicEden?: {
     connect?: () => Promise<{ publicKey: { toString: () => string } }>;
     disconnect?: () => Promise<void>;
+    signTransaction?: () => Promise<any>;
+    signAllTransactions?: () => Promise<any>;
+    signMessage?: () => Promise<any>;
   };
-  // Add definition for Backpack wallet
+  // Alternative capitalization
+  magiceden?: {
+    connect?: () => Promise<{ publicKey: { toString: () => string } }>;
+    disconnect?: () => Promise<void>;
+    signTransaction?: () => Promise<any>;
+    signAllTransactions?: () => Promise<any>;
+    signMessage?: () => Promise<any>;
+  };
+  // Backpack wallet
   backpack?: {
     connect?: () => Promise<{ publicKey: { toString: () => string } }>;
     disconnect?: () => Promise<void>;
+    signTransaction?: () => Promise<any>;
+    signAllTransactions?: () => Promise<any>;
+    signMessage?: () => Promise<any>;
   };
-  // Generic interface for other wallets
+  // Common interface for other Solana wallets
   [key: string]: any;
 }
