@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { validateVotePubkey } from "@/services/solanaApi";
 import { toast } from "sonner";
-import { fetchAllValidators } from "@/services/api/validatorApi";
+import { fetchAllValidators } from "@/services/api/validatorSearchApi";
 import StakeModal from "@/components/StakeModal";
 import { ValidatorSearchResult } from "@/services/api/types";
 import SearchBar from "@/components/search/SearchBar";
@@ -44,22 +44,38 @@ const Home = () => {
     if (searchInput.trim()) {
       const searchTerm = searchInput.toLowerCase();
       
-      // First, find exact name matches (prioritize these)
+      // Prioritize search matches
       const exactNameMatches = validators.filter(
         (validator) => validator.name?.toLowerCase() === searchTerm
       );
       
-      // Then find partial matches in name, vote pubkey, or identity
-      const partialMatches = validators.filter(
+      const exactPubkeyMatches = validators.filter(
         (validator) => 
-          (validator.name?.toLowerCase().includes(searchTerm) && 
-           validator.name?.toLowerCase() !== searchTerm) ||
-          validator.votePubkey.toLowerCase().includes(searchTerm) ||
-          validator.identity.toLowerCase().includes(searchTerm)
+          validator.votePubkey.toLowerCase() === searchTerm ||
+          validator.identity.toLowerCase() === searchTerm
       );
       
-      // Combine and limit to top 10 results
-      const filtered = [...exactNameMatches, ...partialMatches].slice(0, 10);
+      const partialNameMatches = validators.filter(
+        (validator) => 
+          validator.name?.toLowerCase().includes(searchTerm) && 
+          validator.name?.toLowerCase() !== searchTerm
+      );
+      
+      const partialPubkeyMatches = validators.filter(
+        (validator) => 
+          (validator.votePubkey.toLowerCase().includes(searchTerm) && 
+           validator.votePubkey.toLowerCase() !== searchTerm) ||
+          (validator.identity.toLowerCase().includes(searchTerm) &&
+           validator.identity.toLowerCase() !== searchTerm)
+      );
+      
+      // Combine and limit to top 10 results with prioritization
+      const filtered = [
+        ...exactNameMatches, 
+        ...exactPubkeyMatches,
+        ...partialNameMatches,
+        ...partialPubkeyMatches
+      ].filter((v, i, a) => a.findIndex(t => t.votePubkey === v.votePubkey) === i).slice(0, 10);
       
       setFilteredValidators(filtered);
       setShowSuggestions(filtered.length > 0);
@@ -83,7 +99,7 @@ const Home = () => {
         return;
       }
       
-      // Then check for exact name match
+      // Exact name match
       const nameMatch = validators.find(v => 
         v.name?.toLowerCase() === searchInput.toLowerCase()
       );
@@ -92,11 +108,21 @@ const Home = () => {
         navigate(`/validator/${encodeURIComponent(nameMatch.votePubkey)}`);
         return;
       }
+
+      // Identity match
+      const identityMatch = validators.find(v => 
+        v.identity.toLowerCase() === searchInput.toLowerCase()
+      );
       
-      // Then check for partial matches
+      if (identityMatch) {
+        navigate(`/validator/${encodeURIComponent(identityMatch.votePubkey)}`);
+        return;
+      }
+      
+      // Partial matches - try to find the best match
       const matchedValidator = validators.find(v => 
-        v.votePubkey.toLowerCase() === searchInput.toLowerCase() ||
-        v.identity.toLowerCase() === searchInput.toLowerCase() ||
+        v.votePubkey.toLowerCase().includes(searchInput.toLowerCase()) ||
+        v.identity.toLowerCase().includes(searchInput.toLowerCase()) ||
         v.name?.toLowerCase().includes(searchInput.toLowerCase())
       );
 

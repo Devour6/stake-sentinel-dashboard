@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { 
   Dialog, 
@@ -12,6 +13,7 @@ import { toast } from "sonner";
 import WalletSelector from "./wallet/WalletSelector";
 import StakeForm from "./stake/StakeForm";
 import { useWallet } from "@/hooks/use-wallet";
+import { VALIDATOR_PUBKEY } from "@/services/api/constants";
 
 interface StakeModalProps {
   isOpen: boolean;
@@ -22,7 +24,7 @@ const StakeModal = ({ isOpen, setIsOpen }: StakeModalProps) => {
   const [amount, setAmount] = useState("");
   const [isStaking, setIsStaking] = useState(false);
   const [showWalletOptions, setShowWalletOptions] = useState(false);
-  const { isConnected, isConnecting, selectedWallet, connectWallet, disconnectWallet } = useWallet();
+  const { isConnected, isConnecting, selectedWallet, connectWallet, disconnectWallet, publicKey } = useWallet();
 
   const handleConnectOption = () => {
     setShowWalletOptions(true);
@@ -44,26 +46,102 @@ const StakeModal = ({ isOpen, setIsOpen }: StakeModalProps) => {
     setIsStaking(true);
     
     try {
-      // This is a placeholder - in a real app, you'd use the connected wallet to stake
-      // using @solana/web3.js to create and send a staking transaction
+      // Find the wallet provider
+      const walletProvider = findWalletProvider(selectedWallet || "");
       
-      /* The actual staking process would look something like:
-      1. Create a new stake account
-      2. Transfer SOL to the stake account
-      3. Delegate the stake to the validator
-      4. Sign and send the transaction
-      */
+      if (!walletProvider) {
+        throw new Error(`Could not find wallet provider for ${selectedWallet}`);
+      }
+
+      // Create stake transaction
+      await createStakeTransaction(walletProvider, parseFloat(amount));
       
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      toast.success(`Successfully staked ${amount} SOL to Gojira validator`);
+      toast.success(`Successfully initiated staking of ${amount} SOL to Gojira validator`);
       setAmount("");
       setIsOpen(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to stake:", error);
-      toast.error("Failed to stake");
+      toast.error(error.message || "Failed to stake");
     } finally {
       setIsStaking(false);
+    }
+  };
+
+  // Helper function to find wallet provider
+  const findWalletProvider = (walletName: string): any => {
+    // Standardized wallet names
+    const nameLower = walletName.toLowerCase().trim();
+    
+    // Common wallet provider names
+    const providerNames: Record<string, string[]> = {
+      "phantom": ["solana", "phantom"],
+      "solflare": ["solflare"],
+      "backpack": ["backpack", "xnft"],
+      "magic eden": ["magicEden", "magiceden"],
+      "coinbase": ["coinbaseWallet", "coinbaseWalletExtension"],
+      "slope": ["slope", "slopeWallet"],
+      "brave": ["braveSolanaAdapter", "braveWallet"],
+      "exodus": ["exodus"],
+      "glow": ["glow"],
+    };
+    
+    // Try to find provider based on wallet name
+    for (const [key, names] of Object.entries(providerNames)) {
+      if (nameLower === key || nameLower.includes(key) || key.includes(nameLower)) {
+        for (const name of names) {
+          const provider = (window as any)[name];
+          if (provider && typeof provider === 'object') {
+            return provider;
+          }
+        }
+      }
+    }
+    
+    // Fallback to using any available provider
+    return (window as any).solana || (window as any).solflare;
+  };
+
+  // Create and send stake transaction
+  const createStakeTransaction = async (provider: any, amountSol: number) => {
+    if (!provider) {
+      throw new Error("Wallet provider not found");
+    }
+
+    try {
+      // Check if wallet has necessary methods
+      if (!provider.signAndSendTransaction && !provider.signTransaction) {
+        throw new Error("Wallet doesn't support transaction signing");
+      }
+
+      // Construct transaction request
+      const amountLamports = amountSol * 1_000_000_000; // Convert SOL to lamports
+      
+      // For Phantom and compatible wallets
+      if (provider.createStakeAccount) {
+        const result = await provider.createStakeAccount({
+          fromPubkey: publicKey,
+          lamports: amountLamports,
+          stakePubkey: null, // Let wallet generate new stake account
+          votePubkey: VALIDATOR_PUBKEY,
+          withdrawAuthority: publicKey,
+          stakeAuthority: publicKey,
+        });
+        
+        console.log("Stake transaction result:", result);
+        return result;
+      }
+      
+      // For other wallets, use standard signing approach
+      // This will vary by wallet, so we'll use the most universal approach
+      // by redirecting to the stakeview.app URL
+      const stakeLinkUrl = `https://stakeview.app/stake-to/${VALIDATOR_PUBKEY}?amount=${amountSol}`;
+      
+      if (confirm("Redirecting to StakeView to complete staking. Continue?")) {
+        window.open(stakeLinkUrl, "_blank");
+      }
+    } catch (error) {
+      console.error("Error creating stake transaction:", error);
+      throw new Error("Failed to create stake transaction");
     }
   };
 

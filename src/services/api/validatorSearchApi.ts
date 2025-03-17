@@ -1,3 +1,4 @@
+
 import { toast } from "sonner";
 import { RPC_ENDPOINT } from "./constants";
 import { ValidatorSearchResult } from "./types";
@@ -5,7 +6,7 @@ import { lamportsToSol } from "./utils";
 import { fetchVoteAccounts } from "./epochApi";
 import { fetchValidatorConfig } from "./validatorConfigApi";
 
-// Fetch all validators for the search function
+// Fetch all validators for the search function with more comprehensive results
 export const fetchAllValidators = async (): Promise<ValidatorSearchResult[]> => {
   try {
     console.log("Fetching all validators...");
@@ -13,18 +14,29 @@ export const fetchAllValidators = async (): Promise<ValidatorSearchResult[]> => 
     // Use the existing fetchVoteAccounts function to get all validators
     const { current, delinquent } = await fetchVoteAccounts();
     
-    // We'll focus on current validators and ignore delinquent ones
-    const allValidators: ValidatorSearchResult[] = [...current].map(validator => ({
-      name: null, // We'll fill this with on-chain name data
-      votePubkey: validator.votePubkey,
-      identity: validator.nodePubkey,
-      icon: null, // Initialize with null, will be populated later
-      activatedStake: lamportsToSol(validator.activatedStake),
-      commission: validator.commission,
-      delinquent: false
-    }));
+    // Process both current and delinquent validators
+    const allValidators: ValidatorSearchResult[] = [
+      ...current.map(validator => ({
+        name: null, // Will be filled with on-chain name data
+        votePubkey: validator.votePubkey,
+        identity: validator.nodePubkey,
+        icon: null, // Initialize with null, will be populated later
+        activatedStake: lamportsToSol(validator.activatedStake),
+        commission: validator.commission,
+        delinquent: false
+      })),
+      ...delinquent.map(validator => ({
+        name: null,
+        votePubkey: validator.votePubkey,
+        identity: validator.nodePubkey,
+        icon: null,
+        activatedStake: lamportsToSol(validator.activatedStake),
+        commission: validator.commission,
+        delinquent: true
+      }))
+    ];
     
-    console.log(`Fetched ${allValidators.length} active validators`);
+    console.log(`Fetched ${allValidators.length} total validators (${current.length} active, ${delinquent.length} delinquent)`);
     
     // Fetch on-chain validator info for proper names and logos
     try {
@@ -51,7 +63,7 @@ export const fetchAllValidators = async (): Promise<ValidatorSearchResult[]> => 
     
     // Add well-known validators with proper names if they weren't already in the list
     const knownValidators: ValidatorSearchResult[] = [
-      { name: "Gojira", votePubkey: "CcaHc2L43ZWjwCHART3oZoJvHLAe9hzT2DJNUpBzoTN1", identity: "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM", icon: null, activatedStake: 0, commission: 10, delinquent: false },
+      { name: "Gojira", votePubkey: "goJiRADNdmfnJ4iWEyft7KaYMPTVsRba2Ee1akDEBXb", identity: "gojir4WnhS7VS1JdbnanJMzaMfr4UD7KeX1ixWAHEmw", icon: null, activatedStake: 0, commission: 10, delinquent: false },
       { name: "Solana Foundation", votePubkey: "GhBd6sozvfR9F2YwHVj2tAHbGyzQSuHxWNn5K8ofuYkx", identity: "7BJUCjD9sMQQ3LXeNZ3j8FQmJxMS1hC9t5S2g4gtLQBJ", icon: null, activatedStake: 0, commission: 10, delinquent: false },
       { name: "Jito", votePubkey: "E5ruSVxEKrAoXAcuMaAfcN5tX6bUYK6ouJcS5yAbs6Zh", identity: "88E5dLt2WQ6WNbQTXoZYwywickdGF9U5e3tbeYxQmHJx", icon: null, activatedStake: 0, commission: 10, delinquent: false },
       { name: "Marinade", votePubkey: "DQ7D6ZRtKbBSxCcAunEkoTzQhCBKLPdzTjJRoFBDkntj", identity: "HxkZUjg1RnCUTJ8j1Lc9J4xzQXGbQMY8kqbAMU4rMDKr", icon: null, activatedStake: 0, commission: 10, delinquent: false },
@@ -99,27 +111,35 @@ export const fetchAllValidators = async (): Promise<ValidatorSearchResult[]> => 
       { name: "Gunstar DAO", votePubkey: "5kgFd4N82ZbX8HpmCpX3kRgLTaBcNTkpmJmzigpzLiS6", identity: "8WwMJ2X5RYvbiXqLaRWv7tQJbJnHWY2LFxsKCVwuTVUc", icon: null, activatedStake: 0, commission: 10, delinquent: false }
     ];
     
-    // Add known validators if not already present, or update their info
+    // Update or add known validators
     knownValidators.forEach(known => {
-      const index = allValidators.findIndex(v => v.votePubkey === known.votePubkey);
-      if (index >= 0) {
-        // Update name if on-chain name wasn't found
-        if (!allValidators[index].name) {
-          allValidators[index].name = known.name;
+      const existingIndex = allValidators.findIndex(v => v.votePubkey === known.votePubkey);
+      if (existingIndex >= 0) {
+        // Update name and icon if not already set
+        if (!allValidators[existingIndex].name) {
+          allValidators[existingIndex].name = known.name;
+        }
+        if (!allValidators[existingIndex].icon) {
+          allValidators[existingIndex].icon = known.icon;
         }
       } else {
+        // Add new validator if not in the list
         allValidators.push(known);
       }
     });
     
-    // Filter out validators without names
-    const namedValidators = allValidators.filter(v => v.name);
+    // Fill missing names with first characters of vote pubkey
+    allValidators.forEach(validator => {
+      if (!validator.name) {
+        validator.name = `Validator ${validator.votePubkey.substring(0, 6)}...${validator.votePubkey.substring(validator.votePubkey.length - 4)}`;
+      }
+    });
     
-    // Sort by stake amount (highest first)
-    namedValidators.sort((a, b) => (b.activatedStake || 0) - (a.activatedStake || 0));
+    // Sort by activated stake (highest first)
+    allValidators.sort((a, b) => (b.activatedStake || 0) - (a.activatedStake || 0));
     
-    console.log(`Returning ${namedValidators.length} named validators for search`);
-    return namedValidators;
+    console.log(`Returning ${allValidators.length} validators for search`);
+    return allValidators;
   } catch (error) {
     console.error("Error fetching validators:", error);
     toast.error("Failed to fetch validators");
