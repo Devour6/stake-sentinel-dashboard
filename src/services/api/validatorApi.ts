@@ -28,6 +28,7 @@ export const fetchValidatorInfo = async (): Promise<ValidatorInfo | null> => {
       votePubkey: validator.votePubkey,
       commission: validator.commission,
       activatedStake: lamportsToSol(validator.activatedStake),
+      activatingStake: lamportsToSol(validator.activatingStake || 0),
       delinquentStake: 0,
       epochCredits: validator.epochCredits[0]?.[0] || 0,
       lastVote: validator.lastVote,
@@ -44,6 +45,7 @@ export const fetchValidatorInfo = async (): Promise<ValidatorInfo | null> => {
       votePubkey: VALIDATOR_PUBKEY,
       commission: 7,
       activatedStake: 345678.9012,
+      activatingStake: 0,
       delinquentStake: 0,
       epochCredits: 123456,
       lastVote: 198765432,
@@ -63,20 +65,14 @@ export const fetchValidatorMetrics = async (): Promise<ValidatorMetrics | null> 
       throw new Error("Failed to fetch validator info");
     }
     
-    // Get vote account details to fetch activating stake
-    const { current, delinquent } = await fetchVoteAccounts();
-    const validators = [...current, ...delinquent];
-    const validator = validators.find(v => v.votePubkey === VALIDATOR_PUBKEY);
-    
-    let activatingStake = 0;
-    if (validator && validator.activatingStake) {
-      activatingStake = lamportsToSol(validator.activatingStake);
-    }
-    
     // Try to get delegator count using all available methods
     let delegatorCount = null;
     try {
       delegatorCount = await fetchDelegatorCount();
+      // If the delegator count is 0, we still want to show it as 0, not as an error
+      if (delegatorCount === 0) {
+        console.log("Delegator count is 0, but this is valid data");
+      }
     } catch (error) {
       console.error("Could not fetch delegator count:", error);
       // We'll keep delegatorCount as null to show the error state
@@ -84,7 +80,7 @@ export const fetchValidatorMetrics = async (): Promise<ValidatorMetrics | null> 
     
     return {
       totalStake: validatorInfo.activatedStake,
-      activatingStake: activatingStake,
+      activatingStake: validatorInfo.activatingStake,
       commission: validatorInfo.commission,
       delegatorCount: delegatorCount,
     };
@@ -95,7 +91,7 @@ export const fetchValidatorMetrics = async (): Promise<ValidatorMetrics | null> 
     // Fallback to mock data
     return {
       totalStake: 345678.9012,
-      activatingStake: 12345.6789,
+      activatingStake: 0,
       commission: 7,
       delegatorCount: null,
     };

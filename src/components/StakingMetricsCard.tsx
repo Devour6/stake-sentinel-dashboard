@@ -88,7 +88,7 @@ export const ValidatorMetricsGrid = ({
         title="Activating Stake"
         value={isLoading ? "" : formatSol(activatingStake)}
         icon={<Clock className="h-4 w-4 text-gojira-red" />}
-        trend="up"
+        trend={activatingStake > 0 ? "up" : "neutral"}
         isLoading={isLoading}
       />
       <StakingMetricsCard
@@ -99,10 +99,11 @@ export const ValidatorMetricsGrid = ({
       />
       <StakingMetricsCard
         title="Delegators"
-        value={isLoading ? "" : delegatorCount}
+        value={isLoading ? "" : delegatorCount === null ? null : delegatorCount}
         icon={<Users className="h-4 w-4 text-gojira-red" />}
         isLoading={isLoading}
         isError={delegatorCount === null}
+        isEstimated={delegatorCount !== null}
       />
     </div>
   );

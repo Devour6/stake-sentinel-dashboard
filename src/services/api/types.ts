@@ -5,6 +5,7 @@ export interface ValidatorInfo {
   votePubkey: string;
   commission: number;
   activatedStake: number;
+  activatingStake: number; // Adding explicit activatingStake field
   delinquentStake: number;
   epochCredits: number;
   lastVote: number;
