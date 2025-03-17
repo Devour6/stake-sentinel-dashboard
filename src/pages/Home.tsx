@@ -40,7 +40,7 @@ const Home = () => {
     loadValidators();
   }, []);
 
-  // Improved filtered validators logic
+  // Improved filtered validators logic with better search
   useEffect(() => {
     if (searchInput.trim()) {
       const searchTerm = searchInput.toLowerCase();
@@ -49,7 +49,7 @@ const Home = () => {
           (validator.name?.toLowerCase().includes(searchTerm)) ||
           validator.votePubkey.toLowerCase().includes(searchTerm) ||
           validator.identity.toLowerCase().includes(searchTerm)
-      ).slice(0, 5);
+      ).slice(0, 10); // Limit to 10 results for better UI
       setFilteredValidators(filtered);
       setShowSuggestions(filtered.length > 0);
     } else {
@@ -66,22 +66,26 @@ const Home = () => {
     setIsSearching(true);
     
     try {
-      const isValid = validateVotePubkey(searchInput.trim());
-      
-      if (isValid) {
+      // First check if input is a valid vote pubkey
+      if (validateVotePubkey(searchInput.trim())) {
         navigate(`/validator/${encodeURIComponent(searchInput.trim())}`);
-      } else {
-        const matchedValidator = validators.find(v => 
-          (v.name?.toLowerCase() === searchInput.toLowerCase()) ||
-          v.votePubkey.toLowerCase() === searchInput.toLowerCase() ||
-          v.identity.toLowerCase() === searchInput.toLowerCase()
-        );
+        return;
+      }
+      
+      // Then check if it matches any validator name or identity
+      const matchedValidator = validators.find(v => 
+        (v.name?.toLowerCase() === searchInput.toLowerCase()) ||
+        v.votePubkey.toLowerCase() === searchInput.toLowerCase() ||
+        v.identity.toLowerCase() === searchInput.toLowerCase()
+      );
 
-        if (matchedValidator) {
-          navigate(`/validator/${encodeURIComponent(matchedValidator.votePubkey)}`);
-        } else {
-          toast.error("No validator found matching your search");
-        }
+      if (matchedValidator) {
+        navigate(`/validator/${encodeURIComponent(matchedValidator.votePubkey)}`);
+      } else if (filteredValidators.length > 0) {
+        // If we have filtered results but no exact match, navigate to the first result
+        navigate(`/validator/${encodeURIComponent(filteredValidators[0].votePubkey)}`);
+      } else {
+        toast.error("No validator found matching your search");
       }
     } catch (error) {
       console.error("Search error:", error);
@@ -151,7 +155,7 @@ const Home = () => {
                         onClick={() => handleSelectValidator(validator.votePubkey)}
                       >
                         <div className="flex items-center">
-                          <span>{validator.name || "Unknown"}</span>
+                          <span className="font-medium">{validator.name || "Unknown"}</span>
                         </div>
                         <span className="text-xs text-muted-foreground truncate max-w-[180px]">
                           {validator.votePubkey.slice(0, 8)}...{validator.votePubkey.slice(-8)}
