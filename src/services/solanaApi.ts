@@ -1,4 +1,3 @@
-
 import { toast } from "sonner";
 
 // Constants
@@ -55,9 +54,7 @@ export const fetchValidatorInfo = async (): Promise<ValidatorInfo | null> => {
         jsonrpc: '2.0',
         id: 1,
         method: 'getVoteAccounts',
-        params: {
-          commitment: 'finalized'
-        }
+        params: []
       })
     });
 
@@ -132,10 +129,7 @@ export const fetchValidatorMetrics = async (): Promise<ValidatorMetrics | null> 
           jsonrpc: '2.0',
           id: 2,
           method: 'getStakeActivation',
-          params: {
-            publicKey: VALIDATOR_PUBKEY,
-            commitment: 'finalized'
-          }
+          params: []
         })
       });
       
