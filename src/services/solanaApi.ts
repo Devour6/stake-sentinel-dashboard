@@ -38,5 +38,7 @@ export {
   validateVotePubkey,
   formatSol,
   formatCommission,
-  formatChange
+  formatChange,
+  formatNumber,
+  lamportsToSol
 };

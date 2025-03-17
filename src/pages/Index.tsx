@@ -4,13 +4,14 @@ import { ValidatorHeader } from "@/components/ValidatorHeader";
 import { ValidatorMetricsGrid } from "@/components/StakingMetricsCard";
 import { StakeChart } from "@/components/StakeChart";
 import { ValidatorInfoCard } from "@/components/ValidatorInfoCard";
+import { EpochTimer } from "@/components/EpochTimer";
 import { 
   fetchValidatorInfo, 
   fetchValidatorMetrics, 
   fetchStakeHistory,
-  ValidatorInfo,
-  ValidatorMetrics,
-  StakeHistoryItem
+  type ValidatorInfo,
+  type ValidatorMetrics,
+  type StakeHistoryItem
 } from "@/services/solanaApi";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -76,14 +77,22 @@ const Index = () => {
           isLoading={isLoading}
         />
         
+        {/* Epoch Timer */}
+        <div className="mb-6">
+          <EpochTimer 
+            currentEpoch={validatorInfo?.currentEpoch || 0}
+            timeRemaining={validatorInfo?.epochTimeRemaining}
+            isLoading={isLoading}
+          />
+        </div>
+        
         {/* Validator metrics */}
         {validatorMetrics ? (
           <ValidatorMetricsGrid
             totalStake={validatorMetrics.totalStake}
             activatingStake={validatorMetrics.activatingStake}
-            stakeChange24h={validatorMetrics.stakeChange24h}
-            stakeChangePercentage={validatorMetrics.stakeChangePercentage}
             commission={validatorMetrics.commission}
+            mevCommission={validatorMetrics.mevCommission}
             delegatorCount={validatorMetrics.delegatorCount}
             isLoading={isLoading}
           />
@@ -91,9 +100,8 @@ const Index = () => {
           <ValidatorMetricsGrid
             totalStake={0}
             activatingStake={0}
-            stakeChange24h={0}
-            stakeChangePercentage={0}
             commission={0}
+            mevCommission={0}
             delegatorCount={0}
             isLoading={true}
           />

@@ -4,6 +4,7 @@ export interface ValidatorInfo {
   identity: string;
   votePubkey: string;
   commission: number;
+  mevCommission: number; // Added MEV commission
   activatedStake: number;
   activatingStake: number;
   delinquentStake: number;
@@ -11,6 +12,7 @@ export interface ValidatorInfo {
   lastVote: number;
   rootSlot: number;
   currentEpoch: number;
+  epochTimeRemaining?: number; // Added field for epoch timer
 }
 
 export interface StakeHistoryItem {
@@ -22,8 +24,7 @@ export interface StakeHistoryItem {
 export interface ValidatorMetrics {
   totalStake: number;
   activatingStake: number;
-  stakeChange24h: number;
-  stakeChangePercentage: number;
   commission: number;
+  mevCommission: number; // Added MEV commission
   delegatorCount: number;
 }
