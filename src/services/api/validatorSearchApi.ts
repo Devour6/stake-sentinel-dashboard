@@ -43,7 +43,7 @@ const WELL_KNOWN_VALIDATORS = [
   { name: "mcf", votePubkey: "7mmRxJNttYcJVNsJmiLjTHYmNDt8xn3fQ8JnaNVahKUk", identity: "HWHvQhFmJB3NUcu1aihKmrKegfVxBEHzwVX6yZCKEsi1", icon: null },
   { name: "Cosmostation", votePubkey: "9mbQ9mrRjBGiUVnz9Tdf7PuAkWomw3GLZ6Sup3R93Gf8", identity: "7y1f6Mih1gJhrpzPNSMDyTQd12MFQVvecUDHHY5yz2P1", icon: null },
   { name: "HashQuark", votePubkey: "FdFYHNCyTJYeJ7MUhyjuSFnUy5RydfyZ6pjx7CDeBYMS", identity: "FiPmNbK38XWzFZhfBzPHRazh689gxZ4gqEDL8qEUQ8YV", icon: null },
-  { name: "Blockscope", votePubkey: "HrXWqaKF2NJUc5RUowzYJ5yX9y6AeZbJaAZdDtSZ8n6W", identity: "4t9em1dsapgBxhUhUJcKFHgwPJNnWDrNwAGJqqUQmPvY", icon: null },
+  { name: "Blockscope", votePubkey: "HrXWqaKF2NJUc5RUowzYJ5yX9y6AeZbJaAZdDtSZ8n6W", identity: "4t9em1dsapgBxhUhUhUJcKFHgwPJNnWDrNwAGJqqUQmPvY", icon: null },
   { name: "01node.com", votePubkey: "DP7V5gZctCzBmf6DqsQXvBYrqWGUBZoufxUKzx5MgMew", identity: "DJv6YQV2tSpi7cMxJ3mCdYx9ySXwK6HdTF5BoXBfWVoW", icon: null },
   { name: "Solstake", votePubkey: "49AqLYbpgHHdb3qWyPMAaZmwLVNTNsbxmBgVZdhoBQfF", identity: "GnLdRq6PFC4SX5fPRFbCsQEkUNrHr9mAgVXr1kDMU4qQ", icon: null },
   { name: "Wanderer", votePubkey: "BxTUwfMiokzimVDLDupGfVPmWXfLSGVpkGr9TUmetn6b", identity: "BeGmyi98V9U8XrtCVo9KTgLNtnn1TjKmyVKKg7BuWSL", icon: null },
@@ -55,6 +55,14 @@ const WELL_KNOWN_VALIDATORS = [
   { name: "Chainode Tech (node)", votePubkey: "12oWRNKrW8eXvVxLX7cMHWrnJMqZaZK8gxLNkFgbVf3n", identity: "FHf7WtMZLkNYq7NGGBAF78ZKzKZ7oBbGbAEZR5c6J8eZ", icon: null },
   { name: "POS Bakerz", votePubkey: "3SpZRJQcQ4rJynvCGNRBbQjkHGXEMpVsJvTWKvR17gZN", identity: "8c5ZTPGQxEQyZ1Kg7vRGZmQVvAwmRmeGjBPE3VnZjxTh", icon: null },
   { name: "Gunstar DAO", votePubkey: "5kgFd4N82ZbX8HpmCpX3kRgLTaBcNTkpmJmzigpzLiS6", identity: "8WwMJ2X5RYvbiXqLaRWv7tQJbJnHWY2LFxsKCVwuTVUc", icon: null }
+];
+
+// Extra well-known validators to ensure we have the major ones covered
+const ADDITIONAL_VALIDATORS = [
+  { name: "Helius", votePubkey: "HeZU7mjJx9FFLX8ad4fErHhiTXNxwqLzW3AVUBCfXxT", identity: "7TMu26hC7sfyEqmA8aXGLLx66JD8WMuKQkExW2K8rfwx", icon: null },
+  { name: "Triton", votePubkey: "GoCwdN1C1WXXArrqoivMoaiqksR8QP79N1qoajbHrYG1", identity: "GoCwdN1C1WXXArrqoivMoaiqksR8QP79N1qoajbHrYG1", icon: null },
+  { name: "Blockdaemon", votePubkey: "GBU4rXNppvuYjUDuUHK9evta7aQ9G9567QH5ViVPjvFv", identity: "GBU4rXNppvuYjUDuUHK9evta7aQ9G9567QH5ViVPjvFv", icon: null },
+  { name: "Gojira", votePubkey: "goJiRADNdmfnJ4iWEyft7KaYMPTVsRba2Ee1akDEBXb", identity: "gojir4WnhS7VS1JdbnanJMzaMfr4UD7KeX1ixWAHEmw", icon: null }
 ];
 
 export const fetchAllValidators = async (): Promise<ValidatorSearchResult[]> => {
@@ -123,19 +131,26 @@ export const fetchAllValidators = async (): Promise<ValidatorSearchResult[]> => 
       // Continue with fallback names
     }
     
+    // Create a map of vote pubkeys to validators for easy lookup
+    const votePubkeyToValidator = new Map<string, ValidatorSearchResult>();
+    allValidators.forEach(validator => {
+      votePubkeyToValidator.set(validator.votePubkey, validator);
+    });
+
     // Add all well-known validators if they're not already in the list
     // and update names for existing validators
-    for (const known of WELL_KNOWN_VALIDATORS) {
-      const existingByVote = allValidators.find(v => v.votePubkey === known.votePubkey);
-      const existingByIdentity = allValidators.find(v => v.identity === known.identity && !v.name);
+    const combinedWellKnown = [...WELL_KNOWN_VALIDATORS, ...ADDITIONAL_VALIDATORS];
+    for (const known of combinedWellKnown) {
+      const existingByVote = votePubkeyToValidator.get(known.votePubkey);
+      const existingByIdentity = identityToValidator.get(known.identity);
       
       if (existingByVote && !existingByVote.name) {
         existingByVote.name = known.name;
         if (known.icon) existingByVote.icon = known.icon;
-      } else if (existingByIdentity) {
+      } else if (existingByIdentity && !existingByIdentity.name) {
         existingByIdentity.name = known.name;
         if (known.icon) existingByIdentity.icon = known.icon;
-      } else {
+      } else if (!existingByVote && !existingByIdentity) {
         // Add missing well-known validator
         allValidators.push({
           ...known,
@@ -143,6 +158,9 @@ export const fetchAllValidators = async (): Promise<ValidatorSearchResult[]> => 
           commission: 0,
           delinquent: false
         });
+        // Add to maps for future lookups
+        votePubkeyToValidator.set(known.votePubkey, allValidators[allValidators.length - 1]);
+        identityToValidator.set(known.identity, allValidators[allValidators.length - 1]);
       }
     }
     
@@ -163,7 +181,13 @@ export const fetchAllValidators = async (): Promise<ValidatorSearchResult[]> => 
     toast.error("Failed to fetch validators");
     
     // Use well-known validators as fallback
-    return WELL_KNOWN_VALIDATORS.map(v => ({
+    const combinedWellKnown = [...WELL_KNOWN_VALIDATORS, ...ADDITIONAL_VALIDATORS];
+    // Remove duplicates
+    const uniqueValidators = combinedWellKnown.filter(
+      (v, i, a) => a.findIndex(t => t.votePubkey === v.votePubkey) === i
+    );
+    
+    return uniqueValidators.map(v => ({
       ...v,
       activatedStake: 0,
       commission: 0,

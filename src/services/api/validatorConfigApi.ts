@@ -45,7 +45,6 @@ export const fetchValidatorConfig = async (): Promise<ValidatorSearchResult[]> =
     
     const validatorConfigs: ValidatorSearchResult[] = [];
     
-    // Use a simplified approach that doesn't rely on Buffer
     for (const account of data.result) {
       try {
         if (!account.account || !account.account.data || !account.account.data.parsed) {
@@ -71,20 +70,45 @@ export const fetchValidatorConfig = async (): Promise<ValidatorSearchResult[]> =
         
         try {
           // Parse the validator config JSON
-          const validatorInfo = JSON.parse(configData);
+          let validatorInfo: ValidatorConfigData;
+          
+          // Handle the string format properly
+          if (typeof configData === 'string') {
+            // Some data might be double-encoded JSON or have escape characters
+            let cleanedData = configData;
+            
+            // Handle possible escaping issues
+            if (cleanedData.startsWith('"') && cleanedData.endsWith('"')) {
+              cleanedData = cleanedData.slice(1, -1);
+              // Replace escaped quotes with actual quotes
+              cleanedData = cleanedData.replace(/\\"/g, '"');
+            }
+            
+            try {
+              validatorInfo = JSON.parse(cleanedData);
+            } catch (e) {
+              // Try another approach if the first parse fails
+              cleanedData = cleanedData.replace(/\\/g, '');
+              validatorInfo = JSON.parse(cleanedData);
+            }
+          } else if (typeof configData === 'object') {
+            validatorInfo = configData;
+          } else {
+            continue; // Skip if we can't parse the data
+          }
           
           if (validatorInfo && validatorInfo.name) {
             validatorConfigs.push({
               name: validatorInfo.name,
               identity: identityPubkey,
-              votePubkey: '',  // Will be matched later
-              icon: validatorInfo.website || null
+              votePubkey: '', // Will be matched later
+              icon: validatorInfo.website || validatorInfo.keybaseUsername || null
             });
             
-            console.log(`Found validator with name: ${validatorInfo.name}`);
+            console.log(`Found validator with name: ${validatorInfo.name}, identity: ${identityPubkey}`);
           }
         } catch (e) {
-          console.error("Error parsing validator JSON:", e);
+          console.error("Error parsing validator JSON:", e, "Raw data:", configData);
           continue;
         }
       } catch (err) {

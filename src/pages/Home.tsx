@@ -44,9 +44,9 @@ const Home = () => {
     if (searchInput.trim()) {
       const searchTerm = searchInput.toLowerCase();
       
-      // More aggressive search strategy
+      // Improved search algorithm based on stakewiz approach
       
-      // 1. Exact matches first (case insensitive)
+      // First check for exact matches (case insensitive)
       const exactNameMatches = validators.filter(
         validator => validator.name?.toLowerCase() === searchTerm
       );
@@ -57,14 +57,14 @@ const Home = () => {
           validator.identity.toLowerCase() === searchTerm
       );
       
-      // 2. Starts with matches (higher priority than contains)
+      // Then check for name prefix matches
       const nameStartsWithMatches = validators.filter(
         validator => 
           validator.name?.toLowerCase().startsWith(searchTerm) &&
           validator.name?.toLowerCase() !== searchTerm
       );
       
-      // 3. Contains matches (lower priority)
+      // Then check for substring matches
       const nameContainsMatches = validators.filter(
         validator => 
           validator.name?.toLowerCase().includes(searchTerm) && 
@@ -72,6 +72,7 @@ const Home = () => {
           validator.name?.toLowerCase() !== searchTerm
       );
       
+      // Finally check for substring matches in pubkeys
       const pubkeyContainsMatches = validators.filter(
         validator => 
           (validator.votePubkey.toLowerCase().includes(searchTerm) && 
@@ -90,9 +91,21 @@ const Home = () => {
       ];
       
       // Remove duplicates by votePubkey
-      const filtered = allMatches.filter(
+      const uniqueMatches = allMatches.filter(
         (v, i, a) => a.findIndex(t => t.votePubkey === v.votePubkey) === i
-      ).slice(0, 10);
+      );
+      
+      // Sort by stake (if available)
+      const sortedMatches = uniqueMatches.sort((a, b) => {
+        // Sort by stake if available
+        if (a.activatedStake && b.activatedStake) {
+          return b.activatedStake - a.activatedStake;
+        }
+        return 0;
+      });
+      
+      // Limit to 10 results for performance
+      const filtered = sortedMatches.slice(0, 10);
       
       setFilteredValidators(filtered);
       setShowSuggestions(filtered.length > 0);

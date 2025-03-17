@@ -76,11 +76,27 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(({
                         }}
                       />
                     )}
-                    <span className="font-medium">{validator.name || "Unknown Validator"}</span>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{validator.name || "Unknown Validator"}</span>
+                      {validator.commission !== undefined && (
+                        <span className="text-xs text-muted-foreground">
+                          Commission: {validator.commission}%
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <span className="text-xs text-muted-foreground truncate max-w-[180px]">
-                    {validator.votePubkey.slice(0, 8)}...{validator.votePubkey.slice(-8)}
-                  </span>
+                  <div className="flex flex-col items-end">
+                    <span className="text-xs text-muted-foreground truncate max-w-[180px]">
+                      {validator.votePubkey.slice(0, 6)}...{validator.votePubkey.slice(-6)}
+                    </span>
+                    {validator.activatedStake !== undefined && (
+                      <span className="text-xs text-muted-foreground">
+                        {validator.activatedStake > 0 
+                          ? `Stake: ${Math.floor(validator.activatedStake).toLocaleString()} SOL` 
+                          : ''}
+                      </span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
