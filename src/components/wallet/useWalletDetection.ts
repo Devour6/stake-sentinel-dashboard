@@ -1,6 +1,12 @@
 
 import { useState, useEffect } from "react";
-import { WalletType, getDisplayNameForProvider, getInstallUrlForWallet } from "./walletUtils";
+import { 
+  WalletType, 
+  getDisplayNameForProvider, 
+  getInstallUrlForWallet, 
+  isSolanaWallet,
+  SOLANA_WALLETS
+} from "./walletUtils";
 
 export const useWalletDetection = () => {
   const [wallets, setWallets] = useState<WalletType[]>([]);
@@ -32,7 +38,7 @@ export const useWalletDetection = () => {
       detectedProviders['magiceden'] = (window as any).magiceden;
     }
     
-    // 2. General scan for wallet providers
+    // 2. General scan for wallet providers that look like Solana wallets
     Object.keys(window).forEach(key => {
       // Skip keys we've already identified
       if (Object.keys(detectedProviders).some(name => 
@@ -47,49 +53,53 @@ export const useWalletDetection = () => {
           (provider.connect || provider.signTransaction || 
            provider.signAllTransactions || provider.signMessage)) {
           
-        // Try to identify the wallet type
+        // Try to identify if it's a Solana wallet
         const keyLower = key.toLowerCase();
         
-        // Find a name for this wallet
-        let walletId = '';
-        for (const [id] of Object.entries(getDisplayNameForProvider)) {
-          if (keyLower.includes(id.toLowerCase())) {
-            walletId = id.toLowerCase();
-            detectedProviders[walletId] = provider;
-            break;
+        // Only add if it seems like a Solana wallet
+        if (keyLower.includes('solana') || 
+            keyLower.includes('sol') || 
+            Object.keys(getDisplayNameForProvider).some(id => keyLower.includes(id.toLowerCase()))) {
+          
+          // Find a name for this wallet
+          let walletId = '';
+          for (const [id] of Object.entries(getDisplayNameForProvider)) {
+            if (keyLower.includes(id.toLowerCase())) {
+              walletId = id.toLowerCase();
+              detectedProviders[walletId] = provider;
+              break;
+            }
           }
-        }
-        
-        // If not identified but has wallet-like properties, add with generic name
-        if (!walletId) {
-          detectedProviders[keyLower] = provider;
+          
+          // If identified as a likely Solana wallet but not mapped, add with generic name
+          if (!walletId && (keyLower.includes('sol') || keyLower.includes('solana'))) {
+            detectedProviders[keyLower] = provider;
+          }
         }
       }
     });
     
-    console.log("Detected wallet providers:", detectedProviders);
+    console.log("Detected potential Solana wallet providers:", detectedProviders);
     
     // Create the final wallet list
     const walletList: WalletType[] = [];
     
-    // First add detected wallets
+    // First add detected wallets that are confirmed Solana wallets
     for (const [id, provider] of Object.entries(detectedProviders)) {
       const displayName = getDisplayNameForProvider(id);
       
-      walletList.push({
-        name: displayName,
-        providerName: id,
-        isDetected: true
-      });
+      // Only add if it's likely a Solana wallet
+      if (isSolanaWallet(displayName)) {
+        walletList.push({
+          name: displayName,
+          providerName: id,
+          isDetected: true
+        });
+      }
     }
     
-    // Add standard non-detected wallets for common options
-    const standardWallets = [
-      "Phantom", "Solflare", "Backpack", "Magic Eden", "Coinbase", 
-      "Brave Wallet", "Slope", "Exodus", "Glow"
-    ];
-    
-    standardWallets.forEach(name => {
+    // Add standard non-detected Solana wallets
+    SOLANA_WALLETS.forEach(name => {
       // Skip if already in the list
       if (walletList.some(w => w.name.toLowerCase() === name.toLowerCase())) {
         return;
@@ -111,7 +121,7 @@ export const useWalletDetection = () => {
       return a.name.localeCompare(b.name);
     });
     
-    console.log("Processed wallets:", walletList);
+    console.log("Processed Solana wallets:", walletList);
     setWallets(walletList);
   };
 

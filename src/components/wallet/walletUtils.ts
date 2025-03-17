@@ -29,6 +29,28 @@ export const WALLET_NAME_MAPPING: Record<string, string> = {
   "strike": "Strike Wallet",
 };
 
+// List of known Solana wallets - we'll use this to filter detected wallets
+export const SOLANA_WALLETS = [
+  "Phantom",
+  "Solflare",
+  "Backpack",
+  "Magic Eden",
+  "Coinbase",
+  "Brave Wallet",
+  "Exodus",
+  "Glow",
+  "Slope",
+  "Math Wallet", 
+  "Coin98",
+  "Clover",
+  "BitKeep",
+  "Sollet",
+  "Torus Wallet",
+  "Nightly Connect",
+  "DeFi Wallet",
+  "Strike Wallet"
+];
+
 export interface WalletType {
   name: string;
   providerName?: string;
@@ -87,4 +109,16 @@ export const formatWalletName = (key: string): string => {
   if (!name) name = "Solana Wallet";
   
   return name;
+};
+
+// Function to check if a wallet is a Solana wallet
+export const isSolanaWallet = (walletName: string): boolean => {
+  const normalizedName = walletName.toLowerCase();
+  
+  // Check against our list of known Solana wallets
+  return SOLANA_WALLETS.some(wallet => 
+    normalizedName === wallet.toLowerCase() || 
+    normalizedName.includes("solana") ||
+    wallet.toLowerCase().includes(normalizedName)
+  );
 };
