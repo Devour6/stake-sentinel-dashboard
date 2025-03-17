@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
@@ -28,6 +29,7 @@ const Home = () => {
       try {
         const allValidators = await fetchAllValidators();
         setValidators(allValidators);
+        console.log(`Fetched ${allValidators.length} validators`);
       } catch (error) {
         console.error("Failed to load validators:", error);
         toast.error("Failed to load validator list");
@@ -47,8 +49,10 @@ const Home = () => {
           validator.identity.toLowerCase().includes(searchTerm)
       ).slice(0, 5);
       setFilteredValidators(filtered);
+      setShowSuggestions(filtered.length > 0);
     } else {
       setFilteredValidators([]);
+      setShowSuggestions(false);
     }
   }, [searchInput, validators]);
 
@@ -92,6 +96,16 @@ const Home = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gojira-gray to-gojira-gray-dark p-4">
+      <div className="fixed top-4 right-4 z-10">
+        <Button 
+          variant="outline" 
+          className="border-gojira-red text-gojira-red hover:bg-gojira-red/10"
+          onClick={() => setIsStakeModalOpen(true)}
+        >
+          Stake to Gojira Validator
+        </Button>
+      </div>
+
       <div className="w-full max-w-3xl mx-auto text-center mb-12 animate-fade-in">
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 text-white">
           hiStake
@@ -106,7 +120,7 @@ const Home = () => {
           <form onSubmit={handleSearch} className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
-              <Popover open={showSuggestions && filteredValidators.length > 0} onOpenChange={setShowSuggestions}>
+              <Popover open={showSuggestions} onOpenChange={setShowSuggestions}>
                 <PopoverTrigger asChild>
                   <Input
                     type="text"
@@ -114,7 +128,7 @@ const Home = () => {
                     className="pl-10 bg-gojira-gray-dark border-gojira-gray-light"
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
-                    onFocus={() => setShowSuggestions(true)}
+                    onFocus={() => filteredValidators.length > 0 && setShowSuggestions(true)}
                   />
                 </PopoverTrigger>
                 <PopoverContent 
@@ -156,16 +170,6 @@ const Home = () => {
         </CardContent>
       </Card>
 
-      <div className="mt-8 flex justify-center">
-        <Button 
-          variant="outline" 
-          className="border-gojira-red text-gojira-red hover:bg-gojira-red/10"
-          onClick={() => setIsStakeModalOpen(true)}
-        >
-          Stake to Gojira Validator
-        </Button>
-      </div>
-
       <div className="mt-16 text-center text-sm text-muted-foreground">
         <div className="flex justify-center gap-1 items-center">
           <span>Powered by</span>
@@ -178,7 +182,7 @@ const Home = () => {
         </div>
       </div>
 
-      {isStakeModalOpen && <StakeModal isOpen={isStakeModalOpen} setIsOpen={setIsStakeModalOpen} />}
+      <StakeModal isOpen={isStakeModalOpen} setIsOpen={setIsStakeModalOpen} />
     </div>
   );
 };
