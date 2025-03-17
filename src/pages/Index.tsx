@@ -80,6 +80,7 @@ const Index = () => {
         {validatorMetrics ? (
           <ValidatorMetricsGrid
             totalStake={validatorMetrics.totalStake}
+            activatingStake={validatorMetrics.activatingStake}
             commission={validatorMetrics.commission}
             delegatorCount={validatorMetrics.delegatorCount}
             isLoading={isLoading}
@@ -87,6 +88,7 @@ const Index = () => {
         ) : (
           <ValidatorMetricsGrid
             totalStake={0}
+            activatingStake={0}
             commission={0}
             delegatorCount={0}
             isLoading={true}

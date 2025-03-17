@@ -20,6 +20,7 @@ export interface StakeHistoryItem {
 
 export interface ValidatorMetrics {
   totalStake: number;
+  activatingStake: number;
   commission: number;
   delegatorCount: number | null;
 }

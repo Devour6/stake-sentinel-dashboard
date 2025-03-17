@@ -63,6 +63,7 @@ export const StakingMetricsCard = ({
 
 interface ValidatorMetricsProps {
   totalStake: number;
+  activatingStake?: number;
   commission: number;
   delegatorCount: number | null;
   isLoading?: boolean;
@@ -70,16 +71,24 @@ interface ValidatorMetricsProps {
 
 export const ValidatorMetricsGrid = ({
   totalStake,
+  activatingStake = 0,
   commission,
   delegatorCount,
   isLoading = false,
 }: ValidatorMetricsProps) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-slide-up">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-slide-up">
       <StakingMetricsCard
         title="Total Stake"
         value={isLoading ? "" : formatSol(totalStake)}
         icon={<div className="w-4 h-4 bg-gojira-red rounded-full"></div>}
+        isLoading={isLoading}
+      />
+      <StakingMetricsCard
+        title="Activating Stake"
+        value={isLoading ? "" : formatSol(activatingStake)}
+        icon={<Clock className="h-4 w-4 text-gojira-red" />}
+        trend="up"
         isLoading={isLoading}
       />
       <StakingMetricsCard

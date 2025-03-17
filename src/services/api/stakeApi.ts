@@ -47,128 +47,109 @@ export const fetchStakeHistory = async (days = 30): Promise<StakeHistoryItem[]> 
   }
 };
 
-// Get delegator count by fetching stake accounts delegated to the validator
+// Attempt to get delegator count with multiple RPC endpoints
 export const fetchDelegatorCount = async (): Promise<number | null> => {
-  try {
-    console.log("Fetching delegator count directly from vote account...");
-    
-    // Get vote account info which contains delegator count
-    const voteAccountResponse = await fetch(RPC_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'getVoteAccounts',
-        params: []
-      })
-    });
-
-    if (!voteAccountResponse.ok) {
-      throw new Error(`RPC request failed with status ${voteAccountResponse.status}`);
-    }
-
-    const voteAccountData = await voteAccountResponse.json();
-    console.log("Vote account data:", voteAccountData);
-    
-    const validators = [...(voteAccountData.result?.current || []), ...(voteAccountData.result?.delinquent || [])];
-    const validator = validators.find(v => v.votePubkey === VALIDATOR_PUBKEY);
-    
-    if (!validator) {
-      console.log("Validator not found in vote accounts response");
-      throw new Error("Validator not found");
-    }
-    
-    // Check if the validator data includes a delegatorCount property
-    if (validator.delegatorCount !== undefined) {
-      return validator.delegatorCount;
-    }
-    
-    // If not available in vote account data, use getProgramAccounts to count stake accounts
-    const stakeAccountsResponse = await fetch(RPC_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        id: 2,
-        method: 'getProgramAccounts',
-        params: [
-          'Stake11111111111111111111111111111111111111',
-          {
-            filters: [
-              {
-                memcmp: {
-                  offset: 44,
-                  bytes: VALIDATOR_PUBKEY
-                }
-              }
-            ]
-          }
-        ]
-      })
-    });
-
-    if (!stakeAccountsResponse.ok) {
-      throw new Error(`RPC request failed with status ${stakeAccountsResponse.status}`);
-    }
-
-    const stakeAccountsData = await stakeAccountsResponse.json();
-    console.log("Stake accounts data:", stakeAccountsData);
-    
-    // Check if the result exists and has a length property
-    if (stakeAccountsData.result !== undefined) {
-      // If we got an empty array, this could either mean:
-      // 1. There are genuinely no delegators (unlikely for an active validator)
-      // 2. The RPC endpoint limitations or filtering issue
-      if (stakeAccountsData.result.length === 0) {
-        console.log("Got empty result array from getProgramAccounts, trying fallback method");
-        throw new Error("Empty result from getProgramAccounts");
-      }
-      return stakeAccountsData.result.length;
-    }
-    
-    throw new Error("Failed to fetch delegator count");
-  } catch (error) {
-    console.error("Error fetching delegator count:", error);
-    
-    // As a fallback, try using a more direct method with another RPC endpoint
+  // Array of RPC endpoints to try
+  const rpcEndpoints = [
+    RPC_ENDPOINT,
+    "https://api.mainnet-beta.solana.com",
+    "https://solana-api.projectserum.com",
+    "https://rpc.ankr.com/solana"
+  ];
+  
+  // Try each endpoint until we get a valid result
+  for (const endpoint of rpcEndpoints) {
     try {
-      const solanaMainnetRPC = "https://api.mainnet-beta.solana.com";
-      const response = await fetch(solanaMainnetRPC, {
+      console.log(`Trying to fetch delegator count from ${endpoint}...`);
+      
+      // First, try getVoteAccounts which might have delegatorCount directly
+      const voteAccountResponse = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           jsonrpc: '2.0',
-          id: 3,
+          id: 1,
           method: 'getVoteAccounts',
           params: []
-        })
+        }),
+        // Add timeout to avoid hanging requests
+        signal: AbortSignal.timeout(5000)
       });
+
+      if (!voteAccountResponse.ok) {
+        throw new Error(`RPC request failed with status ${voteAccountResponse.status}`);
+      }
+
+      const voteAccountData = await voteAccountResponse.json();
+      console.log(`Vote account data from ${endpoint}:`, voteAccountData);
       
-      if (!response.ok) {
-        throw new Error(`Fallback RPC request failed`);
+      const validators = [...(voteAccountData.result?.current || []), ...(voteAccountData.result?.delinquent || [])];
+      const validator = validators.find(v => v.votePubkey === VALIDATOR_PUBKEY);
+      
+      if (validator) {
+        // Check if the validator data includes a delegatorCount property
+        if (validator.delegatorCount !== undefined && validator.delegatorCount > 0) {
+          console.log(`Found delegator count directly in vote account: ${validator.delegatorCount}`);
+          return validator.delegatorCount;
+        }
       }
       
-      const data = await response.json();
-      const allValidators = [...(data.result?.current || []), ...(data.result?.delinquent || [])];
-      const validator = allValidators.find(v => v.votePubkey === VALIDATOR_PUBKEY);
-      
-      if (validator && validator.delegatorCount !== undefined) {
-        return validator.delegatorCount;
+      // If not available in vote account data, use getProgramAccounts to count stake accounts
+      console.log(`Trying getProgramAccounts with ${endpoint}...`);
+      const stakeAccountsResponse = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'getProgramAccounts',
+          params: [
+            'Stake11111111111111111111111111111111111111',
+            {
+              filters: [
+                {
+                  memcmp: {
+                    offset: 44,
+                    bytes: VALIDATOR_PUBKEY
+                  }
+                }
+              ]
+            }
+          ]
+        }),
+        // Add timeout to avoid hanging requests
+        signal: AbortSignal.timeout(10000)
+      });
+
+      if (!stakeAccountsResponse.ok) {
+        throw new Error(`RPC request failed with status ${stakeAccountsResponse.status}`);
       }
+
+      const stakeAccountsData = await stakeAccountsResponse.json();
+      console.log(`Stake accounts data from ${endpoint}:`, stakeAccountsData);
       
-      throw new Error("Validator not found in fallback response");
-    } catch (fallbackError) {
-      console.error("Fallback method failed:", fallbackError);
-      // Return null to indicate error instead of a default value
-      toast.error("Could not fetch delegator count");
-      return null;
+      // Check if the result exists and has a length property
+      if (stakeAccountsData.result !== undefined) {
+        // If we got an empty array but this isn't the last endpoint, continue to the next one
+        if (stakeAccountsData.result.length === 0) {
+          console.log(`Empty result array from getProgramAccounts on ${endpoint}, trying next endpoint...`);
+          continue;
+        }
+        
+        console.log(`Found ${stakeAccountsData.result.length} delegators via getProgramAccounts`);
+        return stakeAccountsData.result.length;
+      }
+    } catch (error) {
+      console.error(`Error fetching delegator count from ${endpoint}:`, error);
+      // Continue to the next endpoint on error
     }
   }
+  
+  // If all endpoints failed, return null to indicate the error
+  console.error("All RPC endpoints failed to return delegator count");
+  return null;
 };

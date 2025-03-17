@@ -1,4 +1,3 @@
-
 import { toast } from "sonner";
 import { VALIDATOR_PUBKEY, VALIDATOR_IDENTITY } from "./constants";
 import { ValidatorInfo, ValidatorMetrics, StakeHistoryItem } from "./types";
@@ -64,22 +63,28 @@ export const fetchValidatorMetrics = async (): Promise<ValidatorMetrics | null> 
       throw new Error("Failed to fetch validator info");
     }
     
-    // Get delegator count
-    const delegatorCount = await fetchDelegatorCount();
+    // Get vote account details to fetch activating stake
+    const { current, delinquent } = await fetchVoteAccounts();
+    const validators = [...current, ...delinquent];
+    const validator = validators.find(v => v.votePubkey === VALIDATOR_PUBKEY);
     
-    // If delegatorCount is 0, it's likely due to RPC limitations rather than actually having zero delegators
-    // for an active validator, so treat it as an error case
-    if (delegatorCount === 0) {
-      console.log("Delegator count returned 0, treating as error case");
-      return {
-        totalStake: validatorInfo.activatedStake,
-        commission: validatorInfo.commission,
-        delegatorCount: null,
-      };
+    let activatingStake = 0;
+    if (validator && validator.activatingStake) {
+      activatingStake = lamportsToSol(validator.activatingStake);
+    }
+    
+    // Try to get delegator count using all available methods
+    let delegatorCount = null;
+    try {
+      delegatorCount = await fetchDelegatorCount();
+    } catch (error) {
+      console.error("Could not fetch delegator count:", error);
+      // We'll keep delegatorCount as null to show the error state
     }
     
     return {
       totalStake: validatorInfo.activatedStake,
+      activatingStake: activatingStake,
       commission: validatorInfo.commission,
       delegatorCount: delegatorCount,
     };
@@ -90,6 +95,7 @@ export const fetchValidatorMetrics = async (): Promise<ValidatorMetrics | null> 
     // Fallback to mock data
     return {
       totalStake: 345678.9012,
+      activatingStake: 12345.6789,
       commission: 7,
       delegatorCount: null,
     };
