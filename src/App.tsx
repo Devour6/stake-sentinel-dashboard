@@ -9,7 +9,7 @@ import ValidatorDashboard from "./pages/ValidatorDashboard";
 import NotFound from "./pages/NotFound";
 
 // Set the document title
-document.title = "hiStake - Solana Validator Monitor";
+document.title = "NodeScan - Solana Validator Monitor";
 
 const queryClient = new QueryClient();
 

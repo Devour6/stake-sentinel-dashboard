@@ -1,15 +1,9 @@
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { 
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { validateVotePubkey } from "@/services/solanaApi";
 import { toast } from "sonner";
 import { fetchAllValidators } from "@/services/api/validatorApi";
@@ -40,7 +34,6 @@ const Home = () => {
     loadValidators();
   }, []);
 
-  // Improved filtered validators logic with better search
   useEffect(() => {
     if (searchInput.trim()) {
       const searchTerm = searchInput.toLowerCase();
@@ -49,7 +42,7 @@ const Home = () => {
           (validator.name?.toLowerCase().includes(searchTerm)) ||
           validator.votePubkey.toLowerCase().includes(searchTerm) ||
           validator.identity.toLowerCase().includes(searchTerm)
-      ).slice(0, 10); // Limit to 10 results for better UI
+      ).slice(0, 10);
       setFilteredValidators(filtered);
       setShowSuggestions(filtered.length > 0);
     } else {
@@ -66,13 +59,11 @@ const Home = () => {
     setIsSearching(true);
     
     try {
-      // First check if input is a valid vote pubkey
       if (validateVotePubkey(searchInput.trim())) {
         navigate(`/validator/${encodeURIComponent(searchInput.trim())}`);
         return;
       }
       
-      // Then check if it matches any validator name or identity
       const matchedValidator = validators.find(v => 
         (v.name?.toLowerCase() === searchInput.toLowerCase()) ||
         v.votePubkey.toLowerCase() === searchInput.toLowerCase() ||
@@ -82,7 +73,6 @@ const Home = () => {
       if (matchedValidator) {
         navigate(`/validator/${encodeURIComponent(matchedValidator.votePubkey)}`);
       } else if (filteredValidators.length > 0) {
-        // If we have filtered results but no exact match, navigate to the first result
         navigate(`/validator/${encodeURIComponent(filteredValidators[0].votePubkey)}`);
       } else {
         toast.error("No validator found matching your search");
@@ -118,7 +108,7 @@ const Home = () => {
 
       <div className="w-full max-w-3xl mx-auto text-center mb-12 animate-fade-in">
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 text-white">
-          hiStake
+          NodeScan
         </h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
           Search for any Solana validator by vote account address, identity, or name to view detailed performance metrics.
@@ -131,7 +121,6 @@ const Home = () => {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
               
-              {/* Removed Popover around Input, and implemented custom dropdown */}
               <div className="relative">
                 <Input
                   type="text"
@@ -142,7 +131,6 @@ const Home = () => {
                   ref={searchInputRef}
                   onFocus={() => filteredValidators.length > 0 && setShowSuggestions(true)}
                   onBlur={() => {
-                    // Delay hiding suggestions to allow for clicks
                     setTimeout(() => setShowSuggestions(false), 200);
                   }}
                 />
@@ -154,7 +142,7 @@ const Home = () => {
                         key={validator.votePubkey}
                         className="flex items-center justify-between p-3 hover:bg-accent cursor-pointer"
                         onMouseDown={(e) => {
-                          e.preventDefault(); // Prevent blur event from firing before click
+                          e.preventDefault();
                           handleSelectValidator(validator.votePubkey);
                         }}
                       >
