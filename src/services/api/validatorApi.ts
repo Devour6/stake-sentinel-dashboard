@@ -67,6 +67,17 @@ export const fetchValidatorMetrics = async (): Promise<ValidatorMetrics | null> 
     // Get delegator count
     const delegatorCount = await fetchDelegatorCount();
     
+    // If delegatorCount is 0, it's likely due to RPC limitations rather than actually having zero delegators
+    // for an active validator, so treat it as an error case
+    if (delegatorCount === 0) {
+      console.log("Delegator count returned 0, treating as error case");
+      return {
+        totalStake: validatorInfo.activatedStake,
+        commission: validatorInfo.commission,
+        delegatorCount: null,
+      };
+    }
+    
     return {
       totalStake: validatorInfo.activatedStake,
       commission: validatorInfo.commission,

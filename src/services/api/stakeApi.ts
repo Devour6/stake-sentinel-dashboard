@@ -119,8 +119,15 @@ export const fetchDelegatorCount = async (): Promise<number | null> => {
     const stakeAccountsData = await stakeAccountsResponse.json();
     console.log("Stake accounts data:", stakeAccountsData);
     
-    // Count the number of returned stake accounts
-    if (stakeAccountsData.result) {
+    // Check if the result exists and has a length property
+    if (stakeAccountsData.result !== undefined) {
+      // If we got an empty array, this could either mean:
+      // 1. There are genuinely no delegators (unlikely for an active validator)
+      // 2. The RPC endpoint limitations or filtering issue
+      if (stakeAccountsData.result.length === 0) {
+        console.log("Got empty result array from getProgramAccounts, trying fallback method");
+        throw new Error("Empty result from getProgramAccounts");
+      }
       return stakeAccountsData.result.length;
     }
     
