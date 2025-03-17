@@ -72,14 +72,14 @@ async function fetchActivatingStake(voteAccount: string): Promise<number> {
 }
 
 // API methods using real RPC endpoint
-export const fetchValidatorInfo = async (): Promise<ValidatorInfo | null> => {
+export const fetchValidatorInfo = async (votePubkey = VALIDATOR_PUBKEY): Promise<ValidatorInfo | null> => {
   try {
-    console.log("Fetching validator info...");
+    console.log(`Fetching validator info for ${votePubkey}...`);
     
     // Get vote accounts for basic validator info
     const { current, delinquent } = await fetchVoteAccounts();
     const validators = [...current, ...delinquent];
-    const validator = validators.find(v => v.votePubkey === VALIDATOR_PUBKEY);
+    const validator = validators.find(v => v.votePubkey === votePubkey);
     
     if (!validator) {
       console.log("Validator not found in response");
@@ -110,29 +110,16 @@ export const fetchValidatorInfo = async (): Promise<ValidatorInfo | null> => {
     };
   } catch (error) {
     console.error("Error fetching validator info:", error);
-    toast.error("Failed to fetch validator data. Falling back to mock data.");
-    
-    // Fallback to mock data
-    return {
-      identity: VALIDATOR_IDENTITY,
-      votePubkey: VALIDATOR_PUBKEY,
-      commission: 7,
-      activatedStake: 345678.9012,
-      activatingStake: 0,
-      delinquentStake: 0,
-      epochCredits: 123456,
-      lastVote: 198765432,
-      rootSlot: 198765400,
-      currentEpoch: 351
-    };
+    toast.error("Failed to fetch validator data.");
+    return null;
   }
 };
 
-export const fetchValidatorMetrics = async (): Promise<ValidatorMetrics | null> => {
+export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Promise<ValidatorMetrics | null> => {
   try {
-    console.log("Fetching validator metrics...");
+    console.log(`Fetching validator metrics for ${votePubkey}...`);
     
-    const validatorInfo = await fetchValidatorInfo();
+    const validatorInfo = await fetchValidatorInfo(votePubkey);
     
     if (!validatorInfo) {
       throw new Error("Failed to fetch validator info");
@@ -145,14 +132,8 @@ export const fetchValidatorMetrics = async (): Promise<ValidatorMetrics | null> 
     };
   } catch (error) {
     console.error("Error fetching validator metrics:", error);
-    toast.error("Failed to fetch validator metrics. Using mock data.");
-    
-    // Fallback to mock data
-    return {
-      totalStake: 345678.9012,
-      activatingStake: 0,
-      commission: 7,
-    };
+    toast.error("Failed to fetch validator metrics.");
+    return null;
   }
 };
 

@@ -1,75 +1,78 @@
+import { toast } from "sonner";
 
-// Utility functions for the Solana API
+// Utils for formatting and converting data
+export const formatSol = (lamports: number | null): string => {
+  if (lamports === null) return "N/A";
+  const sol = lamports / 1_000_000_000;
+  return new Intl.NumberFormat('en-US', {
+    style: 'decimal',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(sol);
+};
 
-// Convert lamports to SOL
+export const formatCommission = (commission: number | null): string => {
+  if (commission === null) return "N/A";
+  return new Intl.NumberFormat('en-US', {
+    style: 'percent',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(commission / 100);
+};
+
+export const formatChange = (change: number | null): string => {
+  if (change === null) return "N/A";
+  return new Intl.NumberFormat('en-US', {
+    style: 'percent',
+    signDisplay: 'always',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(change);
+};
+
+export const formatNumber = (number: number | null): string => {
+  if (number === null) return "N/A";
+  return new Intl.NumberFormat('en-US', {
+    style: 'decimal',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(number);
+};
+
 export const lamportsToSol = (lamports: number): number => {
-  return lamports / 1000000000;
+  return lamports / 1_000_000_000;
 };
 
-// Format a number with commas
-export const formatNumber = (num: number): string => {
-  return new Intl.NumberFormat().format(Math.round(num * 100) / 100);
-};
-
-// Validate a vote pubkey
-export const validateVotePubkey = (pubkey: string): boolean => {
-  // Simple validation - in real app should be more robust
-  return pubkey.length === 44 || pubkey.length === 43;
-};
-
-// Format SOL amount for display
-export const formatSol = (sol: number): string => {
-  return `${formatNumber(sol)} SOL`;
-};
-
-// Format commission percentage
-export const formatCommission = (commission: number): string => {
-  return `${commission}%`;
-};
-
-// Format stake change with percentage
-export const formatChange = (change: number, percentage: number): string => {
-  const prefix = change >= 0 ? "+" : "";
-  return `${prefix}${formatNumber(change)} SOL (${prefix}${percentage.toFixed(2)}%)`;
-};
-
-// Generate mock stake history data with realistic patterns
+// Mock data generator for stake history
 export const generateMockStakeHistory = (days: number, currentStake: number) => {
-  const history = [];
-  const now = new Date();
-  
-  // Start with current stake and work backwards with realistic variations
+  const stakeHistory = [];
   let stake = currentStake;
-  
-  for (let i = 0; i < days; i++) {
-    const date = new Date(now);
-    date.setDate(date.getDate() - i);
-    
-    // Add some realistic variation using a sine wave pattern for natural growth
-    // The 24h change should be between -0.5% and +0.8% typically
-    const dayOfMonth = date.getDate();
-    const sinValue = Math.sin((dayOfMonth / 31) * Math.PI);
-    
-    // Base daily change: -0.1% to +0.2% plus the sine wave influence
-    const baseChange = (Math.random() * 0.003 - 0.001) * stake;
-    const sineInfluence = sinValue * 0.002 * stake; // Sine wave adds up to 0.2% variation
-    
-    const change = baseChange + sineInfluence;
-    
-    // For older dates, stake should generally be less (showing growth trend)
-    stake = i === 0 ? currentStake : stake - change;
-    
-    // Add a small random correction every few days to simulate epochs
-    if (i % 3 === 0) {
-      stake = stake * (1 + (Math.random() * 0.002 - 0.0005));
-    }
-    
-    history.unshift({
-      epoch: Math.round(300 - Math.floor(i / 3)), // Approximate epochs
+  const today = new Date();
+
+  for (let i = days - 1; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(today.getDate() - i);
+    const dateString = date.toLocaleDateString('en-CA'); // Use a consistent date format
+
+    // Generate a random stake change
+    const stakeChange = (Math.random() - 0.5) * 0.02 * currentStake; // Up to 2% change
+    stake += stakeChange;
+    stake = Math.max(0, stake); // Stake cannot be negative
+
+    stakeHistory.push({
+      epoch: days - i,
       stake: stake,
-      date: date.toISOString().split('T')[0],
+      date: dateString,
     });
   }
-  
-  return history;
+
+  return stakeHistory;
+};
+
+// Add a function to validate vote pubkey format
+export const validateVotePubkey = (pubkey: string): boolean => {
+  // This is a simple check for Solana address format (base58, 32-44 chars)
+  // For a real app, you'd want to perform a more thorough validation
+  const base58Regex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+  return base58Regex.test(pubkey);
 };

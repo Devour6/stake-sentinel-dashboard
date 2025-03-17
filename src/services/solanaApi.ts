@@ -1,6 +1,6 @@
 
 // This file re-exports from the refactored modules
-import { VALIDATOR_PUBKEY, VALIDATOR_IDENTITY } from "./api/constants";
+import { VALIDATOR_PUBKEY, VALIDATOR_IDENTITY, RPC_ENDPOINT } from "./api/constants";
 import {
   validateVotePubkey,
   formatSol,

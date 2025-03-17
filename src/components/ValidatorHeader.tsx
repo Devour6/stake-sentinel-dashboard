@@ -1,5 +1,5 @@
 
-import { ExternalLink, Info, Copy, RefreshCw } from "lucide-react";
+import { ExternalLink, Info, Copy, RefreshCw, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
@@ -9,13 +9,15 @@ interface ValidatorHeaderProps {
   identityPubkey?: string;
   isLoading?: boolean;
   onRefresh: () => void;
+  onBack?: () => void;
 }
 
 export const ValidatorHeader = ({ 
   validatorPubkey, 
   identityPubkey,
   isLoading = false,
-  onRefresh 
+  onRefresh,
+  onBack
 }: ValidatorHeaderProps) => {
   const truncateAddress = (address: string, length = 8) => {
     if (!address) return "";
@@ -48,6 +50,16 @@ export const ValidatorHeader = ({
     <div className="animate-slide-down">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div className="flex items-center gap-3">
+          {onBack && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={onBack}
+              className="mr-2 text-muted-foreground hover:text-white"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          )}
           <div className="w-12 h-12 md:w-16 md:h-16 relative animate-pulse-subtle">
             <img 
               src="/lovable-uploads/31314417-ef5b-4d58-ac5e-91a2ab487110.png" 
@@ -57,7 +69,7 @@ export const ValidatorHeader = ({
           </div>
           <div>
             <p className="text-sm uppercase tracking-widest text-gojira-red mb-1">Solana Validator</p>
-            <h1 className="text-3xl font-bold tracking-tight mb-2 text-white">Gojira Stake Monitor</h1>
+            <h1 className="text-3xl font-bold tracking-tight mb-2 text-white">Validator Dashboard</h1>
             <div className="flex flex-col sm:flex-row gap-2 sm:items-center text-muted-foreground">
               <div className="flex items-center gap-1">
                 <span className="text-sm">Vote Account:</span>
