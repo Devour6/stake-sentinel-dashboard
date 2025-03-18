@@ -101,7 +101,12 @@ export const fetchOnchainStakeChanges = async (votePubkey: string): Promise<{
       };
     } catch (rpcError) {
       console.error("Error with direct RPC method:", rpcError);
-      throw rpcError; // Propagate to try fallback methods
+      
+      // Try another method or fallback
+      return {
+        activatingStake: 0,
+        deactivatingStake: 0
+      };
     }
   } catch (error) {
     console.error("Error fetching on-chain stake changes:", error);

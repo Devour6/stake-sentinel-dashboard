@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ValidatorHeader } from "@/components/validator/ValidatorHeader";
@@ -55,6 +56,7 @@ const ValidatorDashboard = () => {
     try {
       console.log("Fetching data for validator:", votePubkey);
       
+      // Fetch validator info and metrics in parallel
       const [info, metrics] = await Promise.all([
         fetchValidatorInfo(votePubkey),
         fetchValidatorMetrics(votePubkey)
@@ -70,6 +72,7 @@ const ValidatorDashboard = () => {
       setValidatorInfo(info);
       setValidatorMetrics(metrics);
       
+      // Get active stake, history, pending changes and delegator count in parallel
       const [stakeData, historyData, stakeChangesData, delegatorCountData] = await Promise.allSettled([
         fetchSolanaFMStake(votePubkey),
         fetchSolanaFMStakeHistory(votePubkey),
@@ -77,10 +80,12 @@ const ValidatorDashboard = () => {
         fetchDelegatorCount(votePubkey)
       ]);
       
+      // ENHANCEMENT: Prioritize SolanaFM active stake as the source of truth
       if (stakeData.status === 'fulfilled' && stakeData.value > 0) {
         console.log("SolanaFM total stake:", stakeData.value);
         setTotalStake(stakeData.value);
       } else {
+        // Fallback to metrics or info if SolanaFM fails
         const fallbackStake = Math.max(
           metrics?.totalStake || 0, 
           info?.activatedStake || 0
@@ -89,7 +94,7 @@ const ValidatorDashboard = () => {
         setTotalStake(fallbackStake);
       }
       
-      if (historyData.status === 'fulfilled') {
+      if (historyData.status === 'fulfilled' && historyData.value && historyData.value.length > 0) {
         console.log("SolanaFM stake history:", historyData.value);
         setStakeHistory(historyData.value);
       }
@@ -125,45 +130,9 @@ const ValidatorDashboard = () => {
     setIsRefreshing(true);
     await fetchData(true);
     
-    if (votePubkey) {
-      await fetchSolanaData(votePubkey);
-    }
-    
     setTimeout(() => {
       setIsRefreshing(false);
     }, 800);
-  };
-  
-  const fetchSolanaData = async (votePubkey: string) => {
-    try {
-      console.log("Fetching SolanaFM and on-chain data for validator:", votePubkey);
-      
-      const [stakeData, historyData, stakeChangesData] = await Promise.all([
-        fetchSolanaFMStake(votePubkey),
-        fetchSolanaFMStakeHistory(votePubkey),
-        fetchOnchainStakeChanges(votePubkey)
-      ]);
-      
-      console.log("SolanaFM total stake:", stakeData);
-      console.log("SolanaFM stake history:", historyData);
-      console.log("On-chain stake changes:", stakeChangesData);
-      
-      setTotalStake(stakeData);
-      setStakeHistory(historyData);
-      setStakeChanges(stakeChangesData);
-      
-    } catch (err) {
-      console.error("Error fetching SolanaFM data:", err);
-      
-      if (totalStake <= 0) {
-        const fallbackStake = Math.max(
-          validatorMetrics?.totalStake || 0, 
-          validatorInfo?.activatedStake || 0
-        );
-        console.log("Using fallback stake value:", fallbackStake);
-        setTotalStake(fallbackStake);
-      }
-    }
   };
 
   useEffect(() => {
@@ -191,8 +160,8 @@ const ValidatorDashboard = () => {
   const activatingStake = stakeChanges?.activatingStake || 0;
   const deactivatingStake = stakeChanges?.deactivatingStake || 0;
   
+  // Use the largest pending change and indicate whether it's activating or deactivating
   const pendingStakeChange = Math.max(activatingStake, deactivatingStake);
-  
   const isDeactivating = deactivatingStake > activatingStake;
 
   return (
@@ -225,7 +194,7 @@ const ValidatorDashboard = () => {
         )}
         
         <ValidatorMetricsGrid
-          totalStake={totalStake > 0 ? totalStake : (validatorMetrics?.totalStake || validatorInfo?.activatedStake || 0)}
+          totalStake={totalStake}
           pendingStakeChange={pendingStakeChange}
           isDeactivating={isDeactivating}
           commission={validatorMetrics?.commission || validatorInfo?.commission || 0}
