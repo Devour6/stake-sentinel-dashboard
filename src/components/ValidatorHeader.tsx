@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { ExternalLink, Info, Copy, RefreshCw, ArrowLeft, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -88,7 +87,6 @@ export const ValidatorHeader = ({
   return (
     <div className="animate-slide-down space-y-4">
       <div className="flex flex-col md:flex-row gap-4 items-start">
-        {/* Validator info section - flex grow to take available space */}
         <div className="flex items-start gap-3 flex-grow overflow-hidden">
           {onBack && (
             <Button 
@@ -128,7 +126,6 @@ export const ValidatorHeader = ({
               )}
             </h1>
             
-            {/* Address information with horizontal layout when possible */}
             <div className="text-muted-foreground">
               {isLoading ? (
                 <div className="flex flex-col space-y-2">
@@ -137,7 +134,6 @@ export const ValidatorHeader = ({
                 </div>
               ) : (
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                  {/* Vote Account */}
                   <div className="flex items-center gap-1">
                     <span className="text-sm whitespace-nowrap">Vote Account:</span>
                     <code className="bg-gojira-gray-dark/50 px-2 py-0.5 rounded text-sm font-mono">
@@ -173,31 +169,34 @@ export const ValidatorHeader = ({
                     </TooltipProvider>
                   </div>
                   
-                  {/* Identity */}
                   {identityPubkey && (
                     <>
                       <span className="hidden sm:inline text-muted-foreground">•</span>
-                      <div className="flex items-center gap-1">
+                      <div className="flex flex-wrap items-center gap-1">
                         <span className="text-sm whitespace-nowrap">Identity:</span>
-                        <code className="bg-gojira-gray-dark/50 px-2 py-0.5 rounded text-sm font-mono">
-                          {identityPubkey}
-                        </code>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="p-0 h-auto hover:bg-transparent text-gojira-red hover:text-gojira-red-light"
-                          onClick={() => copyToClipboard(identityPubkey, "Identity")}
-                        >
-                          <Copy className="h-3.5 w-3.5" />
-                        </Button>
-                        <a 
-                          href={identitySolscanUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-gojira-red hover:text-gojira-red-light transition-colors"
-                        >
-                          <ExternalLink className="h-3.5 w-3.5" />
-                        </a>
+                        <div className="flex items-center flex-wrap">
+                          <code className="bg-gojira-gray-dark/50 px-2 py-0.5 rounded text-sm font-mono max-w-[250px] overflow-hidden text-ellipsis">
+                            {identityPubkey}
+                          </code>
+                          <div className="flex items-center">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="p-0 h-auto hover:bg-transparent text-gojira-red hover:text-gojira-red-light"
+                              onClick={() => copyToClipboard(identityPubkey, "Identity")}
+                            >
+                              <Copy className="h-3.5 w-3.5" />
+                            </Button>
+                            <a 
+                              href={identitySolscanUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-gojira-red hover:text-gojira-red-light transition-colors"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5" />
+                            </a>
+                          </div>
+                        </div>
                       </div>
                     </>
                   )}
@@ -207,7 +206,6 @@ export const ValidatorHeader = ({
           </div>
         </div>
         
-        {/* Search and refresh section - always visible */}
         <div className="flex flex-row gap-3 items-center ml-auto max-w-full">
           <form onSubmit={handleSearchSubmit} className="w-full sm:w-52 md:w-64">
             <div className="relative">
