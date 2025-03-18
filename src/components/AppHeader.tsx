@@ -1,14 +1,40 @@
 
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from './ui/button';
 import SearchBar from './search/SearchBar';
+import { ValidatorSearchResult } from '@/services/api/types';
 
 interface AppHeaderProps {
   setIsStakeModalOpen: (isOpen: boolean) => void;
 }
 
 const AppHeader = ({ setIsStakeModalOpen }: AppHeaderProps) => {
+  const navigate = useNavigate();
+  const [searchInput, setSearchInput] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [isLoadingValidators, setIsLoadingValidators] = useState(false);
+  const [filteredValidators, setFilteredValidators] = useState<ValidatorSearchResult[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchInput.trim()) {
+      setIsSearching(true);
+      // Navigate to validator page if search is submitted
+      navigate(`/validator/${searchInput.trim()}`);
+      setIsSearching(false);
+      setShowSuggestions(false);
+    }
+  };
+
+  const handleSelectValidator = (votePubkey: string) => {
+    // Navigate to selected validator's page
+    navigate(`/validator/${votePubkey}`);
+    setSearchInput('');
+    setShowSuggestions(false);
+  };
+
   return (
     <header className="w-full bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
       <div className="container flex items-center justify-between h-16 px-4 mx-auto">
@@ -19,7 +45,17 @@ const AppHeader = ({ setIsStakeModalOpen }: AppHeaderProps) => {
         </div>
         
         <div className="flex-1 max-w-xl mx-4">
-          <SearchBar />
+          <SearchBar 
+            searchInput={searchInput}
+            setSearchInput={setSearchInput}
+            isSearching={isSearching}
+            isLoadingValidators={isLoadingValidators}
+            filteredValidators={filteredValidators}
+            showSuggestions={showSuggestions}
+            setShowSuggestions={setShowSuggestions}
+            onSearch={handleSearch}
+            onSelectValidator={handleSelectValidator}
+          />
         </div>
         
         <div className="flex items-center space-x-4">
