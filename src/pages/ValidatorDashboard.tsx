@@ -4,6 +4,7 @@ import { ValidatorHeader } from "@/components/validator/ValidatorHeader";
 import { ValidatorMetricsGrid } from "@/components/StakingMetricsCard";
 import { EpochStatusCard } from "@/components/EpochStatusCard";
 import StakeModal from "@/components/StakeModal";
+import { StakeChart } from "@/components/StakeChart";
 import { 
   fetchValidatorInfo, 
   fetchValidatorMetrics, 
@@ -16,7 +17,6 @@ import { toast } from "sonner";
 import { fetchSolanaFMStake, fetchSolanaFMStakeHistory } from "@/services/api/solanaFMApi";
 import { fetchOnchainStakeChanges } from "@/services/api/onchainStakeApi";
 import { fetchDelegatorCount } from "@/services/api/stakeApi";
-import { StakeChart } from "@/components/StakeChart";
 
 const RefreshOverlay = () => (
   <div className="refresh-overlay">
@@ -36,7 +36,6 @@ const ValidatorDashboard = () => {
   const [error, setError] = useState<string | null>(null);
   const [isStakeModalOpen, setIsStakeModalOpen] = useState(false);
   
-  // SolanaFM and on-chain data state
   const [totalStake, setTotalStake] = useState<number>(0);
   const [stakeHistory, setStakeHistory] = useState<any[]>([]);
   const [stakeChanges, setStakeChanges] = useState<{
@@ -56,16 +55,13 @@ const ValidatorDashboard = () => {
     try {
       console.log("Fetching data for validator:", votePubkey);
       
-      // Fetch validator info and metrics
-      const [info, metrics, delegators] = await Promise.all([
+      const [info, metrics] = await Promise.all([
         fetchValidatorInfo(votePubkey),
-        fetchValidatorMetrics(votePubkey),
-        fetchDelegatorCount(votePubkey)
+        fetchValidatorMetrics(votePubkey)
       ]);
       
       console.log("Validator info:", info);
       console.log("Validator metrics:", metrics);
-      console.log("Delegator count:", delegators);
       
       if (!info) {
         throw new Error("Validator not found");
@@ -73,10 +69,40 @@ const ValidatorDashboard = () => {
       
       setValidatorInfo(info);
       setValidatorMetrics(metrics);
-      setDelegatorCount(delegators);
       
-      // Fetch SolanaFM and on-chain data in parallel
-      fetchSolanaData(votePubkey);
+      const [stakeData, historyData, stakeChangesData, delegatorCountData] = await Promise.allSettled([
+        fetchSolanaFMStake(votePubkey),
+        fetchSolanaFMStakeHistory(votePubkey),
+        fetchOnchainStakeChanges(votePubkey),
+        fetchDelegatorCount(votePubkey)
+      ]);
+      
+      if (stakeData.status === 'fulfilled' && stakeData.value > 0) {
+        console.log("SolanaFM total stake:", stakeData.value);
+        setTotalStake(stakeData.value);
+      } else {
+        const fallbackStake = Math.max(
+          metrics?.totalStake || 0, 
+          info?.activatedStake || 0
+        );
+        console.log("Using fallback stake value:", fallbackStake);
+        setTotalStake(fallbackStake);
+      }
+      
+      if (historyData.status === 'fulfilled') {
+        console.log("SolanaFM stake history:", historyData.value);
+        setStakeHistory(historyData.value);
+      }
+      
+      if (stakeChangesData.status === 'fulfilled') {
+        console.log("On-chain stake changes:", stakeChangesData.value);
+        setStakeChanges(stakeChangesData.value);
+      }
+      
+      if (delegatorCountData.status === 'fulfilled') {
+        console.log("Delegator count:", delegatorCountData.value);
+        setDelegatorCount(delegatorCountData.value);
+      }
       
       if (showToast && info) {
         uiToast({
@@ -95,12 +121,23 @@ const ValidatorDashboard = () => {
     }
   };
   
-  // Separate function to fetch SolanaFM data
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchData(true);
+    
+    if (votePubkey) {
+      await fetchSolanaData(votePubkey);
+    }
+    
+    setTimeout(() => {
+      setIsRefreshing(false);
+    }, 800);
+  };
+  
   const fetchSolanaData = async (votePubkey: string) => {
     try {
       console.log("Fetching SolanaFM and on-chain data for validator:", votePubkey);
       
-      // Fetch data in parallel
       const [stakeData, historyData, stakeChangesData] = await Promise.all([
         fetchSolanaFMStake(votePubkey),
         fetchSolanaFMStakeHistory(votePubkey),
@@ -111,7 +148,6 @@ const ValidatorDashboard = () => {
       console.log("SolanaFM stake history:", historyData);
       console.log("On-chain stake changes:", stakeChangesData);
       
-      // Update state with fetched data
       setTotalStake(stakeData);
       setStakeHistory(historyData);
       setStakeChanges(stakeChangesData);
@@ -119,29 +155,17 @@ const ValidatorDashboard = () => {
     } catch (err) {
       console.error("Error fetching SolanaFM data:", err);
       
-      // Keep previous data if available, otherwise provide fallback
       if (totalStake <= 0) {
-        // Use metrics data as fallback
-        const fallbackStake = validatorMetrics?.totalStake || validatorInfo?.activatedStake || 0;
-        setTotalStake(fallbackStake > 0 ? fallbackStake : 0);
+        const fallbackStake = Math.max(
+          validatorMetrics?.totalStake || 0, 
+          validatorInfo?.activatedStake || 0
+        );
+        console.log("Using fallback stake value:", fallbackStake);
+        setTotalStake(fallbackStake);
       }
     }
   };
 
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    await fetchData(true);
-    
-    // Explicitly refresh SolanaFM data
-    if (votePubkey) {
-      await fetchSolanaData(votePubkey);
-    }
-    
-    setTimeout(() => {
-      setIsRefreshing(false);
-    }, 800);
-  };
-  
   useEffect(() => {
     fetchData();
     const intervalId = setInterval(() => fetchData(), 5 * 60 * 1000);
@@ -156,7 +180,6 @@ const ValidatorDashboard = () => {
     setIsStakeModalOpen(false);
   };
 
-  // Log state variables to help debug
   useEffect(() => {
     console.log("Current validator info state:", validatorInfo);
     console.log("Current validator metrics state:", validatorMetrics);
@@ -165,14 +188,11 @@ const ValidatorDashboard = () => {
     console.log("Current stake history from SolanaFM:", stakeHistory);
   }, [validatorInfo, validatorMetrics, totalStake, stakeChanges, stakeHistory]);
 
-  // Get activating and deactivating stake values
-  const activatingStake = stakeChanges.activatingStake || 0;
-  const deactivatingStake = stakeChanges.deactivatingStake || 0;
+  const activatingStake = stakeChanges?.activatingStake || 0;
+  const deactivatingStake = stakeChanges?.deactivatingStake || 0;
   
-  // Calculate pending stake change
   const pendingStakeChange = Math.max(activatingStake, deactivatingStake);
   
-  // Determine if deactivating
   const isDeactivating = deactivatingStake > activatingStake;
 
   return (
@@ -205,7 +225,7 @@ const ValidatorDashboard = () => {
         )}
         
         <ValidatorMetricsGrid
-          totalStake={totalStake}
+          totalStake={totalStake > 0 ? totalStake : (validatorMetrics?.totalStake || validatorInfo?.activatedStake || 0)}
           pendingStakeChange={pendingStakeChange}
           isDeactivating={isDeactivating}
           commission={validatorMetrics?.commission || validatorInfo?.commission || 0}
@@ -213,7 +233,7 @@ const ValidatorDashboard = () => {
           estimatedApy={validatorMetrics?.estimatedApy}
           delegatorCount={delegatorCount}
           isLoading={isLoading}
-          hasError={!!error}
+          hasError={!!error && totalStake <= 0}
         />
         
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mt-6">

@@ -1,6 +1,5 @@
 
-import { Connection, PublicKey, StakeProgram, LAMPORTS_PER_SOL } from "@solana/web3.js";
-import { RPC_ENDPOINT, FALLBACK_RPC_ENDPOINTS } from "./constants";
+import { RPC_ENDPOINT } from "./constants";
 import { fetchCurrentEpoch } from "./epochApi";
 import { StakeHistoryItem } from "./types";
 
@@ -12,7 +11,7 @@ export const fetchOnchainStakeChanges = async (votePubkey: string): Promise<{
   try {
     console.log(`Fetching on-chain stake changes for vote account: ${votePubkey}`);
     
-    // First try direct RPC call method (most reliable)
+    // Try direct RPC call method (most reliable)
     try {
       console.log("Using direct RPC call for stake changes");
       const response = await fetch(RPC_ENDPOINT, {
@@ -45,7 +44,7 @@ export const fetchOnchainStakeChanges = async (votePubkey: string): Promise<{
       }
 
       const data = await response.json();
-      console.log(`Received ${data.result?.length || 0} stake accounts from RPC:`, data);
+      console.log(`Received ${data.result?.length || 0} stake accounts from RPC`);
 
       let activatingStake = 0;
       let deactivatingStake = 0;
@@ -58,7 +57,6 @@ export const fetchOnchainStakeChanges = async (votePubkey: string): Promise<{
         for (const account of data.result) {
           try {
             if (!account.account?.data?.parsed?.info?.stake?.delegation) {
-              console.log("Skipping account without delegation data");
               continue;
             }
             
@@ -67,20 +65,22 @@ export const fetchOnchainStakeChanges = async (votePubkey: string): Promise<{
             
             if (!delegation) continue;
             
-            const activationEpoch = Number(delegation.activationEpoch);
-            const deactivationEpoch = Number(delegation.deactivationEpoch);
-            const stake = Number(delegation.stake);
+            const activationEpoch = parseInt(delegation.activationEpoch);
+            const deactivationEpoch = parseInt(delegation.deactivationEpoch);
+            const stake = parseInt(delegation.stake);
             
             // Check for activating stake (not yet active in current epoch)
             if (activationEpoch >= currentEpoch) {
-              console.log(`Found activating stake: ${stake / LAMPORTS_PER_SOL} SOL, activation epoch: ${activationEpoch}, current epoch: ${currentEpoch}`);
+              console.log(`Found activating stake: ${stake / 1_000_000_000} SOL, activation epoch: ${activationEpoch}, current epoch: ${currentEpoch}`);
               activatingStake += stake;
             }
             
             // Check for deactivating stake (deactivation requested but not yet complete)
-            // 18446744073709551615 is the max u64 value used to represent "not deactivating"
-            if (deactivationEpoch !== 18446744073709552000 && deactivationEpoch >= currentEpoch) {
-              console.log(`Found deactivating stake: ${stake / LAMPORTS_PER_SOL} SOL, deactivation epoch: ${deactivationEpoch}, current epoch: ${currentEpoch}`);
+            // In Solana, the "deactivationEpoch" is set to the max u64 value (18446744073709551615) when not deactivating
+            if (deactivationEpoch !== 18446744073709552000 && 
+                deactivationEpoch !== 18446744073709551615 && 
+                deactivationEpoch >= currentEpoch) {
+              console.log(`Found deactivating stake: ${stake / 1_000_000_000} SOL, deactivation epoch: ${deactivationEpoch}, current epoch: ${currentEpoch}`);
               deactivatingStake += stake;
             }
           } catch (err) {
@@ -89,8 +89,8 @@ export const fetchOnchainStakeChanges = async (votePubkey: string): Promise<{
         }
       }
       
-      const activatingStakeInSol = activatingStake / LAMPORTS_PER_SOL;
-      const deactivatingStakeInSol = deactivatingStake / LAMPORTS_PER_SOL;
+      const activatingStakeInSol = activatingStake / 1_000_000_000;
+      const deactivatingStakeInSol = deactivatingStake / 1_000_000_000;
       
       console.log(`On-chain activating stake: ${activatingStakeInSol} SOL`);
       console.log(`On-chain deactivating stake: ${deactivatingStakeInSol} SOL`);
@@ -122,8 +122,9 @@ export const generateStakeHistory = (
 ): StakeHistoryItem[] => {
   console.log(`Generating stake history data for ${votePubkey} with current stake: ${totalStake}`);
   
+  // Use a reasonable default if no stake data available
   if (!totalStake || totalStake <= 0) {
-    totalStake = 1000; // Fallback if total stake is invalid
+    totalStake = 10000; // Fallback if total stake is invalid
   }
   
   // Use last 6 chars of pubkey to seed the random generation for consistency
