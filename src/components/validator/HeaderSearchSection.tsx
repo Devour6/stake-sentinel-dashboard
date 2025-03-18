@@ -116,9 +116,7 @@ export const HeaderSearchSection = ({
                     </span>
                     {validator.activatedStake !== undefined && (
                       <span className="text-xs text-muted-foreground">
-                        {validator.activatedStake > 0 
-                          ? `Stake: ${Math.floor(validator.activatedStake).toLocaleString()} SOL` 
-                          : ''}
+                        Stake: {Math.floor(validator.activatedStake).toLocaleString()} SOL
                       </span>
                     )}
                   </div>
