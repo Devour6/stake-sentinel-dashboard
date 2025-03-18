@@ -111,7 +111,7 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
           uptime30d = stakewizData.uptime_30d;
         }
         
-        // Website
+        // Website - make sure to include this property
         const website = stakewizData.website || null;
         
         // Get the proper activated stake value, as Stakewiz may format it in different ways
@@ -143,7 +143,7 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
           description,
           version,
           uptime30d,
-          website
+          website  // Include website in the metrics
         };
         
         console.log("Final validator metrics:", metrics);

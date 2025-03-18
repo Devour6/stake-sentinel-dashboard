@@ -37,6 +37,7 @@ export interface ValidatorMetrics {
   description?: string; // Added field
   version?: string; // Added field
   uptime30d?: number; // Added field for 30-day uptime percentage
+  website?: string | null; // Adding the missing website property
 }
 
 // Raw RPC response interfaces
