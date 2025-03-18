@@ -1,3 +1,4 @@
+
 // Types for the Solana API responses and data structures
 export interface ValidatorInfo {
   identity: string;
@@ -113,4 +114,5 @@ export interface EpochInfo {
   absoluteSlot: number;
   blockHeight?: number;
   transactionCount?: number;
+  timeRemaining?: number; // Added field for time remaining in seconds
 }
