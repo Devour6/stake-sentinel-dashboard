@@ -1,7 +1,6 @@
-
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ValidatorHeader } from "@/components/ValidatorHeader";
+import { ValidatorHeader } from "@/components/validator/ValidatorHeader";
 import { ValidatorMetricsGrid } from "@/components/StakingMetricsCard";
 import { ValidatorInfoCard } from "@/components/ValidatorInfoCard";
 import { EpochStatusCard } from "@/components/EpochStatusCard";
