@@ -6,12 +6,13 @@ import { ValidatorMetricsGrid } from "@/components/StakingMetricsCard";
 import { ValidatorInfoCard } from "@/components/ValidatorInfoCard";
 import { EpochStatusCard } from "@/components/EpochStatusCard";
 import { StakeHistoryChart } from "@/components/stakes/StakeHistoryChart";
-import { StakeModal } from "@/components/StakeModal";
+import StakeModal from "@/components/StakeModal"; // Fixed import statement
 import { 
   fetchValidatorInfo, 
   fetchValidatorMetrics, 
   type ValidatorInfo,
-  type ValidatorMetrics
+  type ValidatorMetrics,
+  VALIDATOR_PUBKEY // Import VALIDATOR_PUBKEY to fix the error
 } from "@/services/solanaApi";
 import { useToast } from "@/components/ui/use-toast";
 import { toast } from "sonner";

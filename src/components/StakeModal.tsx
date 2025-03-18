@@ -17,10 +17,12 @@ import { VALIDATOR_PUBKEY } from "@/services/api/constants";
 
 interface StakeModalProps {
   isOpen: boolean;
-  setIsOpen: (isOpen: boolean) => void;
+  onClose: () => void;
+  validatorPubkey: string;
+  validatorName: string;
 }
 
-const StakeModal = ({ isOpen, setIsOpen }: StakeModalProps) => {
+const StakeModal = ({ isOpen, onClose, validatorPubkey, validatorName }: StakeModalProps) => {
   const [amount, setAmount] = useState("");
   const [isStaking, setIsStaking] = useState(false);
   const [showWalletOptions, setShowWalletOptions] = useState(false);
@@ -54,11 +56,11 @@ const StakeModal = ({ isOpen, setIsOpen }: StakeModalProps) => {
       }
 
       // Create stake transaction
-      await createStakeTransaction(walletProvider, parseFloat(amount));
+      await createStakeTransaction(walletProvider, parseFloat(amount), validatorPubkey);
       
-      toast.success(`Successfully initiated staking of ${amount} SOL to Gojira validator`);
+      toast.success(`Successfully initiated staking of ${amount} SOL to ${validatorName}`);
       setAmount("");
-      setIsOpen(false);
+      onClose();
     } catch (error: any) {
       console.error("Failed to stake:", error);
       toast.error(error.message || "Failed to stake");
@@ -102,7 +104,7 @@ const StakeModal = ({ isOpen, setIsOpen }: StakeModalProps) => {
   };
 
   // Create and send stake transaction
-  const createStakeTransaction = async (provider: any, amountSol: number) => {
+  const createStakeTransaction = async (provider: any, amountSol: number, votePubkey: string) => {
     if (!provider) {
       throw new Error("Wallet provider not found");
     }
@@ -122,7 +124,7 @@ const StakeModal = ({ isOpen, setIsOpen }: StakeModalProps) => {
           fromPubkey: publicKey,
           lamports: amountLamports,
           stakePubkey: null, // Let wallet generate new stake account
-          votePubkey: VALIDATOR_PUBKEY,
+          votePubkey: votePubkey,
           withdrawAuthority: publicKey,
           stakeAuthority: publicKey,
         });
@@ -134,7 +136,7 @@ const StakeModal = ({ isOpen, setIsOpen }: StakeModalProps) => {
       // For other wallets, use standard signing approach
       // This will vary by wallet, so we'll use the most universal approach
       // by redirecting to the stakeview.app URL
-      const stakeLinkUrl = `https://stakeview.app/stake-to/${VALIDATOR_PUBKEY}?amount=${amountSol}`;
+      const stakeLinkUrl = `https://stakeview.app/stake-to/${votePubkey}?amount=${amountSol}`;
       
       if (confirm("Redirecting to StakeView to complete staking. Continue?")) {
         window.open(stakeLinkUrl, "_blank");
@@ -146,12 +148,12 @@ const StakeModal = ({ isOpen, setIsOpen }: StakeModalProps) => {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md bg-gojira-gray-dark">
         <DialogHeader>
-          <DialogTitle className="text-white">Stake to Gojira Validator</DialogTitle>
+          <DialogTitle className="text-white">Stake to {validatorName}</DialogTitle>
           <DialogDescription>
-            Support Gojira by staking your SOL tokens to our validator.
+            Support the Solana network by staking your SOL tokens to this validator.
           </DialogDescription>
         </DialogHeader>
         
@@ -188,7 +190,7 @@ const StakeModal = ({ isOpen, setIsOpen }: StakeModalProps) => {
         <DialogFooter>
           <Button 
             variant="outline" 
-            onClick={() => setIsOpen(false)}
+            onClick={onClose}
             className="border-gojira-gray-light text-white"
           >
             Cancel

@@ -7,8 +7,8 @@ export const VALIDATOR_IDENTITY = "gojir4WnhS7VS1JdbnanJMzaMfr4UD7KeX1ixWAHEmw";
 export const STAKEWIZ_API_URL = "https://api.stakewiz.com";
 
 // Helius paid RPC endpoint (primary) - more reliable and private endpoint
-export const HELIUS_RPC_ENDPOINT = "https://nanete-kbmodz-fast-mainnet.helius-rpc.com";
-export const HELIUS_WEBSOCKET_URL = "wss://nanete-kbmodz-fast-mainnet.helius-rpc.com";
+export const HELIUS_RPC_ENDPOINT = "https://mainnet.helius-rpc.com/?api-key=dff978e2-fae5-4768-8ee2-8e01b2c7fe2f";
+export const HELIUS_WEBSOCKET_URL = "wss://mainnet.helius-rpc.com/?api-key=dff978e2-fae5-4768-8ee2-8e01b2c7fe2f";
 
 // Primary RPC endpoint (Helius)
 export const RPC_ENDPOINT = HELIUS_RPC_ENDPOINT;
