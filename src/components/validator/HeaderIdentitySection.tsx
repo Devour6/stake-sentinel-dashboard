@@ -29,6 +29,13 @@ export const HeaderIdentitySection = ({
     return `${address.slice(0, length)}...${address.slice(-length)}`;
   };
 
+  const truncateUrl = (url: string, maxLength = 30) => {
+    if (!url) return "";
+    url = url.replace(/^https?:\/\//, '');
+    if (url.length <= maxLength) return url;
+    return `${url.slice(0, maxLength - 3)}...`;
+  };
+
   const copyToClipboard = (text: string, type: string) => {
     navigator.clipboard.writeText(text)
       .then(() => {
@@ -54,7 +61,7 @@ export const HeaderIdentitySection = ({
   return (
     <div className="space-y-4">
       {description && (
-        <div className="text-sm text-muted-foreground mb-2 max-w-3xl">
+        <div className="text-sm text-muted-foreground mb-2 max-w-3xl pl-0">
           {description}
         </div>
       )}
@@ -130,10 +137,13 @@ export const HeaderIdentitySection = ({
               href={website} 
               target="_blank" 
               rel="noopener noreferrer"
-              className="text-gojira-red hover:text-gojira-red-light transition-colors"
+              className="text-gojira-red hover:text-gojira-red-light transition-colors flex items-center"
+              title={website}
             >
               <ExternalLink className="h-3.5 w-3.5 mr-1" />
-              <span className="text-sm">{website.replace(/^https?:\/\//, '')}</span>
+              <span className="text-sm truncate max-w-[120px] sm:max-w-[150px] md:max-w-[200px]">
+                {truncateUrl(website)}
+              </span>
             </a>
           </div>
         )}

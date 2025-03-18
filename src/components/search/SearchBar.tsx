@@ -53,13 +53,13 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(({
   return (
     <form onSubmit={handleSearch} className="flex gap-2 relative search-container">
       <div className="relative flex-1">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
         
         <div className="relative">
           <Input
             type="text"
-            placeholder={isLoadingValidators ? "Loading validators..." : "Search by validator name, vote account, or identity..."}
-            className="pl-10 bg-gojira-gray-dark border-gojira-gray-light"
+            placeholder={isLoadingValidators ? "Loading validators..." : "Search by name, address..."}
+            className="pl-9 pr-3 py-2 bg-gojira-gray-dark border-gojira-gray-light h-9"
             value={searchInput}
             onChange={handleInputChange}
             ref={ref}
