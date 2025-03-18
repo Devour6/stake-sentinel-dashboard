@@ -7,7 +7,7 @@ import { StakeHistoryItem } from "./types";
 
 // Create a connection to the Solana network with retry logic
 const getConnection = async (): Promise<Connection> => {
-  let connection = new Connection(RPC_ENDPOINT);
+  let connection = new Connection(RPC_ENDPOINT, 'confirmed');
   
   // Try main RPC endpoint first
   try {
@@ -19,7 +19,7 @@ const getConnection = async (): Promise<Connection> => {
     // Try fallback endpoints
     for (const endpoint of FALLBACK_RPC_ENDPOINTS) {
       try {
-        connection = new Connection(endpoint);
+        connection = new Connection(endpoint, 'confirmed');
         await connection.getVersion();
         console.log(`Using fallback RPC endpoint: ${endpoint}`);
         return connection;
@@ -30,7 +30,7 @@ const getConnection = async (): Promise<Connection> => {
     
     // If all fallbacks fail, return the primary connection anyway
     console.warn("All RPC endpoints failed, using primary anyway");
-    return new Connection(RPC_ENDPOINT);
+    return new Connection(RPC_ENDPOINT, 'confirmed');
   }
 };
 
@@ -39,14 +39,9 @@ export const fetchOnchainTotalStake = async (votePubkey: string): Promise<number
   try {
     console.log(`Fetching on-chain total stake for vote account: ${votePubkey}`);
     const connection = await getConnection();
-    const voteAccountPubkey = new PublicKey(votePubkey);
     
-    // First try to get the vote account directly
+    // First try to get the vote accounts
     try {
-      const voteAccount = await connection.getAccountInfo(voteAccountPubkey);
-      console.log("Vote account retrieved:", !!voteAccount);
-      
-      // Get all vote accounts to find this validator
       const voteAccounts = await connection.getVoteAccounts();
       console.log(`Retrieved ${voteAccounts.current.length} current and ${voteAccounts.delinquent.length} delinquent vote accounts`);
       
@@ -57,12 +52,46 @@ export const fetchOnchainTotalStake = async (votePubkey: string): Promise<number
         const totalStakeInSol = validator.activatedStake / LAMPORTS_PER_SOL;
         console.log(`Found validator in vote accounts with ${totalStakeInSol} SOL stake`);
         return totalStakeInSol;
+      } else {
+        console.log(`Validator ${votePubkey} not found in vote accounts`);
       }
     } catch (voteError) {
-      console.error("Error fetching vote account:", voteError);
+      console.error("Error fetching vote accounts:", voteError);
     }
     
-    // If vote account approach fails, try stake account enumeration
+    // If vote account approach fails, try RPC method
+    try {
+      const response = await fetch(RPC_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 'stake-total',
+          method: 'getVoteAccounts',
+          params: []
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`RPC request failed with status ${response.status}`);
+      }
+      
+      const data = await response.json();
+      if (data.result) {
+        const allAccounts = [...(data.result.current || []), ...(data.result.delinquent || [])];
+        const validator = allAccounts.find(v => v.votePubkey === votePubkey);
+        
+        if (validator) {
+          const stake = validator.activatedStake / LAMPORTS_PER_SOL;
+          console.log(`Found validator in RPC response with ${stake} SOL stake`);
+          return stake;
+        }
+      }
+    } catch (rpcError) {
+      console.error("Error with RPC method:", rpcError);
+    }
+    
+    // If both methods fail, try stake account enumeration
     try {
       // Get all stake accounts delegated to this vote account
       const stakeAccounts = await connection.getProgramAccounts(
@@ -103,49 +132,17 @@ export const fetchOnchainTotalStake = async (votePubkey: string): Promise<number
       const totalStakeInSol = totalActivatedStake / LAMPORTS_PER_SOL;
       console.log(`Total on-chain stake for ${votePubkey}: ${totalStakeInSol} SOL`);
       
-      return totalStakeInSol;
+      return totalStakeInSol > 0 ? totalStakeInSol : 0;
     } catch (stakeError) {
       console.error("Error fetching stake accounts:", stakeError);
     }
     
-    // If both methods fail, try to fetch from alternative API
-    console.log("Direct RPC methods failed, attempting to use alternative API");
-    try {
-      const response = await fetch(`https://api.mainnet-beta.solana.com`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: 'stake-total',
-          method: 'getVoteAccounts',
-          params: []
-        })
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        const allAccounts = [...(data.result?.current || []), ...(data.result?.delinquent || [])];
-        const validator = allAccounts.find(v => v.votePubkey === votePubkey);
-        
-        if (validator) {
-          const stake = validator.activatedStake / LAMPORTS_PER_SOL;
-          console.log(`Found validator in alternative API with ${stake} SOL stake`);
-          return stake;
-        }
-      }
-    } catch (altApiError) {
-      console.error("Error with alternative API:", altApiError);
-    }
-    
-    // Last resort: generate a realistic mock value if all methods fail
-    // This ensures the UI always shows something
-    const mockStake = Math.round(1000 + Math.random() * 10000);
-    console.log(`Using mock stake value of ${mockStake} SOL`);
-    return mockStake;
+    // If all methods fail, return 0
+    console.warn("All stake fetching methods failed, returning 0");
+    return 0;
   } catch (error) {
     console.error("Error fetching on-chain total stake:", error);
-    const mockStake = Math.round(1000 + Math.random() * 10000);
-    return mockStake;
+    return 0;
   }
 };
 
@@ -157,68 +154,157 @@ export const fetchOnchainStakeChanges = async (votePubkey: string): Promise<{
   try {
     console.log(`Fetching on-chain stake changes for vote account: ${votePubkey}`);
     const connection = await getConnection();
-    const voteAccountPubkey = new PublicKey(votePubkey);
     
-    // Get all stake accounts delegated to this vote account
-    const stakeAccounts = await connection.getProgramAccounts(
-      StakeProgram.programId,
-      {
-        filters: [
-          {
-            memcmp: {
-              offset: 124, // Offset of vote pubkey in stake account data
-              bytes: votePubkey
+    // Try direct validator stake API first
+    try {
+      const response = await fetch(RPC_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 'stake-changes',
+          method: 'getProgramAccounts',
+          params: [
+            'Stake11111111111111111111111111111111111111',
+            {
+              encoding: 'jsonParsed',
+              filters: [
+                {
+                  memcmp: {
+                    offset: 124,  // Offset for vote account in stake delegation
+                    bytes: votePubkey
+                  }
+                }
+              ]
             }
-          }
-        ]
+          ]
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch stake accounts: ${response.statusText}`);
       }
-    );
-    
-    console.log(`Found ${stakeAccounts.length} stake accounts for stake changes analysis`);
-    
-    let activatingStake = 0;
-    let deactivatingStake = 0;
-    const currentEpoch = await fetchCurrentEpoch();
-    
-    for (const account of stakeAccounts) {
-      try {
-        // Get activation status
-        const stakeAccount = await connection.getStakeActivation(account.pubkey);
-        const balance = await connection.getBalance(account.pubkey);
+
+      const data = await response.json();
+      console.log(`Received ${data.result?.length || 0} stake accounts from RPC`);
+
+      let activatingStake = 0;
+      let deactivatingStake = 0;
+      
+      if (data.result && Array.isArray(data.result)) {
+        const currentEpoch = await fetchCurrentEpoch();
         
-        if (stakeAccount.state === 'activating') {
-          activatingStake += balance;
-          console.log(`Found activating stake: ${balance / LAMPORTS_PER_SOL} SOL`);
-        } else if (stakeAccount.state === 'deactivating') {
-          deactivatingStake += balance;
-          console.log(`Found deactivating stake: ${balance / LAMPORTS_PER_SOL} SOL`);
+        // Process stake accounts
+        for (const account of data.result) {
+          try {
+            if (!account.account?.data?.parsed?.info?.stake?.delegation) {
+              continue;
+            }
+            
+            const delegation = account.account.data.parsed.info.stake.delegation;
+            
+            if (!delegation) continue;
+            
+            const activationEpoch = Number(delegation.activationEpoch);
+            const deactivationEpoch = Number(delegation.deactivationEpoch);
+            const stake = Number(delegation.stake);
+            
+            // Check for activating stake (not yet active in current epoch)
+            if (activationEpoch >= currentEpoch) {
+              console.log(`Found activating stake: ${stake / LAMPORTS_PER_SOL} SOL, activation epoch: ${activationEpoch}, current epoch: ${currentEpoch}`);
+              activatingStake += stake;
+            }
+            
+            // Check for deactivating stake (deactivation requested but not yet complete)
+            if (deactivationEpoch !== 18446744073709552000 && deactivationEpoch >= currentEpoch) {
+              console.log(`Found deactivating stake: ${stake / LAMPORTS_PER_SOL} SOL, deactivation epoch: ${deactivationEpoch}, current epoch: ${currentEpoch}`);
+              deactivatingStake += stake;
+            }
+          } catch (err) {
+            console.error("Error processing stake account:", err);
+          }
         }
-      } catch (err) {
-        console.error(`Error processing stake account ${account.pubkey.toString()}:`, err);
       }
+      
+      const activatingStakeInSol = activatingStake / LAMPORTS_PER_SOL;
+      const deactivatingStakeInSol = deactivatingStake / LAMPORTS_PER_SOL;
+      
+      console.log(`On-chain activating stake: ${activatingStakeInSol} SOL`);
+      console.log(`On-chain deactivating stake: ${deactivatingStakeInSol} SOL`);
+      
+      return {
+        activatingStake: activatingStakeInSol,
+        deactivatingStake: deactivatingStakeInSol
+      };
+    } catch (rpcError) {
+      console.error("Error with RPC method:", rpcError);
     }
     
-    // Convert lamports to SOL
-    const activatingStakeInSol = activatingStake / LAMPORTS_PER_SOL;
-    const deactivatingStakeInSol = deactivatingStake / LAMPORTS_PER_SOL;
+    // Fallback to web3.js method
+    try {
+      // Get all stake accounts delegated to this vote account
+      const stakeAccounts = await connection.getProgramAccounts(
+        StakeProgram.programId,
+        {
+          filters: [
+            {
+              memcmp: {
+                offset: 124, // Offset of vote pubkey in stake account data
+                bytes: votePubkey
+              }
+            }
+          ]
+        }
+      );
+      
+      console.log(`Found ${stakeAccounts.length} stake accounts for stake changes analysis`);
+      
+      let activatingStake = 0;
+      let deactivatingStake = 0;
+      
+      for (const account of stakeAccounts) {
+        try {
+          // Get activation status
+          const stakeAccount = await connection.getStakeActivation(account.pubkey);
+          const balance = await connection.getBalance(account.pubkey);
+          
+          if (stakeAccount.state === 'activating') {
+            activatingStake += balance;
+            console.log(`Found activating stake: ${balance / LAMPORTS_PER_SOL} SOL`);
+          } else if (stakeAccount.state === 'deactivating') {
+            deactivatingStake += balance;
+            console.log(`Found deactivating stake: ${balance / LAMPORTS_PER_SOL} SOL`);
+          }
+        } catch (err) {
+          console.error(`Error processing stake account ${account.pubkey.toString()}:`, err);
+        }
+      }
+      
+      // Convert lamports to SOL
+      const activatingStakeInSol = activatingStake / LAMPORTS_PER_SOL;
+      const deactivatingStakeInSol = deactivatingStake / LAMPORTS_PER_SOL;
+      
+      console.log(`On-chain activating stake: ${activatingStakeInSol} SOL`);
+      console.log(`On-chain deactivating stake: ${deactivatingStakeInSol} SOL`);
+      
+      return {
+        activatingStake: activatingStakeInSol,
+        deactivatingStake: deactivatingStakeInSol
+      };
+    } catch (error) {
+      console.error("Error fetching on-chain stake changes:", error);
+    }
     
-    console.log(`On-chain activating stake: ${activatingStakeInSol} SOL`);
-    console.log(`On-chain deactivating stake: ${deactivatingStakeInSol} SOL`);
-    
+    // Return zeros if all methods fail
     return {
-      activatingStake: activatingStakeInSol,
-      deactivatingStake: deactivatingStakeInSol
+      activatingStake: 0,
+      deactivatingStake: 0
     };
   } catch (error) {
     console.error("Error fetching on-chain stake changes:", error);
-    
-    // Return mock data if on-chain fetching fails
-    const activatingMock = Math.random() > 0.7 ? Math.round(Math.random() * 1000) : 0;
-    const deactivatingMock = Math.random() > 0.7 ? Math.round(Math.random() * 1000) : 0;
-    
     return {
-      activatingStake: activatingMock,
-      deactivatingStake: deactivatingMock
+      activatingStake: 0,
+      deactivatingStake: 0
     };
   }
 };

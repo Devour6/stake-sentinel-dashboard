@@ -60,6 +60,13 @@ export const StakeInfoTable: React.FC<StakeInfoTableProps> = ({
                 <TableCell className="text-right">{delegatorCount}</TableCell>
               </TableRow>
             )}
+            {totalStake === 0 && activatingStake === 0 && deactivatingStake === 0 && (
+              <TableRow>
+                <TableCell colSpan={2} className="text-center text-muted-foreground py-4">
+                  Fetching on-chain stake data...
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </CardContent>

@@ -181,13 +181,9 @@ export const StakeHistoryChart: FC<StakeHistoryChartProps> = ({ vote_identity, i
             >
               <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
               <XAxis 
-                dataKey="date" 
-                label={{ value: 'Date', position: 'insideBottomRight', offset: -5 }}
+                dataKey="epoch" 
+                label={{ value: 'Epoch', position: 'insideBottomRight', offset: -5 }}
                 style={{ fontSize: '0.75rem' }}
-                tickFormatter={(value) => {
-                  const date = new Date(value);
-                  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                }}
               />
               <YAxis 
                 label={{ value: 'Stake (SOL)', angle: -90, position: 'insideLeft' }}
@@ -201,14 +197,7 @@ export const StakeHistoryChart: FC<StakeHistoryChartProps> = ({ vote_identity, i
               />
               <Tooltip 
                 formatter={(value: number) => [`${value.toLocaleString()} SOL`, 'Stake']}
-                labelFormatter={(label) => {
-                  const date = new Date(label);
-                  return date.toLocaleDateString('en-US', { 
-                    year: 'numeric',
-                    month: 'long', 
-                    day: 'numeric' 
-                  });
-                }}
+                labelFormatter={(epoch) => `Epoch ${epoch}`}
               />
               <Legend />
               <Line 

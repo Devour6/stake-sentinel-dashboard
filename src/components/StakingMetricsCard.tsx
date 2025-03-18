@@ -101,7 +101,7 @@ export const ValidatorMetricsGrid = ({
         value={isLoading ? "" : hasError ? "Error" : formatSol(totalStake)}
         icon={<div className="w-4 h-4 bg-gojira-red rounded-full"></div>}
         isLoading={isLoading}
-        isError={hasError}
+        isError={hasError || totalStake === 0}
       />
       <StakingMetricsCard
         title="Pending Change in Stake"

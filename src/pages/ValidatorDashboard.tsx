@@ -5,6 +5,7 @@ import { ValidatorHeader } from "@/components/validator/ValidatorHeader";
 import { ValidatorMetricsGrid } from "@/components/StakingMetricsCard";
 import { EpochStatusCard } from "@/components/EpochStatusCard";
 import { StakeHistoryChart } from "@/components/stakes/StakeHistoryChart";
+import StakeInfoTable from "@/components/stakes/StakeInfoTable";
 import StakeModal from "@/components/StakeModal";
 import { 
   fetchValidatorInfo, 
@@ -79,7 +80,7 @@ const ValidatorDashboard = () => {
       setValidatorMetrics(metrics);
       setDelegatorCount(delegators);
       
-      // Fetch on-chain data separately to not block main UI data
+      // Fetch on-chain data in parallel but don't wait for it to complete
       fetchOnchainData(votePubkey);
       
       if (showToast && info) {
@@ -113,15 +114,12 @@ const ValidatorDashboard = () => {
       console.log("On-chain total stake:", totalStake);
       console.log("On-chain stake changes:", stakeChanges);
       
-      // Only update state if we got valid data
-      if (totalStake > 0) {
-        setOnchainTotalStake(totalStake);
-      }
-      
+      // Update state with on-chain data
+      setOnchainTotalStake(totalStake);
       setOnchainStakeChanges(stakeChanges);
       
       // Generate stake history based on total stake
-      // Only use valid total stake value
+      // Use the real total stake value or the next best alternative
       const validTotalStake = totalStake > 0 ? totalStake : 
         (validatorMetrics?.totalStake || validatorInfo?.activatedStake || 1000);
       
@@ -141,7 +139,7 @@ const ValidatorDashboard = () => {
     
     // Explicitly refresh on-chain data
     if (votePubkey) {
-      fetchOnchainData(votePubkey);
+      await fetchOnchainData(votePubkey);
     }
     
     setTimeout(() => {
@@ -151,9 +149,7 @@ const ValidatorDashboard = () => {
   
   useEffect(() => {
     fetchData();
-    
     const intervalId = setInterval(() => fetchData(), 5 * 60 * 1000);
-    
     return () => clearInterval(intervalId);
   }, [votePubkey]);
 
@@ -175,20 +171,21 @@ const ValidatorDashboard = () => {
   }, [validatorInfo, validatorMetrics, onchainTotalStake, onchainStakeChanges, stakeHistory]);
 
   // Properly calculate totalStake with on-chain data as first priority
-  const totalStake = 
-    (onchainTotalStake && onchainTotalStake > 0 ? onchainTotalStake : null) || 
-    (validatorMetrics?.totalStake) || 
-    (validatorInfo?.activatedStake) || 
-    1000; // Fallback value
+  const totalStake = onchainTotalStake || 
+    validatorMetrics?.totalStake || 
+    validatorInfo?.activatedStake || 
+    0; // Changed fallback to 0
     
+  // Get activating and deactivating stake values
+  const activatingStake = onchainStakeChanges.activatingStake || 0;
+  const deactivatingStake = onchainStakeChanges.deactivatingStake || 0;
+  
   // Calculate pending stake change
-  const pendingStakeChange = Math.max(
-    onchainStakeChanges.activatingStake,
-    onchainStakeChanges.deactivatingStake
-  ) || validatorMetrics?.pendingStakeChange || 0;
+  const pendingStakeChange = Math.max(activatingStake, deactivatingStake) || 
+    validatorMetrics?.pendingStakeChange || 0;
   
   // Determine if deactivating
-  const isDeactivating = onchainStakeChanges.deactivatingStake > onchainStakeChanges.activatingStake;
+  const isDeactivating = deactivatingStake > activatingStake;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gojira-gray to-gojira-gray-dark">
@@ -232,8 +229,16 @@ const ValidatorDashboard = () => {
         />
         
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mt-6">
-          <div className="lg:col-span-4">
+          <div className="lg:col-span-4 space-y-5">
             <EpochStatusCard />
+            
+            {/* Add StakeInfoTable component */}
+            <StakeInfoTable 
+              totalStake={totalStake}
+              activatingStake={activatingStake}
+              deactivatingStake={deactivatingStake}
+              delegatorCount={delegatorCount || undefined}
+            />
           </div>
           
           <div className="lg:col-span-8">
