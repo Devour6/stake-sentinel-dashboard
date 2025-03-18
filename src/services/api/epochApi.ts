@@ -1,15 +1,18 @@
 
-import { RPC_ENDPOINT, ALL_RPC_ENDPOINTS } from "./constants";
+import { ALL_RPC_ENDPOINTS, ADDITIONAL_RPC_ENDPOINTS } from "./constants";
 import { EpochInfo, RpcVoteAccount } from "./types";
 import { toast } from "sonner";
 
 /**
  * Fetches detailed epoch information directly from Solana's RPC endpoint
- * with fallback to multiple RPC providers
+ * with fallback to multiple RPC providers and extended retry logic
  */
 export const fetchEpochInfo = async (): Promise<EpochInfo | null> => {
+  // Combine all available endpoints for maximum reliability
+  const allEndpoints = [...ALL_RPC_ENDPOINTS, ...ADDITIONAL_RPC_ENDPOINTS];
+  
   // Try each endpoint in sequence until one works
-  for (const endpoint of ALL_RPC_ENDPOINTS) {
+  for (const endpoint of allEndpoints) {
     try {
       console.log(`Fetching epoch info from RPC endpoint: ${endpoint}...`);
       
@@ -25,7 +28,7 @@ export const fetchEpochInfo = async (): Promise<EpochInfo | null> => {
           params: []
         }),
         // Add timeout to prevent long waits on failing endpoints
-        signal: AbortSignal.timeout(5000)
+        signal: AbortSignal.timeout(3000) // Shorter timeout for faster fallback
       });
 
       const epochInfoData = await epochInfoResponse.json();
@@ -95,8 +98,11 @@ export const fetchExtendedEpochInfo = async (): Promise<any> => {
  * with fallback to multiple RPC providers
  */
 export const fetchVoteAccounts = async (): Promise<{ current: RpcVoteAccount[], delinquent: RpcVoteAccount[] }> => {
+  // Use all available endpoints for maximum reliability
+  const allEndpoints = [...ALL_RPC_ENDPOINTS, ...ADDITIONAL_RPC_ENDPOINTS];
+  
   // Try each endpoint in sequence until one works
-  for (const endpoint of ALL_RPC_ENDPOINTS) {
+  for (const endpoint of allEndpoints) {
     try {
       console.log(`Fetching vote accounts from RPC endpoint: ${endpoint}...`);
       
@@ -111,7 +117,7 @@ export const fetchVoteAccounts = async (): Promise<{ current: RpcVoteAccount[], 
           method: 'getVoteAccounts',
           params: []
         }),
-        signal: AbortSignal.timeout(5000)
+        signal: AbortSignal.timeout(3000) // Shorter timeout for faster fallback
       });
 
       const data = await response.json();

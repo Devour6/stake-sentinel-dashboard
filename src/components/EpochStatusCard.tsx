@@ -1,11 +1,12 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock, CalendarClock, AlertCircle } from "lucide-react";
+import { Clock, CalendarClock, AlertCircle, RefreshCw } from "lucide-react";
 import { EpochTimer } from "./EpochTimer";
 import { fetchEpochInfo } from "@/services/api/epochApi";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface EpochStatusCardProps {
   compact?: boolean;
@@ -21,6 +22,7 @@ export const EpochStatusCard = ({ compact = false }: EpochStatusCardProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     const fetchEpochData = async () => {
@@ -37,6 +39,11 @@ export const EpochStatusCard = ({ compact = false }: EpochStatusCardProps) => {
             slotsInEpoch: info.slotsInEpoch,
             timeRemaining: info.timeRemaining || 0
           });
+          
+          // Show toast on successful refresh if it was previously in error state
+          if (error && retryCount > 0) {
+            toast.success("Successfully connected to Solana network");
+          }
         } else {
           throw new Error("Failed to retrieve epoch data from all sources");
         }
@@ -45,6 +52,7 @@ export const EpochStatusCard = ({ compact = false }: EpochStatusCardProps) => {
         setError("Unable to fetch current epoch data. Network may be unavailable.");
       } finally {
         setIsLoading(false);
+        setIsRefreshing(false);
       }
     };
 
@@ -58,7 +66,9 @@ export const EpochStatusCard = ({ compact = false }: EpochStatusCardProps) => {
   }, [retryCount, error]);
 
   const handleRetry = () => {
+    setIsRefreshing(true);
     setRetryCount(prev => prev + 1);
+    toast.info("Attempting to reconnect to Solana network...");
   };
 
   if (compact) {
@@ -85,8 +95,13 @@ export const EpochStatusCard = ({ compact = false }: EpochStatusCardProps) => {
                 size="sm" 
                 onClick={handleRetry}
                 className="h-6 px-2 text-xs"
+                disabled={isRefreshing}
               >
-                Retry
+                {isRefreshing ? (
+                  <RefreshCw className="h-3 w-3 animate-spin" />
+                ) : (
+                  "Retry"
+                )}
               </Button>
             ) : (
               <EpochTimer 
@@ -122,7 +137,14 @@ export const EpochStatusCard = ({ compact = false }: EpochStatusCardProps) => {
               <AlertCircle className="h-8 w-8 text-red-500" />
             </div>
             <p className="text-red-500">{error}</p>
-            <Button onClick={handleRetry} variant="outline" size="sm">
+            <Button 
+              onClick={handleRetry} 
+              variant="outline" 
+              size="sm"
+              disabled={isRefreshing}
+              className="gap-2"
+            >
+              {isRefreshing && <RefreshCw className="h-4 w-4 animate-spin" />}
               Retry Connection
             </Button>
           </div>
