@@ -43,7 +43,7 @@ export const fetchAllValidators = async (): Promise<ValidatorSearchResult[]> => 
         console.log(`Fetched ${stakewizResponse.data.length} validators from Stakewiz`);
         
         // Process Stakewiz validators
-        let stakewizValidators = stakewizResponse.data.map(validator => ({
+        const stakewizValidators: ValidatorSearchResult[] = stakewizResponse.data.map(validator => ({
           name: validator.name || null,
           votePubkey: validator.vote_identity,
           identity: validator.identity,
@@ -55,14 +55,14 @@ export const fetchAllValidators = async (): Promise<ValidatorSearchResult[]> => 
         }));
         
         // Sort by activated stake
-        stakewizValidators = sortValidatorsByStake(stakewizValidators);
+        const sortedValidators = sortValidatorsByStake(stakewizValidators);
         
         // Cache the results
-        cachedValidators = stakewizValidators;
+        cachedValidators = sortedValidators;
         lastValidatorFetchTime = now;
         
-        console.log(`Returning ${stakewizValidators.length} validators from Stakewiz`);
-        return stakewizValidators;
+        console.log(`Returning ${sortedValidators.length} validators from Stakewiz`);
+        return sortedValidators;
       }
     } catch (stakewizError) {
       console.error("Error fetching from Stakewiz validators API:", stakewizError);
