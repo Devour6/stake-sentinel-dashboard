@@ -113,7 +113,7 @@ const ValidatorDashboard = () => {
           </div>
         )}
         
-        {/* Validator metrics - updated grid layout */}
+        {/* Validator metrics */}
         <ValidatorMetricsGrid
           totalStake={validatorMetrics?.totalStake || 0}
           pendingStakeChange={validatorMetrics?.pendingStakeChange || 0}
@@ -125,15 +125,15 @@ const ValidatorDashboard = () => {
           hasError={!!error}
         />
         
-        {/* Adjusted two column layout with validator info moved up */}
+        {/* Epoch status card and chart in two column layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-          {/* Validator info card now first in the right column */}
+          {/* Left column for cards */}
           <div className="lg:col-span-1 space-y-6">
             <ValidatorInfoCard validatorInfo={validatorInfo} isLoading={isLoading} />
             <EpochStatusCard />
           </div>
           
-          {/* Chart now in the second column */}
+          {/* Right column for chart */}
           <div className="lg:col-span-2">
             {votePubkey && <StakeHistoryChart vote_identity={votePubkey} />}
           </div>

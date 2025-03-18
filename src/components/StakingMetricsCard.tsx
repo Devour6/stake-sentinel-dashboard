@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatSol, formatCommission } from "@/services/solanaApi";
 import { ArrowUpRight, ArrowDownRight, Percent, Clock, TrendingUp } from "lucide-react";
@@ -93,7 +92,7 @@ export const ValidatorMetricsGrid = ({
     : "";
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 animate-slide-up">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4 animate-slide-up">
       <StakingMetricsCard
         title="Total Stake"
         value={isLoading ? "" : hasError ? "Error" : formatSol(totalStake)}
@@ -120,8 +119,6 @@ export const ValidatorMetricsGrid = ({
         isLoading={isLoading}
         isError={hasError}
       />
-      
-      {/* Add Estimated APY in the top grid row */}
       <StakingMetricsCard
         title="Estimated APY"
         value={isLoading ? "" : hasError ? "Error" : estimatedApy ? `${(estimatedApy * 100).toFixed(2)}%` : "Error"}
