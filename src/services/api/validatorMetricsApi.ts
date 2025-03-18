@@ -26,7 +26,7 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
     try {
       const stakewizResponse = await axios.get(
         `${STAKEWIZ_API_URL}/validator/${votePubkey}`,
-        { timeout: 30000 } // Increased timeout for slower connections
+        { timeout: 60000 } // Increased timeout for slower connections
       );
       
       if (stakewizResponse.data) {
@@ -39,7 +39,7 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
         
         try {
           const stakeResponse = await axios.get(`${STAKEWIZ_API_URL}/validator/${votePubkey}/stake`, {
-            timeout: 15000
+            timeout: 30000
           });
           
           if (stakeResponse.data) {
@@ -111,8 +111,23 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
           uptime30d = stakewizData.uptime_30d;
         }
         
+        // Get the proper activated stake value, as Stakewiz may format it in different ways
+        // Sometimes it's "activated_stake", sometimes it's "stake", sometimes it's a different format
+        let totalStake = 0;
+        if (stakewizData.activated_stake !== undefined) {
+          totalStake = stakewizData.activated_stake;
+        } else if (stakewizData.stake !== undefined) {
+          totalStake = stakewizData.stake;
+        } else if (stakewizData.total_stake !== undefined) {
+          totalStake = stakewizData.total_stake;
+        } else if (stakewizData.active_stake !== undefined) {
+          totalStake = stakewizData.active_stake;
+        }
+        
+        console.log("Activated stake value:", totalStake);
+        
         const metrics = {
-          totalStake: stakewizData.activated_stake || 0,
+          totalStake: totalStake,
           pendingStakeChange: Math.max(activatingStake, deactivatingStake),
           isDeactivating: deactivatingStake > activatingStake,
           commission: stakewizData.commission || 0,
@@ -161,7 +176,7 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
           const estimatedApy = baseApy * (1 - commissionDecimal);
           
           const metrics = {
-            totalStake: validator.activated_stake || 0,
+            totalStake: validator.activated_stake || validator.stake || 0,
             pendingStakeChange: 0,
             isDeactivating: false,
             commission: validator.commission || 0,

@@ -1,9 +1,8 @@
-
 // RPC and Validator Constants
 export const VALIDATOR_PUBKEY = "goJiRADNdmfnJ4iWEyft7KaYMPTVsRba2Ee1akDEBXb";
 export const VALIDATOR_IDENTITY = "gojir4WnhS7VS1JdbnanJMzaMfr4UD7KeX1ixWAHEmw";
 
-// Stakewiz API URL
+// Set up Stakewiz API URL
 export const STAKEWIZ_API_URL = "https://api.stakewiz.com";
 
 // Helius paid RPC endpoint (primary) - more reliable and private endpoint

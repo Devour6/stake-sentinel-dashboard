@@ -76,7 +76,7 @@ export const useStakeHistory = (vote_identity: string) => {
         
         // Attempt to fetch with increased timeout (30 seconds)
         const response = await axios.get(`${STAKEWIZ_API_URL}/validator/${vote_identity}/stake_history`, {
-          timeout: 30000 // Increased timeout to 30 seconds
+          timeout: 60000 // Increased timeout to 60 seconds
         });
         
         if (response.data && Array.isArray(response.data)) {
@@ -105,6 +105,33 @@ export const useStakeHistory = (vote_identity: string) => {
         }
       } catch (err: any) {
         console.error("Error fetching stake history:", err);
+        
+        // Try alternate endpoint format
+        try {
+          const alternateResponse = await axios.get(`${STAKEWIZ_API_URL}/validator/${vote_identity}`, {
+            timeout: 30000
+          });
+          
+          if (alternateResponse.data && alternateResponse.data.stake_history && 
+              Array.isArray(alternateResponse.data.stake_history)) {
+            console.log("Found stake history in main validator response:", alternateResponse.data.stake_history);
+            
+            const formattedData = alternateResponse.data.stake_history.map((item: any) => ({
+              epoch: item.epoch,
+              stake: item.stake,
+              date: new Date(item.date || Date.now()).toISOString()
+            }));
+            
+            formattedData.sort((a: StakeData, b: StakeData) => a.epoch - b.epoch);
+            
+            setAllStakes(formattedData);
+            filterStakesByTimeframe(formattedData, timeframe);
+            return;
+          }
+        } catch (alternateErr) {
+          console.error("Error with alternate stake history approach:", alternateErr);
+        }
+        
         setError(`Failed to fetch stake history: ${err.message || "Unknown error"}`);
         setAllStakes([]);
         
