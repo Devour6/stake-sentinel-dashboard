@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { fetchValidatorMetrics, fetchValidatorInfo } from "@/services/solanaApi";
 import { formatSol, formatCommission } from "@/services/solanaApi";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import AppHeader from '@/components/AppHeader';
 
 interface HomeProps {
   setIsStakeModalOpen: (isOpen: boolean) => void;
@@ -36,56 +37,7 @@ const Home = ({ setIsStakeModalOpen }: HomeProps) => {
   
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <header className="w-full bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-        <div className="container flex items-center justify-between h-16 px-4 mx-auto">
-          <div className="flex items-center space-x-2">
-            <Link to="/" className="flex items-center space-x-2">
-              <img 
-                src="/lovable-uploads/373e9dfd-22f8-47a8-971e-5dcb53f5aae2.png" 
-                alt="NodeScan Logo" 
-                className="h-8 w-auto" 
-              />
-              <span className="text-xl font-bold text-gray-900 dark:text-white">NodeScan</span>
-            </Link>
-          </div>
-          
-          <div className="flex-1 max-w-xl mx-4">
-            {/* Simple search placeholder */}
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search validator by pubkey or name..."
-                className="w-full py-2 pl-10 pr-4 text-sm text-gray-700 bg-gray-100 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              />
-              <div className="absolute inset-y-0 left-0 flex items-center pl-3">
-                <svg
-                  className="w-5 h-5 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  ></path>
-                </svg>
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-4">
-            <Button 
-              onClick={() => setIsStakeModalOpen(true)} 
-              className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
-            >
-              Stake to Validator
-            </Button>
-          </div>
-        </div>
-      </header>
+      <AppHeader setIsStakeModalOpen={setIsStakeModalOpen} />
       
       <main className="container mx-auto px-4 py-8">
         <section className="mb-8">
