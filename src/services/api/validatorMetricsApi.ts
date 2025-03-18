@@ -8,7 +8,7 @@ import { ValidatorMetrics } from "./types";
 const validatorMetricsCache = new Map<string, ValidatorMetrics & { timestamp: number }>();
 const CACHE_VALIDITY_MS = 5 * 60 * 1000; // 5 minutes
 
-// Enhanced metrics fetching from Stakewiz with error handling
+// Enhanced metrics fetching from Stakewiz with improved error handling
 export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Promise<ValidatorMetrics | null> => {
   try {
     console.log(`Fetching validator metrics for ${votePubkey}...`);
@@ -28,13 +28,14 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
     );
     
     if (!stakewizResponse.data) {
-      throw new Error("Invalid response from Stakewiz API");
+      console.error("Invalid response from Stakewiz API");
+      return null;
     }
     
     const stakewizData = stakewizResponse.data;
     console.log("Stakewiz validator data:", stakewizData);
     
-    // Get stake changes from Stakewiz
+    // Get stake changes from Stakewiz - but don't fail the whole request if this fails
     let activatingStake = 0;
     let deactivatingStake = 0;
     
@@ -47,17 +48,14 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
         console.log("Stakewiz stake data:", stakeResponse.data);
         activatingStake = stakeResponse.data.activating || 0;
         deactivatingStake = stakeResponse.data.deactivating || 0;
-      } else {
-        throw new Error("Invalid stake data response");
       }
     } catch (stakeError) {
       console.error("Error fetching stake data from Stakewiz:", stakeError);
-      throw new Error("Failed to fetch stake change data");
+      // Continue without stake data rather than failing the whole request
     }
     
     // Get network data for APY calculation
     let estimatedApy = null;
-    let networkInflation;
     
     try {
       const networkResponse = await axios.get(`${STAKEWIZ_API_URL}/network`, {
@@ -66,20 +64,17 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
       
       if (networkResponse.data && networkResponse.data.inflation) {
         console.log("Stakewiz network data:", networkResponse.data);
-        networkInflation = networkResponse.data.inflation;
+        const networkInflation = networkResponse.data.inflation;
         
         // Calculate estimated APY based on network inflation and commission
         const commission = stakewizData.commission / 100 || 0;
-        const mevCommission = stakewizData.mev_commission / 100 || commission;
         
         // Basic APY calculation formula
         estimatedApy = networkInflation * (1 - commission);
-      } else {
-        throw new Error("Invalid network data response");
       }
     } catch (networkError) {
       console.error("Error fetching network data from Stakewiz:", networkError);
-      throw new Error("Failed to fetch APY calculation data");
+      // Continue without APY data rather than failing the whole request
     }
     
     const metrics = {
@@ -93,6 +88,7 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
       deactivatingStake
     };
     
+    console.log("Final validator metrics:", metrics);
     validatorMetricsCache.set(votePubkey, { ...metrics, timestamp: now });
     return metrics;
   } catch (error) {
