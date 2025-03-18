@@ -34,7 +34,7 @@ export const ValidatorHeader = ({
 }: ValidatorHeaderProps) => {
   return (
     <div className="animate-slide-down space-y-4">
-      <div className="flex flex-col md:flex-row gap-4 items-start justify-between">
+      <div className="flex flex-col md:flex-row gap-4 items-start justify-between mb-2">
         <HeaderInfoSection 
           validatorName={validatorName}
           validatorIcon={validatorIcon}

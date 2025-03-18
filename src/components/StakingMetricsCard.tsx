@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatSol, formatCommission } from "@/services/solanaApi";
-import { ArrowUpRight, ArrowDownRight, Percent, Clock, TrendingUp } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Percent, Clock, TrendingUp, Users } from "lucide-react";
 
 interface StakingMetricsCardProps {
   title: string;
@@ -67,8 +67,7 @@ interface ValidatorMetricsProps {
   commission: number;
   mevCommission?: number;
   estimatedApy?: number;
-  uptime?: number;
-  version?: string;
+  delegatorCount?: number;
   isLoading?: boolean;
   hasError?: boolean;
 }
@@ -80,8 +79,7 @@ export const ValidatorMetricsGrid = ({
   commission,
   mevCommission,
   estimatedApy,
-  uptime,
-  version,
+  delegatorCount,
   isLoading = false,
   hasError = false,
 }: ValidatorMetricsProps) => {
@@ -97,7 +95,7 @@ export const ValidatorMetricsGrid = ({
     : "";
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4 animate-slide-up">
+    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4 mb-4 animate-slide-up">
       <StakingMetricsCard
         title="Total Stake"
         value={isLoading ? "" : hasError ? "Error" : formatSol(totalStake)}

@@ -15,6 +15,7 @@ import {
 } from "@/services/solanaApi";
 import { useToast } from "@/components/ui/use-toast";
 import { toast } from "sonner";
+import { fetchDelegatorCount } from "@/services/api/stakeApi";
 
 const RefreshOverlay = () => (
   <div className="refresh-overlay">
@@ -30,6 +31,7 @@ const ValidatorDashboard = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [validatorInfo, setValidatorInfo] = useState<ValidatorInfo | null>(null);
   const [validatorMetrics, setValidatorMetrics] = useState<ValidatorMetrics | null>(null);
+  const [delegatorCount, setDelegatorCount] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isStakeModalOpen, setIsStakeModalOpen] = useState(false);
   
@@ -43,10 +45,16 @@ const ValidatorDashboard = () => {
     setError(null);
     
     try {
-      const [info, metrics] = await Promise.all([
+      console.log("Fetching data for validator:", votePubkey);
+      const [info, metrics, delegators] = await Promise.all([
         fetchValidatorInfo(votePubkey),
-        fetchValidatorMetrics(votePubkey)
+        fetchValidatorMetrics(votePubkey),
+        fetchDelegatorCount(votePubkey)
       ]);
+      
+      console.log("Validator info:", info);
+      console.log("Validator metrics:", metrics);
+      console.log("Delegator count:", delegators);
       
       if (!info) {
         throw new Error("Validator not found");
@@ -54,6 +62,7 @@ const ValidatorDashboard = () => {
       
       setValidatorInfo(info);
       setValidatorMetrics(metrics);
+      setDelegatorCount(delegators);
       
       if (showToast && info) {
         uiToast({
@@ -96,6 +105,9 @@ const ValidatorDashboard = () => {
     setIsStakeModalOpen(false);
   };
 
+  // Use activatedStake from validatorInfo as primary source, fall back to totalStake from metrics
+  const totalStake = validatorInfo?.activatedStake || validatorMetrics?.totalStake || 0;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gojira-gray to-gojira-gray-dark">
       {isRefreshing && <RefreshOverlay />}
@@ -125,14 +137,13 @@ const ValidatorDashboard = () => {
         )}
         
         <ValidatorMetricsGrid
-          totalStake={validatorInfo?.activatedStake || validatorMetrics?.totalStake || 0}
+          totalStake={totalStake}
           pendingStakeChange={validatorMetrics?.pendingStakeChange || 0}
           isDeactivating={validatorMetrics?.isDeactivating || false}
           commission={validatorMetrics?.commission || validatorInfo?.commission || 0}
           mevCommission={validatorMetrics?.mevCommission}
           estimatedApy={validatorMetrics?.estimatedApy}
-          uptime={validatorMetrics?.uptime}
-          version={validatorMetrics?.version}
+          delegatorCount={delegatorCount}
           isLoading={isLoading}
           hasError={!!error}
         />
