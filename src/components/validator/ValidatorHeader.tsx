@@ -4,6 +4,7 @@ import { HeaderIdentitySection } from "./HeaderIdentitySection";
 import { HeaderSearchSection } from "./HeaderSearchSection";
 import { Button } from "@/components/ui/button";
 import { Wallet } from "lucide-react";
+import { VALIDATOR_PUBKEY } from "@/services/api/constants";
 
 interface ValidatorHeaderProps {
   validatorPubkey: string;
@@ -13,6 +14,7 @@ interface ValidatorHeaderProps {
   description?: string;
   version?: string;
   uptime?: number;
+  website?: string | null;
   isLoading?: boolean;
   onRefresh: () => void;
   onBack?: () => void;
@@ -27,6 +29,7 @@ export const ValidatorHeader = ({
   description,
   version,
   uptime,
+  website,
   isLoading = false,
   onRefresh,
   onBack,
@@ -49,7 +52,7 @@ export const ValidatorHeader = ({
             onClick={onStakeModalOpen}
           >
             <Wallet className="mr-2 h-4 w-4" />
-            Stake to Validator
+            Stake to Gojira
           </Button>
           
           <HeaderSearchSection 
@@ -66,6 +69,7 @@ export const ValidatorHeader = ({
           description={description}
           version={version}
           uptime={uptime}
+          website={website}
           isLoading={isLoading}
         />
       </div>

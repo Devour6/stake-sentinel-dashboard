@@ -15,7 +15,7 @@ import {
 } from "@/services/solanaApi";
 import { useToast } from "@/components/ui/use-toast";
 import { toast } from "sonner";
-import { fetchDelegatorCount } from "@/services/api/stakeApi";
+import { fetchDelegatorCount, fetchStakeHistory } from "@/services/api/stakeApi";
 
 const RefreshOverlay = () => (
   <div className="refresh-overlay">
@@ -121,6 +121,7 @@ const ValidatorDashboard = () => {
           description={validatorMetrics?.description}
           version={validatorMetrics?.version}
           uptime={validatorMetrics?.uptime}
+          website={validatorInfo?.website || validatorMetrics?.website}
           isLoading={isLoading}
           onRefresh={handleRefresh}
           onBack={() => navigate("/")}
@@ -175,8 +176,8 @@ const ValidatorDashboard = () => {
       <StakeModal 
         isOpen={isStakeModalOpen} 
         onClose={handleStakeModalClose} 
-        validatorPubkey={validatorInfo?.votePubkey || VALIDATOR_PUBKEY}
-        validatorName={validatorInfo?.name || "Gojira Validator"}
+        validatorPubkey={VALIDATOR_PUBKEY}
+        validatorName="Gojira Validator"
       />
     </div>
   );

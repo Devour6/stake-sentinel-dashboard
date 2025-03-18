@@ -18,8 +18,8 @@ import { VALIDATOR_PUBKEY } from "@/services/api/constants";
 interface StakeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  validatorPubkey: string;
-  validatorName: string;
+  validatorPubkey?: string;
+  validatorName?: string;
 }
 
 const StakeModal = ({ isOpen, onClose, validatorPubkey, validatorName }: StakeModalProps) => {
@@ -55,10 +55,10 @@ const StakeModal = ({ isOpen, onClose, validatorPubkey, validatorName }: StakeMo
         throw new Error(`Could not find wallet provider for ${selectedWallet}`);
       }
 
-      // Create stake transaction
-      await createStakeTransaction(walletProvider, parseFloat(amount), validatorPubkey);
+      // Create stake transaction - always use VALIDATOR_PUBKEY
+      await createStakeTransaction(walletProvider, parseFloat(amount), VALIDATOR_PUBKEY);
       
-      toast.success(`Successfully initiated staking of ${amount} SOL to ${validatorName}`);
+      toast.success(`Successfully initiated staking of ${amount} SOL to Gojira Validator`);
       setAmount("");
       onClose();
     } catch (error: any) {
@@ -151,9 +151,9 @@ const StakeModal = ({ isOpen, onClose, validatorPubkey, validatorName }: StakeMo
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md bg-gojira-gray-dark">
         <DialogHeader>
-          <DialogTitle className="text-white">Stake to {validatorName}</DialogTitle>
+          <DialogTitle className="text-white">Stake to Gojira Validator</DialogTitle>
           <DialogDescription>
-            Support the Solana network by staking your SOL tokens to this validator.
+            Support the Solana network by staking your SOL tokens to Gojira validator.
           </DialogDescription>
         </DialogHeader>
         

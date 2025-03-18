@@ -12,6 +12,7 @@ interface HeaderIdentitySectionProps {
   version?: string;
   uptime?: number;
   description?: string;
+  website?: string | null;
 }
 
 export const HeaderIdentitySection = ({ 
@@ -20,7 +21,8 @@ export const HeaderIdentitySection = ({
   isLoading = false,
   version,
   uptime,
-  description
+  description,
+  website
 }: HeaderIdentitySectionProps) => {
   const truncateAddress = (address: string, length = 8) => {
     if (!address) return "";
@@ -120,6 +122,22 @@ export const HeaderIdentitySection = ({
           </div>
         )}
         
+        {/* Website Badge */}
+        {website && (
+          <div className="flex items-center gap-1 bg-gojira-gray-dark/30 px-2 py-1 rounded-md">
+            <span className="text-sm whitespace-nowrap">Website:</span>
+            <a 
+              href={website} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-gojira-red hover:text-gojira-red-light transition-colors"
+            >
+              <ExternalLink className="h-3.5 w-3.5 mr-1" />
+              <span className="text-sm">{website.replace(/^https?:\/\//, '')}</span>
+            </a>
+          </div>
+        )}
+        
         {/* Version Badge */}
         {version && (
           <Badge variant="outline" className="bg-gojira-gray-dark/30 text-white border-gojira-gray-light">
@@ -130,7 +148,7 @@ export const HeaderIdentitySection = ({
         {/* Uptime Badge */}
         {uptime !== undefined && (
           <Badge variant="outline" className={`${uptime >= 95 ? 'bg-green-500/20 border-green-500/30' : 'bg-yellow-500/20 border-yellow-500/30'}`}>
-            Uptime: {uptime}%
+            Uptime (30d): {uptime}%
           </Badge>
         )}
       </div>

@@ -6,18 +6,16 @@ import SearchBar from "@/components/search/SearchBar";
 interface HeaderSearchSectionProps {
   onRefresh: () => void;
   isLoading?: boolean;
-  showStakeAmount?: boolean;
 }
 
 export const HeaderSearchSection = ({
   onRefresh,
-  isLoading = false,
-  showStakeAmount = true
+  isLoading = false
 }: HeaderSearchSectionProps) => {
   return (
     <div className="flex items-center gap-2">
       <div className="w-64 md:w-80">
-        <SearchBar showStakeAmount={showStakeAmount} />
+        <SearchBar showStakeAmount={true} />
       </div>
       
       <Button 
