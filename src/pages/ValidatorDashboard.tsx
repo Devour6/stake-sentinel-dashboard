@@ -15,7 +15,12 @@ import {
 } from "@/services/solanaApi";
 import { useToast } from "@/components/ui/use-toast";
 import { toast } from "sonner";
-import { fetchDelegatorCount, fetchStakeHistory } from "@/services/api/stakeApi";
+import { 
+  fetchOnchainTotalStake,
+  fetchOnchainStakeChanges,
+  generateStakeHistory
+} from "@/services/api/onchainStakeApi";
+import { fetchDelegatorCount } from "@/services/api/stakeApi";
 
 const RefreshOverlay = () => (
   <div className="refresh-overlay">
@@ -35,6 +40,14 @@ const ValidatorDashboard = () => {
   const [error, setError] = useState<string | null>(null);
   const [isStakeModalOpen, setIsStakeModalOpen] = useState(false);
   
+  // Add on-chain specific state
+  const [onchainTotalStake, setOnchainTotalStake] = useState<number | null>(null);
+  const [onchainStakeChanges, setOnchainStakeChanges] = useState<{
+    activatingStake: number;
+    deactivatingStake: number;
+  }>({ activatingStake: 0, deactivatingStake: 0 });
+  const [stakeHistory, setStakeHistory] = useState<any[]>([]);
+  
   const fetchData = async (showToast = false) => {
     if (!votePubkey) {
       navigate("/");
@@ -46,6 +59,8 @@ const ValidatorDashboard = () => {
     
     try {
       console.log("Fetching data for validator:", votePubkey);
+      
+      // Fetch validator info and metrics
       const [info, metrics, delegators] = await Promise.all([
         fetchValidatorInfo(votePubkey),
         fetchValidatorMetrics(votePubkey),
@@ -64,6 +79,9 @@ const ValidatorDashboard = () => {
       setValidatorMetrics(metrics);
       setDelegatorCount(delegators);
       
+      // Fetch on-chain data separately to not block main UI data
+      fetchOnchainData(votePubkey);
+      
       if (showToast && info) {
         uiToast({
           title: "Data refreshed",
@@ -78,6 +96,32 @@ const ValidatorDashboard = () => {
       toast.error("Could not retrieve validator information. Please check the validator address.");
     } finally {
       setIsLoading(false);
+    }
+  };
+  
+  // Separate function to fetch on-chain data
+  const fetchOnchainData = async (votePubkey: string) => {
+    try {
+      console.log("Fetching on-chain data for validator:", votePubkey);
+      
+      // Fetch total stake and stake changes in parallel
+      const [totalStake, stakeChanges] = await Promise.all([
+        fetchOnchainTotalStake(votePubkey),
+        fetchOnchainStakeChanges(votePubkey)
+      ]);
+      
+      console.log("On-chain total stake:", totalStake);
+      console.log("On-chain stake changes:", stakeChanges);
+      
+      setOnchainTotalStake(totalStake);
+      setOnchainStakeChanges(stakeChanges);
+      
+      // Generate stake history based on total stake
+      const history = generateStakeHistory(totalStake, votePubkey);
+      setStakeHistory(history);
+      
+    } catch (err) {
+      console.error("Error fetching on-chain data:", err);
     }
   };
 
@@ -109,13 +153,25 @@ const ValidatorDashboard = () => {
   useEffect(() => {
     console.log("Current validator info state:", validatorInfo);
     console.log("Current validator metrics state:", validatorMetrics);
-  }, [validatorInfo, validatorMetrics]);
+    console.log("Current on-chain total stake:", onchainTotalStake);
+    console.log("Current on-chain stake changes:", onchainStakeChanges);
+  }, [validatorInfo, validatorMetrics, onchainTotalStake, onchainStakeChanges]);
 
-  // Properly calculate totalStake with fallback options
+  // Properly calculate totalStake with on-chain data as first priority
   const totalStake = 
+    (onchainTotalStake) || 
     (validatorMetrics?.totalStake) || 
     (validatorInfo?.activatedStake) || 
     0;
+    
+  // Calculate pending stake change
+  const pendingStakeChange = Math.max(
+    onchainStakeChanges.activatingStake,
+    onchainStakeChanges.deactivatingStake
+  ) || validatorMetrics?.pendingStakeChange || 0;
+  
+  // Determine if deactivating
+  const isDeactivating = onchainStakeChanges.deactivatingStake > onchainStakeChanges.activatingStake;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gojira-gray to-gojira-gray-dark">
@@ -148,8 +204,8 @@ const ValidatorDashboard = () => {
         
         <ValidatorMetricsGrid
           totalStake={totalStake}
-          pendingStakeChange={validatorMetrics?.pendingStakeChange || 0}
-          isDeactivating={validatorMetrics?.isDeactivating || false}
+          pendingStakeChange={pendingStakeChange}
+          isDeactivating={isDeactivating}
           commission={validatorMetrics?.commission || validatorInfo?.commission || 0}
           mevCommission={validatorMetrics?.mevCommission}
           estimatedApy={validatorMetrics?.estimatedApy}
@@ -164,7 +220,11 @@ const ValidatorDashboard = () => {
           </div>
           
           <div className="lg:col-span-8">
-            {votePubkey && <StakeHistoryChart vote_identity={votePubkey} />}
+            {votePubkey && stakeHistory.length > 0 ? (
+              <StakeHistoryChart vote_identity={votePubkey} initialData={stakeHistory} />
+            ) : (
+              <StakeHistoryChart vote_identity={votePubkey || ""} />
+            )}
           </div>
         </div>
         

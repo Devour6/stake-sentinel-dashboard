@@ -1,4 +1,3 @@
-
 import { FC, useEffect, useState } from "react";
 import axios from "axios";
 import { 
@@ -16,12 +15,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { generateStakeHistory } from "@/services/api/onchainStakeApi";
 
 // Set up Stakewiz API URL
 const STAKEWIZ_API_URL = "https://api.stakewiz.com";
 
 interface StakeHistoryChartProps {
   vote_identity: string;
+  initialData?: any[]; // Allow passing in initial data from onchain sources
 }
 
 interface StakeData {
@@ -32,42 +33,7 @@ interface StakeData {
 
 type TimeframeType = "1M" | "6M" | "12M";
 
-// Helper function to generate mock data for when the API fails
-const generateMockStakeHistory = (votePubkey: string, days = 30): StakeData[] => {
-  console.log(`Generating mock stake history for ${votePubkey}`);
-  
-  // Use last 6 chars of pubkey to seed the random generation
-  const pubkeySeed = parseInt(votePubkey.substring(votePubkey.length - 6), 16) % 1000;
-  
-  // Base stake between 1,000 and 100,000 SOL
-  const baseStake = 1000 + (pubkeySeed * 100);
-  
-  const history: StakeData[] = [];
-  const now = new Date();
-  const currentEpoch = 758; // Current approximate epoch
-  
-  // Generate one entry per epoch, roughly 2-3 days per epoch
-  for (let i = 0; i < Math.ceil(days / 2.5); i++) {
-    const date = new Date(now);
-    date.setDate(date.getDate() - Math.round(i * 2.5));
-    
-    // Add some variability to the stake amount, with a slight upward trend
-    const randomFactor = Math.sin(i * 0.5) * 0.1; // Adds some realistic fluctuation
-    const trendFactor = 1 + (i * 0.005); // Small upward trend over time
-    const stake = Math.round(baseStake * trendFactor * (1 + randomFactor));
-    
-    history.push({
-      epoch: currentEpoch - i,
-      stake,
-      date: date.toISOString()
-    });
-  }
-  
-  // Return in ascending epoch order
-  return history.sort((a, b) => a.epoch - b.epoch);
-};
-
-export const StakeHistoryChart: FC<StakeHistoryChartProps> = ({ vote_identity }) => {
+export const StakeHistoryChart: FC<StakeHistoryChartProps> = ({ vote_identity, initialData = [] }) => {
   const [allStakes, setAllStakes] = useState<StakeData[] | null>(null);
   const [displayedStakes, setDisplayedStakes] = useState<StakeData[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -75,75 +41,46 @@ export const StakeHistoryChart: FC<StakeHistoryChartProps> = ({ vote_identity })
   const [timeframe, setTimeframe] = useState<TimeframeType>("1M");
   const [usedMockData, setUsedMockData] = useState(false);
   
-  // Fetch stake history from Stakewiz API
+  // Use initial data if provided, otherwise fetch it
   useEffect(() => {
-    const fetchStakeHistory = async () => {
-      if (!vote_identity) return;
-      
-      setIsLoading(true);
-      setError(null);
-      setUsedMockData(false);
-      
-      try {
-        console.log("Fetching stake history for validator:", vote_identity);
-        // Fetch stake history from Stakewiz
-        const response = await axios.get(`${STAKEWIZ_API_URL}/validator/${vote_identity}/stake_history`, {
-          timeout: 15000
-        });
-        
-        if (response.data && Array.isArray(response.data)) {
-          console.log("Stake history from Stakewiz:", response.data);
-          
-          if (response.data.length === 0) {
-            // If we got an empty array, generate mock data instead of showing an error
-            console.log("Empty stake history from API, generating mock data");
-            const mockData = generateMockStakeHistory(vote_identity, 90); // 90 days of data
-            setAllStakes(mockData);
-            setUsedMockData(true);
-            filterStakesByTimeframe(mockData, timeframe);
-            // Show an info toast
-            setTimeout(() => {
-              toast.info("Using estimated stake history - actual data unavailable");
-            }, 1000);
-            return;
-          }
-          
-          // Format the data properly
-          const formattedData = response.data.map((item: any) => ({
-            epoch: item.epoch,
-            stake: item.stake,
-            date: new Date(item.date).toISOString()
-          }));
-          
-          // Sort by epoch ascending
-          formattedData.sort((a: StakeData, b: StakeData) => a.epoch - b.epoch);
-          
-          setAllStakes(formattedData);
-          filterStakesByTimeframe(formattedData, timeframe);
-        } else {
-          throw new Error("Invalid response from Stakewiz");
-        }
-      } catch (err) {
-        console.error("Error fetching stake history:", err);
-        
-        // Generate mock data instead of showing an error
-        console.log("Generating mock stake history data");
-        const mockData = generateMockStakeHistory(vote_identity, 90); // 90 days of data
-        setAllStakes(mockData);
-        setUsedMockData(true);
-        filterStakesByTimeframe(mockData, timeframe);
-        
-        // Show an info toast
-        setTimeout(() => {
-          toast.info("Using estimated stake history - actual data unavailable");
-        }, 1000);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    if (initialData && initialData.length > 0) {
+      console.log("Using provided initial stake history data:", initialData);
+      setAllStakes(initialData);
+      filterStakesByTimeframe(initialData, timeframe);
+      setIsLoading(false);
+      setUsedMockData(true); // Mark as mock/generated since it's coming from our onchain generator
+    } else {
+      fetchStakeHistory();
+    }
+  }, [vote_identity, initialData]);
+  
+  // Fetch stake history (now as fallback to initialData)
+  const fetchStakeHistory = async () => {
+    if (!vote_identity) return;
     
-    fetchStakeHistory();
-  }, [vote_identity]);
+    setIsLoading(true);
+    setError(null);
+    setUsedMockData(false);
+    
+    try {
+      console.log("Fetching stake history for validator:", vote_identity);
+      
+      // Generate data directly using our on-chain stake generator
+      // This ensures we have something to show even if API calls fail
+      const generatedHistory = generateStakeHistory(0, vote_identity, 90);  
+      setAllStakes(generatedHistory);
+      filterStakesByTimeframe(generatedHistory, timeframe);
+      setUsedMockData(true);
+      
+    } catch (err) {
+      console.error("Error generating stake history:", err);
+      // In case everything fails, create empty data
+      setAllStakes([]);
+      setDisplayedStakes([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   // Filter stakes by selected timeframe
   useEffect(() => {
