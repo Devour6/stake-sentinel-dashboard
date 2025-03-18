@@ -10,6 +10,9 @@ interface ValidatorHeaderProps {
   validatorName?: string;
   validatorIcon?: string | null;
   identityPubkey?: string;
+  description?: string; // Added
+  version?: string; // Added
+  uptime?: number; // Added
   isLoading?: boolean;
   onRefresh: () => void;
   onBack?: () => void;
@@ -21,6 +24,9 @@ export const ValidatorHeader = ({
   validatorName,
   validatorIcon,
   identityPubkey,
+  description,
+  version,
+  uptime,
   isLoading = false,
   onRefresh,
   onBack,
@@ -59,6 +65,9 @@ export const ValidatorHeader = ({
         <HeaderIdentitySection
           validatorPubkey={validatorPubkey}
           identityPubkey={identityPubkey}
+          description={description}
+          version={version}
+          uptime={uptime}
           isLoading={isLoading}
         />
       </div>

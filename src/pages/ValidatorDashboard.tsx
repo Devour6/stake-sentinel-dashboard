@@ -3,16 +3,15 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ValidatorHeader } from "@/components/validator/ValidatorHeader";
 import { ValidatorMetricsGrid } from "@/components/StakingMetricsCard";
-import { ValidatorInfoCard } from "@/components/ValidatorInfoCard";
 import { EpochStatusCard } from "@/components/EpochStatusCard";
 import { StakeHistoryChart } from "@/components/stakes/StakeHistoryChart";
-import StakeModal from "@/components/StakeModal"; // Fixed import statement
+import StakeModal from "@/components/StakeModal";
 import { 
   fetchValidatorInfo, 
   fetchValidatorMetrics, 
   type ValidatorInfo,
   type ValidatorMetrics,
-  VALIDATOR_PUBKEY // Import VALIDATOR_PUBKEY to fix the error
+  VALIDATOR_PUBKEY
 } from "@/services/solanaApi";
 import { useToast } from "@/components/ui/use-toast";
 import { toast } from "sonner";
@@ -107,6 +106,9 @@ const ValidatorDashboard = () => {
           validatorName={validatorInfo?.name}
           validatorIcon={validatorInfo?.icon}
           identityPubkey={validatorInfo?.identity}
+          description={validatorMetrics?.description}
+          version={validatorMetrics?.version}
+          uptime={validatorMetrics?.uptime}
           isLoading={isLoading}
           onRefresh={handleRefresh}
           onBack={() => navigate("/")}
@@ -136,13 +138,7 @@ const ValidatorDashboard = () => {
         />
         
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
-          <div className="lg:col-span-4 space-y-6">
-            <ValidatorInfoCard 
-              validatorInfo={validatorInfo} 
-              description={validatorMetrics?.description} 
-              website={validatorInfo?.website}
-              isLoading={isLoading} 
-            />
+          <div className="lg:col-span-4">
             <EpochStatusCard />
           </div>
           
