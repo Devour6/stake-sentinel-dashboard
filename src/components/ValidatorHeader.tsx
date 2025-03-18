@@ -127,13 +127,19 @@ export const ValidatorHeader = ({
                 validatorName || "Validator Dashboard"
               )}
             </h1>
-            <div className="flex flex-col sm:flex-row gap-2 sm:items-center text-muted-foreground flex-wrap">
-              <div className="flex items-center gap-1">
-                <span className="text-sm">Vote Account:</span>
-                {isLoading ? (
+            
+            {/* Address information with horizontal layout when possible */}
+            <div className="text-muted-foreground">
+              {isLoading ? (
+                <div className="flex flex-col space-y-2">
                   <div className="h-5 w-32 bg-muted/30 rounded animate-pulse"></div>
-                ) : (
+                  <div className="h-5 w-32 bg-muted/30 rounded animate-pulse"></div>
+                </div>
+              ) : (
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                  {/* Vote Account */}
                   <div className="flex items-center gap-1">
+                    <span className="text-sm whitespace-nowrap">Vote Account:</span>
                     <code className="bg-gojira-gray-dark/50 px-2 py-0.5 rounded text-sm font-mono">
                       {truncateAddress(validatorPubkey, 6)}
                     </code>
@@ -166,35 +172,36 @@ export const ValidatorHeader = ({
                       </Tooltip>
                     </TooltipProvider>
                   </div>
-                )}
-              </div>
-              
-              {identityPubkey && !isLoading && (
-                <>
-                  <span className="hidden sm:inline text-muted-foreground">•</span>
-                  <div className="flex items-center gap-1">
-                    <span className="text-sm">Identity:</span>
-                    <code className="bg-gojira-gray-dark/50 px-2 py-0.5 rounded text-sm font-mono">
-                      {truncateAddress(identityPubkey, 6)}
-                    </code>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="p-0 h-auto hover:bg-transparent text-gojira-red hover:text-gojira-red-light"
-                      onClick={() => copyToClipboard(identityPubkey, "Identity")}
-                    >
-                      <Copy className="h-3.5 w-3.5" />
-                    </Button>
-                    <a 
-                      href={identitySolscanUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-gojira-red hover:text-gojira-red-light transition-colors"
-                    >
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </a>
-                  </div>
-                </>
+                  
+                  {/* Identity */}
+                  {identityPubkey && (
+                    <>
+                      <span className="hidden sm:inline text-muted-foreground">•</span>
+                      <div className="flex items-center gap-1">
+                        <span className="text-sm whitespace-nowrap">Identity:</span>
+                        <code className="bg-gojira-gray-dark/50 px-2 py-0.5 rounded text-sm font-mono">
+                          {truncateAddress(identityPubkey, 6)}
+                        </code>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="p-0 h-auto hover:bg-transparent text-gojira-red hover:text-gojira-red-light"
+                          onClick={() => copyToClipboard(identityPubkey, "Identity")}
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                        </Button>
+                        <a 
+                          href={identitySolscanUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-gojira-red hover:text-gojira-red-light transition-colors"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </a>
+                      </div>
+                    </>
+                  )}
+                </div>
               )}
             </div>
           </div>
