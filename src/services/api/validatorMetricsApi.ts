@@ -1,17 +1,14 @@
 
 import { toast } from "sonner";
 import axios from "axios";
-import { VALIDATOR_PUBKEY } from "./constants";
+import { VALIDATOR_PUBKEY, STAKEWIZ_API_URL } from "./constants";
 import { ValidatorMetrics } from "./types";
-
-// Set up Stakewiz API URL
-const STAKEWIZ_API_URL = "https://api.stakewiz.com";
 
 // Cache for validator metrics to improve performance
 const validatorMetricsCache = new Map<string, ValidatorMetrics & { timestamp: number }>();
 const CACHE_VALIDITY_MS = 5 * 60 * 1000; // 5 minutes
 
-// Enhanced metrics fetching from Stakewiz with additional data
+// Enhanced metrics fetching from Stakewiz with error handling
 export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Promise<ValidatorMetrics | null> => {
   try {
     console.log(`Fetching validator metrics for ${votePubkey}...`);
@@ -50,15 +47,17 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
         console.log("Stakewiz stake data:", stakeResponse.data);
         activatingStake = stakeResponse.data.activating || 0;
         deactivatingStake = stakeResponse.data.deactivating || 0;
+      } else {
+        throw new Error("Invalid stake data response");
       }
     } catch (stakeError) {
       console.error("Error fetching stake data from Stakewiz:", stakeError);
-      // Continue with default values instead of throwing
+      throw new Error("Failed to fetch stake change data");
     }
     
     // Get network data for APY calculation
     let estimatedApy = null;
-    let networkInflation = 0.08; // Default inflation rate if we can't fetch it
+    let networkInflation;
     
     try {
       const networkResponse = await axios.get(`${STAKEWIZ_API_URL}/network`, {
@@ -71,14 +70,16 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
         
         // Calculate estimated APY based on network inflation and commission
         const commission = stakewizData.commission / 100 || 0;
-        const mevCommission = stakewizData.mev_commission / 100 || commission; // Default to same as regular commission
+        const mevCommission = stakewizData.mev_commission / 100 || commission;
         
-        // Basic APY calculation formula (could be more sophisticated)
+        // Basic APY calculation formula
         estimatedApy = networkInflation * (1 - commission);
+      } else {
+        throw new Error("Invalid network data response");
       }
     } catch (networkError) {
       console.error("Error fetching network data from Stakewiz:", networkError);
-      // We'll continue with default values
+      throw new Error("Failed to fetch APY calculation data");
     }
     
     const metrics = {
@@ -86,17 +87,17 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
       pendingStakeChange: Math.max(activatingStake, deactivatingStake),
       isDeactivating: deactivatingStake > activatingStake,
       commission: stakewizData.commission || 0,
-      mevCommission: stakewizData.mev_commission || stakewizData.commission || 0, // Fall back to regular commission
-      estimatedApy: estimatedApy || networkInflation * 0.9, // Fallback calculation
-      activatingStake: activatingStake,
-      deactivatingStake: deactivatingStake
+      mevCommission: stakewizData.mev_commission || stakewizData.commission || 0,
+      estimatedApy,
+      activatingStake,
+      deactivatingStake
     };
     
     validatorMetricsCache.set(votePubkey, { ...metrics, timestamp: now });
     return metrics;
   } catch (error) {
     console.error("Error fetching validator metrics:", error);
-    toast.error("Failed to fetch validator metrics");
+    toast.error("Failed to fetch validator metrics: " + (error instanceof Error ? error.message : "Unknown error"));
     return null;
   }
 };

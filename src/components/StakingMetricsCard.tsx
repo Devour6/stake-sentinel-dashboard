@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatSol, formatCommission } from "@/services/solanaApi";
-import { ArrowUpRight, ArrowDownRight, Percent, Clock, Gem, TrendingUp } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Percent, Clock, TrendingUp } from "lucide-react";
 
 interface StakingMetricsCardProps {
   title: string;
@@ -124,11 +124,11 @@ export const ValidatorMetricsGrid = ({
       {/* Add Estimated APY - removed MEV Commission as now combined with regular commission */}
       <StakingMetricsCard
         title="Estimated APY"
-        value={isLoading ? "" : hasError ? "Error" : `${estimatedApy ? (estimatedApy * 100).toFixed(2) : "0"}%`}
+        value={isLoading ? "" : hasError ? "Error" : estimatedApy ? `${(estimatedApy * 100).toFixed(2)}%` : "Error"}
         icon={<TrendingUp className="h-4 w-4 text-gojira-red" />}
         isEstimated={true}
         isLoading={isLoading}
-        isError={hasError}
+        isError={hasError || !estimatedApy}
       />
     </div>
   );

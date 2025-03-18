@@ -3,12 +3,14 @@
 export const VALIDATOR_PUBKEY = "goJiRADNdmfnJ4iWEyft7KaYMPTVsRba2Ee1akDEBXb";
 export const VALIDATOR_IDENTITY = "gojir4WnhS7VS1JdbnanJMzaMfr4UD7KeX1ixWAHEmw";
 
-// Helius paid RPC endpoint (primary)
-export const HELIUS_RPC_ENDPOINT = "https://mainnet.helius-rpc.com/?api-key=389d22ab-25bb-4f64-a36f-96455b26ea2e";
-export const HELIUS_WEBSOCKET_URL = "wss://mainnet.helius-rpc.com/?api-key=389d22ab-25bb-4f64-a36f-96455b26ea2e";
-export const HELIUS_PARSE_API = "https://api.helius.xyz/v0/addresses/{address}/transactions/?api-key=389d22ab-25bb-4f64-a36f-96455b26ea2e";
+// Stakewiz API URL
+export const STAKEWIZ_API_URL = "https://api.stakewiz.com";
 
-// Primary RPC endpoint (now Helius)
+// Helius paid RPC endpoint (primary) - more reliable and private endpoint
+export const HELIUS_RPC_ENDPOINT = "https://nanete-kbmodz-fast-mainnet.helius-rpc.com";
+export const HELIUS_WEBSOCKET_URL = "wss://nanete-kbmodz-fast-mainnet.helius-rpc.com";
+
+// Primary RPC endpoint (Helius)
 export const RPC_ENDPOINT = HELIUS_RPC_ENDPOINT;
 
 // Reliable community endpoints for epoch info
