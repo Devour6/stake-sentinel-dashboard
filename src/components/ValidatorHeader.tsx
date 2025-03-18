@@ -174,28 +174,26 @@ export const ValidatorHeader = ({
                       <span className="hidden sm:inline text-muted-foreground">•</span>
                       <div className="flex flex-wrap items-center gap-1">
                         <span className="text-sm whitespace-nowrap">Identity:</span>
-                        <div className="flex items-center flex-wrap">
-                          <code className="bg-gojira-gray-dark/50 px-2 py-0.5 rounded text-sm font-mono max-w-[250px] overflow-hidden text-ellipsis">
+                        <div className="flex items-center">
+                          <code className="bg-gojira-gray-dark/50 px-2 py-0.5 rounded text-sm font-mono overflow-hidden">
                             {identityPubkey}
                           </code>
-                          <div className="flex items-center">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="p-0 h-auto hover:bg-transparent text-gojira-red hover:text-gojira-red-light"
-                              onClick={() => copyToClipboard(identityPubkey, "Identity")}
-                            >
-                              <Copy className="h-3.5 w-3.5" />
-                            </Button>
-                            <a 
-                              href={identitySolscanUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-gojira-red hover:text-gojira-red-light transition-colors"
-                            >
-                              <ExternalLink className="h-3.5 w-3.5" />
-                            </a>
-                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="p-0 h-auto hover:bg-transparent text-gojira-red hover:text-gojira-red-light"
+                            onClick={() => copyToClipboard(identityPubkey, "Identity")}
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </Button>
+                          <a 
+                            href={identitySolscanUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-gojira-red hover:text-gojira-red-light transition-colors"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </a>
                         </div>
                       </div>
                     </>
