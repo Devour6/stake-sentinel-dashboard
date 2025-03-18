@@ -1,6 +1,7 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatSol, formatCommission } from "@/services/solanaApi";
-import { ArrowUpRight, ArrowDownRight, Percent, Clock, TrendingUp } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Percent, Clock, TrendingUp, ShieldCheck, Code } from "lucide-react";
 
 interface StakingMetricsCardProps {
   title: string;
@@ -66,6 +67,8 @@ interface ValidatorMetricsProps {
   commission: number;
   mevCommission?: number;
   estimatedApy?: number;
+  uptime?: number;
+  version?: string;
   isLoading?: boolean;
   hasError?: boolean;
 }
@@ -77,6 +80,8 @@ export const ValidatorMetricsGrid = ({
   commission,
   mevCommission,
   estimatedApy,
+  uptime,
+  version,
   isLoading = false,
   hasError = false,
 }: ValidatorMetricsProps) => {
@@ -92,7 +97,7 @@ export const ValidatorMetricsGrid = ({
     : "";
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4 animate-slide-up">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4 animate-slide-up">
       <StakingMetricsCard
         title="Total Stake"
         value={isLoading ? "" : hasError ? "Error" : formatSol(totalStake)}
@@ -127,6 +132,25 @@ export const ValidatorMetricsGrid = ({
         isLoading={isLoading}
         isError={hasError || !estimatedApy}
       />
+      {uptime !== undefined && (
+        <StakingMetricsCard
+          title="Uptime (30d)"
+          value={isLoading ? "" : hasError ? "Error" : `${uptime.toFixed(2)}%`}
+          icon={<ShieldCheck className="h-4 w-4 text-gojira-red" />}
+          trend={uptime > 99 ? "up" : uptime > 95 ? "neutral" : "down"}
+          isLoading={isLoading}
+          isError={hasError}
+        />
+      )}
+      {version && (
+        <StakingMetricsCard
+          title="Version"
+          value={isLoading ? "" : hasError ? "Error" : version}
+          icon={<Code className="h-4 w-4 text-gojira-red" />}
+          isLoading={isLoading}
+          isError={hasError}
+        />
+      )}
     </div>
   );
 };

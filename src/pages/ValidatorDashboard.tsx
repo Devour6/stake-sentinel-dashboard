@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ValidatorHeader } from "@/components/validator/ValidatorHeader";
@@ -5,6 +6,7 @@ import { ValidatorMetricsGrid } from "@/components/StakingMetricsCard";
 import { ValidatorInfoCard } from "@/components/ValidatorInfoCard";
 import { EpochStatusCard } from "@/components/EpochStatusCard";
 import { StakeHistoryChart } from "@/components/stakes/StakeHistoryChart";
+import { StakeModal } from "@/components/StakeModal";
 import { 
   fetchValidatorInfo, 
   fetchValidatorMetrics, 
@@ -29,6 +31,7 @@ const ValidatorDashboard = () => {
   const [validatorInfo, setValidatorInfo] = useState<ValidatorInfo | null>(null);
   const [validatorMetrics, setValidatorMetrics] = useState<ValidatorMetrics | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isStakeModalOpen, setIsStakeModalOpen] = useState(false);
   
   const fetchData = async (showToast = false) => {
     if (!votePubkey) {
@@ -85,6 +88,14 @@ const ValidatorDashboard = () => {
     return () => clearInterval(intervalId);
   }, [votePubkey]);
 
+  const handleStakeModalOpen = () => {
+    setIsStakeModalOpen(true);
+  };
+
+  const handleStakeModalClose = () => {
+    setIsStakeModalOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gojira-gray to-gojira-gray-dark">
       {isRefreshing && <RefreshOverlay />}
@@ -98,6 +109,7 @@ const ValidatorDashboard = () => {
           isLoading={isLoading}
           onRefresh={handleRefresh}
           onBack={() => navigate("/")}
+          onStakeModalOpen={handleStakeModalOpen}
         />
         
         <div className="mt-8"></div>
@@ -116,17 +128,24 @@ const ValidatorDashboard = () => {
           commission={validatorMetrics?.commission || 0}
           mevCommission={validatorMetrics?.mevCommission}
           estimatedApy={validatorMetrics?.estimatedApy}
+          uptime={validatorMetrics?.uptime}
+          version={validatorMetrics?.version}
           isLoading={isLoading}
           hasError={!!error}
         />
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-          <div className="lg:col-span-1 space-y-6">
-            <ValidatorInfoCard validatorInfo={validatorInfo} isLoading={isLoading} />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
+          <div className="lg:col-span-4 space-y-6">
+            <ValidatorInfoCard 
+              validatorInfo={validatorInfo} 
+              description={validatorMetrics?.description} 
+              website={validatorInfo?.website}
+              isLoading={isLoading} 
+            />
             <EpochStatusCard />
           </div>
           
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-8">
             {votePubkey && <StakeHistoryChart vote_identity={votePubkey} />}
           </div>
         </div>
@@ -144,6 +163,13 @@ const ValidatorDashboard = () => {
           </div>
         </div>
       </div>
+
+      <StakeModal 
+        isOpen={isStakeModalOpen} 
+        onClose={handleStakeModalClose} 
+        validatorPubkey={validatorInfo?.votePubkey || VALIDATOR_PUBKEY}
+        validatorName={validatorInfo?.name || "Gojira Validator"}
+      />
     </div>
   );
 };

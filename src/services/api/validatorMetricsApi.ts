@@ -105,6 +105,11 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
           console.log("Using fallback APY estimate");
         }
         
+        // Extract description, uptime and version from stakewiz data
+        const description = stakewizData.description || '';
+        const uptime = stakewizData.uptime_percentage || stakewizData.uptime || 99.5; // Default to high uptime if not provided
+        const version = stakewizData.version || 'v1.17.x'; // Default version if not provided
+        
         const metrics = {
           totalStake: stakewizData.activated_stake || 0,
           pendingStakeChange: Math.max(activatingStake, deactivatingStake),
@@ -115,7 +120,10 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
                         stakewizData.commission || 0,
           estimatedApy,
           activatingStake,
-          deactivatingStake
+          deactivatingStake,
+          description,
+          uptime,
+          version
         };
         
         console.log("Final validator metrics:", metrics);
@@ -192,7 +200,10 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
       mevCommission: commission,
       estimatedApy: 0.07 - (commission / 1000), // Estimate APY based on commission
       activatingStake: Math.floor(baseStake * 0.02),
-      deactivatingStake: 0
+      deactivatingStake: 0,
+      description: "This validator information is currently unavailable. Showing estimated values.",
+      uptime: 99.2 + (pubkeySeed % 10) / 10, // 99.2-100%
+      version: "v1.17.x"
     };
     
     console.log("Using fallback metrics:", fallbackMetrics);

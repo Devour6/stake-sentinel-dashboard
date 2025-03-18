@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Home from "./pages/Home";
 import ValidatorDashboard from "./pages/ValidatorDashboard";
 import NotFound from "./pages/NotFound";
+import { VALIDATOR_PUBKEY } from "./services/api/constants";
 
 // Set the document title
 document.title = "NodeScan - Solana Validator Monitor";
