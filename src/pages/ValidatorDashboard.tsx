@@ -113,21 +113,37 @@ const ValidatorDashboard = () => {
       console.log("On-chain total stake:", totalStake);
       console.log("On-chain stake changes:", stakeChanges);
       
-      setOnchainTotalStake(totalStake);
+      // Only update state if we got valid data
+      if (totalStake > 0) {
+        setOnchainTotalStake(totalStake);
+      }
+      
       setOnchainStakeChanges(stakeChanges);
       
       // Generate stake history based on total stake
-      const history = generateStakeHistory(totalStake, votePubkey);
+      // Only use valid total stake value
+      const validTotalStake = totalStake > 0 ? totalStake : 
+        (validatorMetrics?.totalStake || validatorInfo?.activatedStake || 1000);
+      
+      const history = generateStakeHistory(validTotalStake, votePubkey);
+      console.log("Generated stake history:", history);
       setStakeHistory(history);
       
     } catch (err) {
       console.error("Error fetching on-chain data:", err);
+      // Even if this fails, we'll use the fallbacks
     }
   };
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
     await fetchData(true);
+    
+    // Explicitly refresh on-chain data
+    if (votePubkey) {
+      fetchOnchainData(votePubkey);
+    }
+    
     setTimeout(() => {
       setIsRefreshing(false);
     }, 800);
@@ -155,14 +171,15 @@ const ValidatorDashboard = () => {
     console.log("Current validator metrics state:", validatorMetrics);
     console.log("Current on-chain total stake:", onchainTotalStake);
     console.log("Current on-chain stake changes:", onchainStakeChanges);
-  }, [validatorInfo, validatorMetrics, onchainTotalStake, onchainStakeChanges]);
+    console.log("Current stake history:", stakeHistory);
+  }, [validatorInfo, validatorMetrics, onchainTotalStake, onchainStakeChanges, stakeHistory]);
 
   // Properly calculate totalStake with on-chain data as first priority
   const totalStake = 
-    (onchainTotalStake) || 
+    (onchainTotalStake && onchainTotalStake > 0 ? onchainTotalStake : null) || 
     (validatorMetrics?.totalStake) || 
     (validatorInfo?.activatedStake) || 
-    0;
+    1000; // Fallback value
     
   // Calculate pending stake change
   const pendingStakeChange = Math.max(
