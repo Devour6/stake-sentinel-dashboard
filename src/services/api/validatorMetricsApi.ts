@@ -1,4 +1,3 @@
-
 import { toast } from "sonner";
 import axios from "axios";
 import { VALIDATOR_PUBKEY, STAKEWIZ_API_URL } from "./constants";
@@ -198,6 +197,7 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
       pendingStakeChange: 0,
       isDeactivating: false,
       commission: 0,
+      estimatedApy: null,
       website: null
     };
   } catch (error) {

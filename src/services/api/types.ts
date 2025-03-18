@@ -29,6 +29,13 @@ export interface ValidatorInfo {
   activatedStake?: number;
   icon?: string | null;
   website?: string | null;
+  pendingStakeChange?: number;
+  isDeactivating?: boolean;
+  delinquentStake?: number;
+  epochCredits?: number;
+  lastVote?: number;
+  rootSlot?: number;
+  currentEpoch?: number;
 }
 
 export interface ValidatorSearchResult {
@@ -38,6 +45,8 @@ export interface ValidatorSearchResult {
   commission?: number;
   activatedStake?: number;
   icon?: string | null;
+  website?: string | null;
+  delinquent?: boolean;
 }
 
 export interface EpochInfo {
@@ -58,4 +67,18 @@ export interface RpcVoteAccount {
   commission: number;
   lastVote: number;
   rootSlot: number;
+  epochCredits?: [number, number, number][];
+}
+
+export interface StakeAccountInfo {
+  stake: number;
+  activationEpoch: number;
+  deactivationEpoch: number;
+}
+
+export interface ValidatorConfigData {
+  name: string;
+  website?: string;
+  keybaseUsername?: string;
+  iconUrl?: string;
 }
