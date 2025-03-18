@@ -26,7 +26,7 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
     try {
       const stakewizResponse = await axios.get(
         `${STAKEWIZ_API_URL}/validator/${votePubkey}`,
-        { timeout: 15000 } // Increased timeout for slower connections
+        { timeout: 30000 } // Increased timeout for slower connections
       );
       
       if (stakewizResponse.data) {
@@ -39,7 +39,7 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
         
         try {
           const stakeResponse = await axios.get(`${STAKEWIZ_API_URL}/validator/${votePubkey}/stake`, {
-            timeout: 8000
+            timeout: 15000
           });
           
           if (stakeResponse.data) {
@@ -62,7 +62,7 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
         // First try network endpoint for overall network APY
         try {
           const networkResponse = await axios.get(`${STAKEWIZ_API_URL}/network`, {
-            timeout: 5000
+            timeout: 10000
           });
           
           if (networkResponse.data && networkResponse.data.apy) {
@@ -99,10 +99,16 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
           console.log("Estimated APY based on commission:", estimatedApy);
         }
         
-        // Last resort fallback
-        if (estimatedApy === null) {
-          estimatedApy = 0.07; // ~7% as a fallback estimate
-          console.log("Using fallback APY estimate");
+        // Extract description and version from stakewizData if available
+        const description = stakewizData.description || null;
+        const version = stakewizData.version || null;
+        
+        // Extract uptime from stakewizData
+        let uptime30d = null;
+        if (stakewizData.uptime) {
+          uptime30d = stakewizData.uptime;
+        } else if (stakewizData.uptime_30d) {
+          uptime30d = stakewizData.uptime_30d;
         }
         
         const metrics = {
@@ -115,7 +121,10 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
                         stakewizData.commission || 0,
           estimatedApy,
           activatingStake,
-          deactivatingStake
+          deactivatingStake,
+          description,
+          version,
+          uptime30d
         };
         
         console.log("Final validator metrics:", metrics);
@@ -135,7 +144,7 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
       console.log("Trying alternate validators list endpoint...");
       const validatorsResponse = await axios.get(
         `${STAKEWIZ_API_URL}/validators`,
-        { timeout: 12000 }
+        { timeout: 20000 }
       );
       
       if (validatorsResponse.data && Array.isArray(validatorsResponse.data)) {
@@ -153,13 +162,16 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
           
           const metrics = {
             totalStake: validator.activated_stake || 0,
-            pendingStakeChange: 0, // We don't have this info from this endpoint
+            pendingStakeChange: 0,
             isDeactivating: false,
             commission: validator.commission || 0,
-            mevCommission: validator.commission || 0, // We don't have MEV info here
+            mevCommission: validator.commission || 0,
             estimatedApy,
             activatingStake: 0,
-            deactivatingStake: 0
+            deactivatingStake: 0,
+            description: validator.description || null,
+            version: validator.version || null,
+            uptime30d: validator.uptime || null
           };
           
           console.log("Metrics from validators list:", metrics);
@@ -171,33 +183,15 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
       console.error("Alternate Stakewiz endpoint failed:", error);
     }
     
-    // Last resort - create fallback metrics
-    console.warn("All Stakewiz endpoints failed, creating fallback metrics");
-    toast.error("Unable to fetch live metrics, showing estimates", {
-      duration: 4000,
-      id: "stakewiz-all-endpoints-failed"
-    });
-    
-    // Generate fallback metrics based on validator pubkey
-    // Use last 6 chars of pubkey to create deterministic but realistic values
-    const pubkeySeed = parseInt(votePubkey.substring(votePubkey.length - 6), 16) % 1000;
-    const baseStake = 10000 + (pubkeySeed * 100);
-    const commission = 5 + (pubkeySeed % 10); // 5-14% commission
-    
-    const fallbackMetrics = {
-      totalStake: baseStake,
-      pendingStakeChange: Math.floor(baseStake * 0.02), // 2% pending change
-      isDeactivating: false,
-      commission,
-      mevCommission: commission,
-      estimatedApy: 0.07 - (commission / 1000), // Estimate APY based on commission
-      activatingStake: Math.floor(baseStake * 0.02),
-      deactivatingStake: 0
-    };
-    
-    console.log("Using fallback metrics:", fallbackMetrics);
-    validatorMetricsCache.set(votePubkey, { ...fallbackMetrics, timestamp: now });
-    return fallbackMetrics;
+    // Last resort - try to fetch directly from Stakewiz website
+    try {
+      // This is just for logging, we can't actually scrape from our frontend
+      console.log(`Consider checking https://stakewiz.com/validator/${votePubkey} manually`);
+      return null;
+    } catch (error) {
+      console.error("Failed to get data from all sources:", error);
+      return null;
+    }
   } catch (error) {
     console.error("Critical error fetching validator metrics:", error);
     toast.error("Failed to fetch validator metrics: " + (error instanceof Error ? error.message : "Unknown error"));
