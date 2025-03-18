@@ -1,83 +1,90 @@
 
 import { FC } from "react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { Spinner } from "@/components/ui/spinner";
-import { AlertTriangle } from "lucide-react";
-import CustomTooltip from "./CustomTooltip";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { Skeleton } from "@/components/ui/skeleton";
+import { CustomTooltip } from "./CustomTooltip";
 import { StakeChartContainerProps } from "./types";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const StakeChartContainer: FC<StakeChartContainerProps> = ({ 
-  isLoading, 
-  error, 
-  displayedStakes,
-  usedMockData
+  isLoading,
+  error,
+  displayedStakes
 }) => {
+  const isMobile = useIsMobile();
+
   if (isLoading) {
     return (
-      <div className="h-[320px] w-full flex items-center justify-center">
-        <Spinner />
+      <div className="w-full h-[300px] flex items-center justify-center">
+        <Skeleton className="w-full h-full" />
       </div>
     );
   }
-  
+
   if (error) {
     return (
-      <div className="h-[320px] w-full flex flex-col items-center justify-center text-center gap-4">
-        <AlertTriangle className="h-12 w-12 text-amber-500" />
-        <p className="text-muted-foreground">{error}</p>
+      <div className="w-full h-[200px] flex items-center justify-center border border-red-500/20 rounded-lg bg-red-500/5 p-4">
+        <p className="text-red-500 text-center">{error}</p>
       </div>
     );
   }
-  
+
   if (!displayedStakes || displayedStakes.length === 0) {
     return (
-      <div className="h-[320px] w-full flex flex-col items-center justify-center text-center gap-4">
-        <AlertTriangle className="h-12 w-12 text-amber-500" />
-        <p className="text-muted-foreground">No stake history available for this timeframe</p>
+      <div className="w-full h-[200px] flex items-center justify-center border border-muted rounded-lg bg-muted/10 p-4">
+        <p className="text-muted-foreground text-center">No stake history data available</p>
       </div>
     );
   }
-  
+
   return (
-    <ResponsiveContainer width="100%" height={320}>
-      <LineChart
-        data={displayedStakes}
-        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-      >
-        <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-        <XAxis 
-          dataKey="date" 
-          label={{ value: 'Date', position: 'insideBottomRight', offset: -5 }}
-          style={{ fontSize: '0.75rem' }}
-          tickFormatter={(value) => {
-            const date = new Date(value);
-            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    <div className="w-full" style={{ height: isMobile ? "250px" : "300px" }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart
+          data={displayedStakes}
+          margin={{
+            top: 10,
+            right: 10,
+            left: isMobile ? 0 : 20,
+            bottom: 20,
           }}
-        />
-        <YAxis 
-          label={{ value: 'Stake (SOL)', angle: -90, position: 'insideLeft' }}
-          style={{ fontSize: '0.75rem' }}
-          tickFormatter={(value) => {
-            return new Intl.NumberFormat('en-US', {
-              notation: 'compact',
-              maximumFractionDigits: 1
-            }).format(value);
-          }}
-        />
-        <Tooltip content={<CustomTooltip />} />
-        <Legend />
-        <Line 
-          type="monotone" 
-          dataKey="stake" 
-          stroke="#ff4a22" 
-          strokeWidth={2}
-          dot={{ r: 2 }}
-          activeDot={{ r: 6 }}
-          name={usedMockData ? "Estimated Stake" : "Active Stake"}
-        />
-      </LineChart>
-    </ResponsiveContainer>
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+          <XAxis 
+            dataKey="epoch" 
+            tick={{ fill: '#9CA3AF' }}
+            label={{ 
+              value: 'Epoch', 
+              position: 'insideBottomRight', 
+              offset: -5,
+              fill: '#9CA3AF'
+            }}
+            tickFormatter={(value) => isMobile ? String(value) : `Epoch ${value}`}
+          />
+          <YAxis 
+            tick={{ fill: '#9CA3AF' }}
+            tickFormatter={(value) => `${(value / 1000).toFixed(0)}K`}
+            label={{ 
+              value: 'Stake (SOL)', 
+              angle: -90, 
+              position: 'insideLeft', 
+              style: { textAnchor: 'middle' },
+              fill: '#9CA3AF',
+              offset: isMobile ? 0 : 10 
+            }}
+            width={isMobile ? 40 : 60}
+          />
+          <Tooltip content={<CustomTooltip />} />
+          <Line 
+            type="monotone" 
+            dataKey="stake" 
+            stroke="#EF4444" 
+            strokeWidth={2}
+            activeDot={{ r: 6, fill: '#EF4444', stroke: '#FFFFFF' }}
+            dot={false}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
   );
 };
-
-export default StakeChartContainer;

@@ -78,8 +78,8 @@
 
   /* Custom scrollbar */
   ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+    width: 8px;
+    height: 8px;
   }
 
   ::-webkit-scrollbar-track {
@@ -88,6 +88,43 @@
 
   ::-webkit-scrollbar-thumb {
     @apply bg-gojira-gray-light hover:bg-gojira-red/80 rounded-full;
+  }
+  
+  /* Mobile optimizations */
+  @media (max-width: 640px) {
+    h1 {
+      @apply text-2xl;
+    }
+    
+    h2 {
+      @apply text-xl;
+    }
+    
+    h3 {
+      @apply text-lg;
+    }
+    
+    .card-title {
+      @apply text-lg;
+    }
+    
+    .card-description {
+      @apply text-sm;
+    }
+    
+    /* Add extra bottom padding to avoid stake button overlap */
+    .page-container {
+      @apply pb-16;
+    }
+    
+    /* Smaller padding on cards for mobile */
+    .card-content {
+      @apply p-3;
+    }
+    
+    .card-header {
+      @apply p-3 pb-1;
+    }
   }
 }
 
@@ -107,6 +144,15 @@
   
   .z-5 {
     z-index: 5;
+  }
+  
+  /* Mobile utilities */
+  .mobile-card {
+    @apply rounded-lg p-3;
+  }
+  
+  .mobile-padding {
+    @apply px-3 py-2;
   }
 }
 
@@ -158,4 +204,23 @@
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* Responsive fixes for mobile */
+@media (max-width: 640px) {
+  .stake-button {
+    @apply fixed bottom-4 right-4 z-50;
+  }
+  
+  .toggle-group {
+    @apply scale-90 origin-right;
+  }
+  
+  .validator-header {
+    @apply flex-col items-start space-y-2;
+  }
+  
+  .validator-actions {
+    @apply w-full flex justify-between;
+  }
 }

@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ValidatorHeader } from "@/components/validator/ValidatorHeader";
@@ -13,6 +14,7 @@ import {
 } from "@/services/solanaApi";
 import { useToast } from "@/components/ui/use-toast";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const RefreshOverlay = () => (
   <div className="refresh-overlay">
@@ -24,6 +26,7 @@ const ValidatorDashboard = () => {
   const { votePubkey } = useParams<{ votePubkey: string }>();
   const { toast: uiToast } = useToast();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [validatorInfo, setValidatorInfo] = useState<ValidatorInfo | null>(null);
@@ -89,7 +92,7 @@ const ValidatorDashboard = () => {
     <div className="min-h-screen bg-gradient-to-br from-gojira-gray to-gojira-gray-dark">
       {isRefreshing && <RefreshOverlay />}
       
-      <div className="container max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      <div className="container max-w-7xl mx-auto py-4 sm:py-8 px-3 sm:px-6 lg:px-8">
         <ValidatorHeader 
           validatorPubkey={votePubkey || ""}
           validatorName={validatorInfo?.name}
@@ -100,10 +103,10 @@ const ValidatorDashboard = () => {
           onBack={() => navigate("/")}
         />
         
-        <div className="mt-8"></div>
+        <div className="mt-4 sm:mt-8"></div>
         
         {error && !isLoading && (
-          <div className="my-8 p-6 bg-red-500/10 border border-red-500/30 rounded-lg text-center">
+          <div className="my-4 sm:my-8 p-4 sm:p-6 bg-red-500/10 border border-red-500/30 rounded-lg text-center">
             <h3 className="text-xl font-semibold text-red-500 mb-2">Error</h3>
             <p className="text-muted-foreground">{error}</p>
           </div>
@@ -120,8 +123,8 @@ const ValidatorDashboard = () => {
           hasError={!!error}
         />
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-          <div className="lg:col-span-1 space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mt-4 sm:mt-6">
+          <div className="lg:col-span-1 space-y-4 sm:space-y-6">
             <ValidatorInfoCard validatorInfo={validatorInfo} isLoading={isLoading} />
             <EpochStatusCard />
           </div>
@@ -131,7 +134,7 @@ const ValidatorDashboard = () => {
           </div>
         </div>
         
-        <div className="mt-12 text-center text-sm text-muted-foreground">
+        <div className="mt-8 sm:mt-12 text-center text-sm text-muted-foreground pb-16 sm:pb-8">
           <p>Data refreshes automatically every 5 minutes. Last updated: {new Date().toLocaleTimeString()}</p>
           <div className="mt-2 flex justify-center gap-1 items-center">
             <span>Powered by</span>

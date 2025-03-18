@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "sonner";
 import { StakeData, TimeframeType } from "./types";
-import { generateMockStakeHistory } from "@/utils/mockDataGenerator";
 
 // Set up Stakewiz API URL
 const STAKEWIZ_API_URL = "https://api.stakewiz.com";
@@ -14,7 +13,6 @@ export const useStakeHistory = (vote_identity: string) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [timeframe, setTimeframe] = useState<TimeframeType>("1M");
-  const [usedMockData, setUsedMockData] = useState(false);
   
   // Helper function to filter stakes by timeframe
   const filterStakesByTimeframe = (stakes: StakeData[], frame: TimeframeType) => {
@@ -72,28 +70,21 @@ export const useStakeHistory = (vote_identity: string) => {
       
       setIsLoading(true);
       setError(null);
-      setUsedMockData(false);
       
       try {
-        // Fetch stake history from Stakewiz
+        console.log(`Attempting to fetch stake history from Stakewiz for ${vote_identity}`);
+        
+        // Attempt to fetch with increased timeout (30 seconds)
         const response = await axios.get(`${STAKEWIZ_API_URL}/validator/${vote_identity}/stake_history`, {
-          timeout: 15000
+          timeout: 30000 // Increased timeout to 30 seconds
         });
         
         if (response.data && Array.isArray(response.data)) {
           console.log("Stake history from Stakewiz:", response.data);
           
           if (response.data.length === 0) {
-            // If we got an empty array, generate mock data instead of showing an error
-            console.log("Empty stake history from API, generating mock data");
-            const mockData = generateMockStakeHistory(vote_identity, 90); // 90 days of data
-            setAllStakes(mockData);
-            setUsedMockData(true);
-            filterStakesByTimeframe(mockData, timeframe);
-            // Show an info toast
-            setTimeout(() => {
-              toast.info("Using estimated stake history - actual data unavailable");
-            }, 1000);
+            setError("No stake history data available for this validator");
+            setAllStakes([]);
             return;
           }
           
@@ -112,20 +103,13 @@ export const useStakeHistory = (vote_identity: string) => {
         } else {
           throw new Error("Invalid response from Stakewiz");
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Error fetching stake history:", err);
+        setError(`Failed to fetch stake history: ${err.message || "Unknown error"}`);
+        setAllStakes([]);
         
-        // Generate mock data instead of showing an error
-        console.log("Generating mock stake history data");
-        const mockData = generateMockStakeHistory(vote_identity, 90); // 90 days of data
-        setAllStakes(mockData);
-        setUsedMockData(true);
-        filterStakesByTimeframe(mockData, timeframe);
-        
-        // Show an info toast
-        setTimeout(() => {
-          toast.info("Using estimated stake history - actual data unavailable");
-        }, 1000);
+        // Show an error toast
+        toast.error("Failed to fetch validator stake history");
       } finally {
         setIsLoading(false);
       }
@@ -146,7 +130,6 @@ export const useStakeHistory = (vote_identity: string) => {
     isLoading,
     error,
     timeframe,
-    setTimeframe,
-    usedMockData
+    setTimeframe
   };
 };

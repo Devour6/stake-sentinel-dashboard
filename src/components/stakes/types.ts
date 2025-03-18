@@ -19,7 +19,6 @@ export interface StakeChartContainerProps {
   isLoading: boolean;
   error: string | null;
   displayedStakes: StakeData[] | null;
-  usedMockData: boolean;
 }
 
 export interface TimeframeToggleProps {

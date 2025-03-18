@@ -12,8 +12,7 @@ export const StakeHistoryChart: FC<StakeHistoryChartProps> = ({ vote_identity })
     isLoading,
     error,
     timeframe,
-    setTimeframe,
-    usedMockData
+    setTimeframe
   } = useStakeHistory(vote_identity);
 
   return (
@@ -23,7 +22,7 @@ export const StakeHistoryChart: FC<StakeHistoryChartProps> = ({ vote_identity })
           <div>
             <CardTitle>Stake History</CardTitle>
             <CardDescription>
-              {usedMockData ? "Estimated validator stake over time" : "Validator stake over time"}
+              Validator stake over time
             </CardDescription>
           </div>
           
@@ -38,7 +37,6 @@ export const StakeHistoryChart: FC<StakeHistoryChartProps> = ({ vote_identity })
           isLoading={isLoading}
           error={error}
           displayedStakes={displayedStakes}
-          usedMockData={usedMockData}
         />
       </CardContent>
     </Card>
