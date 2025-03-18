@@ -2,7 +2,6 @@
 import { useRef, useState } from "react";
 import PageLayout from "@/components/layout/PageLayout";
 import SearchBar from "@/components/search/SearchBar";
-import { useValidatorSearch } from "@/hooks/useValidatorSearch";
 import Footer from "@/components/layout/Footer";
 import StakeModal from "@/components/StakeModal";
 import { EpochStatusCard } from "@/components/EpochStatusCard";
@@ -11,17 +10,6 @@ import { VALIDATOR_PUBKEY } from "@/services/api/constants";
 const Home = () => {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [isStakeModalOpen, setIsStakeModalOpen] = useState(false);
-  const {
-    searchInput,
-    setSearchInput,
-    isSearching,
-    isLoadingValidators,
-    filteredValidators,
-    showSuggestions,
-    setShowSuggestions,
-    handleSearch,
-    handleSelectValidator
-  } = useValidatorSearch();
 
   const handleStakeModalOpen = () => {
     setIsStakeModalOpen(true);
@@ -44,18 +32,7 @@ const Home = () => {
           <div className="w-full max-w-2xl flex flex-col gap-4">
             {/* Search bar takes precedence */}
             <div className="w-full">
-              <SearchBar
-                ref={searchInputRef}
-                searchInput={searchInput}
-                setSearchInput={setSearchInput}
-                isSearching={isSearching}
-                isLoadingValidators={isLoadingValidators}
-                filteredValidators={filteredValidators}
-                showSuggestions={showSuggestions}
-                setShowSuggestions={setShowSuggestions}
-                onSearch={handleSearch}
-                onSelectValidator={handleSelectValidator}
-              />
+              <SearchBar ref={searchInputRef} />
             </div>
             
             {/* Compact Epoch Status Card */}

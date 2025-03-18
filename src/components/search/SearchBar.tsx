@@ -85,7 +85,7 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(({
                   className="flex items-center justify-between p-3 hover:bg-accent cursor-pointer"
                   onMouseDown={(e) => {
                     e.preventDefault();
-                    onSelectValidator(validator.votePubkey);
+                    handleSelectValidator(validator.votePubkey);
                   }}
                 >
                   <div className="flex items-center gap-3">
