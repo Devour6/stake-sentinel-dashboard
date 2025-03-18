@@ -14,17 +14,21 @@ import axios from "axios";
 const STAKEWIZ_API_URL = "https://api.stakewiz.com";
 
 // Cache for validator details to improve performance
-const validatorInfoCache = new Map<string, ValidatorInfo>();
-const validatorMetricsCache = new Map<string, ValidatorMetrics>();
+const validatorInfoCache = new Map<string, ValidatorInfo & { timestamp: number }>();
+const validatorMetricsCache = new Map<string, ValidatorMetrics & { timestamp: number }>();
+const CACHE_VALIDITY_MS = 5 * 60 * 1000; // 5 minutes
 
 // Improved method to fetch validator info - prioritizing Stakewiz
 export const fetchValidatorInfo = async (votePubkey = VALIDATOR_PUBKEY): Promise<ValidatorInfo | null> => {
   try {
     console.log(`Fetching validator info for ${votePubkey}...`);
     
-    // Check cache first
-    if (validatorInfoCache.has(votePubkey)) {
-      return validatorInfoCache.get(votePubkey);
+    // Check cache first (with timeout)
+    const now = Date.now();
+    const cachedInfo = validatorInfoCache.get(votePubkey);
+    if (cachedInfo && (now - cachedInfo.timestamp < CACHE_VALIDITY_MS)) {
+      const { timestamp, ...validatorInfo } = cachedInfo;
+      return validatorInfo;
     }
     
     // First try Stakewiz API directly - most reliable source
@@ -73,8 +77,8 @@ export const fetchValidatorInfo = async (votePubkey = VALIDATOR_PUBKEY): Promise
           website: stakewizData.website || solscanDetails.website || null
         };
         
-        // Cache the result
-        validatorInfoCache.set(votePubkey, validatorInfo);
+        // Cache the result with timestamp
+        validatorInfoCache.set(votePubkey, { ...validatorInfo, timestamp: now });
         return validatorInfo;
       }
     } catch (stakewizError) {
@@ -124,7 +128,7 @@ export const fetchValidatorInfo = async (votePubkey = VALIDATOR_PUBKEY): Promise
             website: solscanDetails.website || null
           };
           
-          validatorInfoCache.set(votePubkey, minimalInfo);
+          validatorInfoCache.set(votePubkey, { ...minimalInfo, timestamp: now });
           return minimalInfo;
         }
         
@@ -146,7 +150,7 @@ export const fetchValidatorInfo = async (votePubkey = VALIDATOR_PUBKEY): Promise
           website: solscanDetails.website || searchResult.website || null
         };
         
-        validatorInfoCache.set(votePubkey, searchBasedInfo);
+        validatorInfoCache.set(votePubkey, { ...searchBasedInfo, timestamp: now });
         return searchBasedInfo;
       }
 
@@ -179,7 +183,7 @@ export const fetchValidatorInfo = async (votePubkey = VALIDATOR_PUBKEY): Promise
         website: solscanDetails.website || (searchResult?.website || null)
       };
       
-      validatorInfoCache.set(votePubkey, validatorInfo);
+      validatorInfoCache.set(votePubkey, { ...validatorInfo, timestamp: now });
       return validatorInfo;
     } catch (traditionalError) {
       console.error("Error with traditional validator info fetch:", traditionalError);
@@ -203,7 +207,7 @@ export const fetchValidatorInfo = async (votePubkey = VALIDATOR_PUBKEY): Promise
         website: solscanDetails.website || null
       };
       
-      validatorInfoCache.set(votePubkey, fallbackInfo);
+      validatorInfoCache.set(votePubkey, { ...fallbackInfo, timestamp: now });
       return fallbackInfo;
     }
   } catch (error) {
@@ -218,9 +222,12 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
   try {
     console.log(`Fetching validator metrics for ${votePubkey}...`);
     
-    // Check cache first
-    if (validatorMetricsCache.has(votePubkey)) {
-      return validatorMetricsCache.get(votePubkey);
+    // Check cache first (with timeout)
+    const now = Date.now();
+    const cachedMetrics = validatorMetricsCache.get(votePubkey);
+    if (cachedMetrics && (now - cachedMetrics.timestamp < CACHE_VALIDITY_MS)) {
+      const { timestamp, ...metrics } = cachedMetrics;
+      return metrics;
     }
     
     // Try to get data from Stakewiz API directly
@@ -239,8 +246,12 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
         let deactivatingStake = 0;
         
         try {
-          const stakeResponse = await axios.get(`${STAKEWIZ_API_URL}/validator/${votePubkey}/stake`);
+          const stakeResponse = await axios.get(`${STAKEWIZ_API_URL}/validator/${votePubkey}/stake`, {
+            timeout: 5000
+          });
+          
           if (stakeResponse.data) {
+            console.log("Stakewiz stake data:", stakeResponse.data);
             activatingStake = stakeResponse.data.activating || 0;
             deactivatingStake = stakeResponse.data.deactivating || 0;
           }
@@ -255,7 +266,7 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
           commission: stakewizData.commission || 0,
         };
         
-        validatorMetricsCache.set(votePubkey, metrics);
+        validatorMetricsCache.set(votePubkey, { ...metrics, timestamp: now });
         return metrics;
       }
     } catch (stakewizError) {
@@ -277,7 +288,7 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
       commission: validatorInfo.commission,
     };
     
-    validatorMetricsCache.set(votePubkey, metrics);
+    validatorMetricsCache.set(votePubkey, { ...metrics, timestamp: now });
     return metrics;
   } catch (error) {
     console.error("Error fetching validator metrics:", error);

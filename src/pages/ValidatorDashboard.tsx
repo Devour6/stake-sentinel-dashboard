@@ -3,9 +3,9 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ValidatorHeader } from "@/components/ValidatorHeader";
 import { ValidatorMetricsGrid } from "@/components/StakingMetricsCard";
-import { StakeChart } from "@/components/StakeChart";
 import { ValidatorInfoCard } from "@/components/ValidatorInfoCard";
 import { EpochStatusCard } from "@/components/EpochStatusCard";
+import { StakeHistoryChart } from "@/components/stakes/StakeHistoryChart";
 import { 
   fetchValidatorInfo, 
   fetchValidatorMetrics, 
@@ -130,7 +130,7 @@ const ValidatorDashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
           {/* Chart takes 2/3 of the space on large screens */}
           <div className="lg:col-span-2">
-            <StakeChart data={stakeHistory} isLoading={isLoading} />
+            {votePubkey && <StakeHistoryChart vote_identity={votePubkey} />}
           </div>
           
           {/* Validator info card takes 1/3 of the space */}

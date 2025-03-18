@@ -1,163 +1,98 @@
 
 import { toast } from "sonner";
-import { VALIDATOR_PUBKEY, RPC_ENDPOINT } from "./constants";
+import { VALIDATOR_PUBKEY } from "./constants";
 import { StakeHistoryItem } from "./types";
-import { lamportsToSol, generateMockStakeHistory } from "./utils";
+import axios from "axios";
 
-// Fetch stake history
+// Set up Stakewiz API URL
+const STAKEWIZ_API_URL = "https://api.stakewiz.com";
+
+// Fetch stake history from Stakewiz
 export const fetchStakeHistory = async (votePubkey = VALIDATOR_PUBKEY, days = 30): Promise<StakeHistoryItem[]> => {
   try {
     console.log(`Fetching stake history for ${votePubkey}...`);
     
-    // For real implementation, you'd need to track historical data in a database
-    // For now, use the validator's current stake to generate mock history
-    const epochInfoResponse = await fetch(RPC_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        id: 3,
-        method: 'getVoteAccounts',
-        params: []
-      })
-    });
-
-    if (!epochInfoResponse.ok) {
-      throw new Error(`RPC request failed with status ${epochInfoResponse.status}`);
-    }
-
-    const epochInfoData = await epochInfoResponse.json();
-    console.log("Vote accounts response for history:", epochInfoData);
-    
-    const validators = [...(epochInfoData.result?.current || []), ...(epochInfoData.result?.delinquent || [])];
-    const validator = validators.find(v => v.votePubkey === votePubkey);
-    
-    if (!validator) {
-      throw new Error("Validator not found in response");
+    // Try to get data from Stakewiz API
+    try {
+      const response = await axios.get(`${STAKEWIZ_API_URL}/validator/${votePubkey}/stake_history`, {
+        timeout: 10000
+      });
+      
+      if (response.data && Array.isArray(response.data)) {
+        console.log(`Found ${response.data.length} stake history records from Stakewiz`);
+        
+        // Convert to our StakeHistoryItem format
+        const stakeHistory: StakeHistoryItem[] = response.data.map(item => ({
+          epoch: item.epoch,
+          stake: item.stake,
+          date: item.date
+        }));
+        
+        // Sort by epoch in ascending order
+        return stakeHistory.sort((a, b) => a.epoch - b.epoch);
+      }
+    } catch (stakewizError) {
+      console.error("Error fetching stake history from Stakewiz:", stakewizError);
     }
     
-    const currentStake = lamportsToSol(validator.activatedStake);
-    return generateMockStakeHistory(days, currentStake);
+    // If Stakewiz fails, generate mock data based on the validator pubkey
+    return generateMockStakeHistory(votePubkey, days);
   } catch (error) {
     console.error(`Error fetching stake history for ${votePubkey}:`, error);
-    
-    // For demo purposes, generate a plausible mock history
-    // In a real app, we'd return an empty array or handle the error differently
-    return generateMockStakeHistory(30, 100000 + Math.random() * 50000);
+    return generateMockStakeHistory(votePubkey, days);
   }
+};
+
+// Generate realistic mock stake history
+const generateMockStakeHistory = (votePubkey: string, days = 30): StakeHistoryItem[] => {
+  console.log(`Generating mock stake history for ${votePubkey}`);
+  
+  // Use last 6 chars of pubkey to seed the random generation
+  const pubkeySeed = parseInt(votePubkey.substring(votePubkey.length - 6), 16) % 1000;
+  
+  // Base stake between 1,000 and 100,000 SOL
+  const baseStake = 1000 + (pubkeySeed * 100);
+  
+  const history: StakeHistoryItem[] = [];
+  const now = new Date();
+  const currentEpoch = 758; // Current approximate epoch
+  
+  // Generate one entry per epoch, roughly 2-3 days per epoch
+  for (let i = 0; i < Math.ceil(days / 2.5); i++) {
+    const date = new Date(now);
+    date.setDate(date.getDate() - Math.round(i * 2.5));
+    
+    // Add some variability to the stake amount, with a slight upward trend
+    const randomFactor = Math.sin(i * 0.5) * 0.1; // Adds some realistic fluctuation
+    const trendFactor = 1 + (i * 0.005); // Small upward trend over time
+    const stake = Math.round(baseStake * trendFactor * (1 + randomFactor));
+    
+    history.push({
+      epoch: currentEpoch - i,
+      stake,
+      date: date.toISOString()
+    });
+  }
+  
+  // Return in ascending epoch order
+  return history.sort((a, b) => a.epoch - b.epoch);
 };
 
 // Attempt to get delegator count with multiple RPC endpoints
 export const fetchDelegatorCount = async (votePubkey = VALIDATOR_PUBKEY): Promise<number | null> => {
-  // Array of RPC endpoints to try
-  const rpcEndpoints = [
-    RPC_ENDPOINT,
-    "https://api.mainnet-beta.solana.com",
-    "https://solana-api.projectserum.com",
-    "https://rpc.ankr.com/solana"
-  ];
-  
-  // Try each endpoint until we get a valid result
-  for (const endpoint of rpcEndpoints) {
-    try {
-      console.log(`Trying to fetch delegator count for ${votePubkey} from ${endpoint}...`);
-      
-      // First, try getVoteAccounts which might have delegatorCount directly
-      const voteAccountResponse = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: 1,
-          method: 'getVoteAccounts',
-          params: []
-        }),
-        // Add timeout to avoid hanging requests
-        signal: AbortSignal.timeout(5000)
-      });
-
-      if (!voteAccountResponse.ok) {
-        throw new Error(`RPC request failed with status ${voteAccountResponse.status}`);
-      }
-
-      const voteAccountData = await voteAccountResponse.json();
-      console.log(`Vote account data from ${endpoint}:`, voteAccountData);
-      
-      const validators = [...(voteAccountData.result?.current || []), ...(voteAccountData.result?.delinquent || [])];
-      const validator = validators.find(v => v.votePubkey === votePubkey);
-      
-      if (validator) {
-        // Check if the validator data includes a delegatorCount property
-        if (validator.delegatorCount !== undefined && validator.delegatorCount >= 0) {
-          console.log(`Found delegator count directly in vote account: ${validator.delegatorCount}`);
-          return validator.delegatorCount;
-        }
-      }
-      
-      // For now, we'll use a mock delegator count to avoid further RPC calls that might fail
-      console.log("Using mock delegator count for now");
-      return Math.floor(20 + Math.random() * 50); // Using a realistic but mock value
-      
-      /* Commented out to avoid rate limiting and 403 errors
-      // If not available in vote account data, use getProgramAccounts to count stake accounts
-      console.log(`Trying getProgramAccounts with ${endpoint}...`);
-      const stakeAccountsResponse = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: 2,
-          method: 'getProgramAccounts',
-          params: [
-            'Stake11111111111111111111111111111111111111',
-            {
-              filters: [
-                {
-                  memcmp: {
-                    offset: 44,
-                    bytes: votePubkey
-                  }
-                }
-              ]
-            }
-          ]
-        }),
-        // Add timeout to avoid hanging requests
-        signal: AbortSignal.timeout(10000)
-      });
-
-      if (!stakeAccountsResponse.ok) {
-        throw new Error(`RPC request failed with status ${stakeAccountsResponse.status}`);
-      }
-
-      const stakeAccountsData = await stakeAccountsResponse.json();
-      console.log(`Stake accounts data from ${endpoint}:`, stakeAccountsData);
-      
-      // Check if the result exists and has a length property
-      if (stakeAccountsData.result !== undefined) {
-        // If we got an empty array but this isn't the last endpoint, continue to the next one
-        if (stakeAccountsData.result.length === 0) {
-          console.log(`Empty result array from getProgramAccounts on ${endpoint}, trying next endpoint...`);
-          continue;
-        }
-        
-        console.log(`Found ${stakeAccountsData.result.length} delegators via getProgramAccounts`);
-        return stakeAccountsData.result.length;
-      }
-      */
-    } catch (error) {
-      console.error(`Error fetching delegator count from ${endpoint}:`, error);
-      // Continue to the next endpoint on error
+  try {
+    // Try to get data from Stakewiz API
+    const response = await axios.get(`${STAKEWIZ_API_URL}/validator/${votePubkey}/stake_accounts`, {
+      timeout: 5000
+    });
+    
+    if (response.data && Array.isArray(response.data)) {
+      return response.data.length;
     }
+  } catch (error) {
+    console.error("Error fetching delegator count from Stakewiz:", error);
   }
   
-  // If all endpoints failed, return a mock value instead of null
-  console.log("All RPC endpoints failed to return delegator count, using mock value");
-  return Math.floor(20 + Math.random() * 50); // Using a realistic but mock value
+  // If Stakewiz fails, return a mock value
+  return Math.floor(20 + Math.random() * 50);
 };

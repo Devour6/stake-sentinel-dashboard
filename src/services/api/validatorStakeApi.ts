@@ -1,4 +1,3 @@
-
 import { RPC_ENDPOINT } from "./constants";
 import { StakeAccountInfo } from "./types";
 import { lamportsToSol } from "./utils";
@@ -35,7 +34,7 @@ export async function fetchValidatorStake(voteAccount: string): Promise<{
       console.error("Error fetching from Stakewiz stake API:", stakewizError);
     }
     
-    // Try main Stakewiz endpoint as fallback
+    // Try direct validator endpoint as fallback
     try {
       const validatorResponse = await axios.get(
         `${STAKEWIZ_API_URL}/validator/${voteAccount}`,
@@ -45,10 +44,18 @@ export async function fetchValidatorStake(voteAccount: string): Promise<{
       if (validatorResponse.data) {
         console.log("Main Stakewiz validator data:", validatorResponse.data);
         
-        // Some basic info may be available here
+        // If validator data has stake changes, use those
+        if (validatorResponse.data.activating_stake !== undefined) {
+          return {
+            activatingStake: validatorResponse.data.activating_stake || 0,
+            deactivatingStake: validatorResponse.data.deactivating_stake || 0
+          };
+        }
+        
+        // Otherwise, return zeros as this information may not be available
         return {
-          activatingStake: 0, // Not directly available in main endpoint
-          deactivatingStake: 0 // Not directly available in main endpoint
+          activatingStake: 0,
+          deactivatingStake: 0
         };
       }
     } catch (mainStakewizError) {

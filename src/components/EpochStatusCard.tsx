@@ -3,12 +3,16 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock, CalendarClock } from "lucide-react";
 import { EpochTimer } from "./EpochTimer";
-import { fetchEpochInfo, estimateEpochTimeRemaining } from "@/services/api/epochApi";
+import axios from "axios";
+
+// Set up Stakewiz API URL
+const STAKEWIZ_API_URL = "https://api.stakewiz.com";
 
 interface EpochInfo {
   epoch: number;
   slot: number;
   slotsInEpoch: number;
+  timeRemaining: number; // in seconds
 }
 
 interface EpochStatusCardProps {
@@ -17,43 +21,52 @@ interface EpochStatusCardProps {
 
 export const EpochStatusCard = ({ compact = false }: EpochStatusCardProps) => {
   const [epochInfo, setEpochInfo] = useState<EpochInfo | null>(null);
-  const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchEpochData = async () => {
       try {
-        // Fetch real epoch data
-        const epochData = await fetchEpochInfo();
+        setIsLoading(true);
         
-        // Set the time remaining
-        const remaining = estimateEpochTimeRemaining(epochData);
-        
-        setEpochInfo({
-          epoch: epochData.epoch,
-          slot: epochData.slotIndex,
-          slotsInEpoch: epochData.slotsInEpoch
+        // Try to get data directly from Stakewiz API
+        const response = await axios.get(`${STAKEWIZ_API_URL}/epoch`, {
+          timeout: 8000
         });
         
-        setTimeRemaining(remaining);
+        if (response.data) {
+          console.log("Epoch data from Stakewiz:", response.data);
+          
+          // Calculate time remaining based on slots remaining and slot time (400ms per slot)
+          const slotsRemaining = response.data.epoch_slot_info.slots_in_epoch - response.data.epoch_slot_info.current_slot;
+          const timeRemaining = slotsRemaining * 0.4; // 400ms per slot = 0.4 seconds
+          
+          setEpochInfo({
+            epoch: response.data.epoch,
+            slot: response.data.epoch_slot_info.current_slot,
+            slotsInEpoch: response.data.epoch_slot_info.slots_in_epoch,
+            timeRemaining: timeRemaining
+          });
+        }
       } catch (error) {
-        console.error("Failed to fetch epoch info:", error);
+        console.error("Failed to fetch epoch info from Stakewiz:", error);
         
         // Fallback to mock data
         setEpochInfo({
-          epoch: 757,
-          slot: 428451,
-          slotsInEpoch: 432000
+          epoch: 758, // Use a reasonable current epoch
+          slot: 280000,
+          slotsInEpoch: 432000,
+          timeRemaining: 60800 // About 17 hours
         });
-        
-        setTimeRemaining(86400); // 1 day fallback
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchEpochData();
-    // In real implementation, you might want to poll this data periodically
+    
+    // Poll for updates every 5 minutes
+    const intervalId = setInterval(fetchEpochData, 5 * 60 * 1000);
+    return () => clearInterval(intervalId);
   }, []);
 
   if (compact) {
@@ -70,7 +83,7 @@ export const EpochStatusCard = ({ compact = false }: EpochStatusCardProps) => {
           <div className="flex items-center gap-2">
             <EpochTimer 
               currentEpoch={epochInfo?.epoch || 0}
-              timeRemaining={timeRemaining}
+              timeRemaining={epochInfo?.timeRemaining || 0}
               isLoading={isLoading}
               compact={true} 
             />
@@ -113,7 +126,7 @@ export const EpochStatusCard = ({ compact = false }: EpochStatusCardProps) => {
               <span className="text-sm text-muted-foreground">Time Remaining</span>
               <EpochTimer 
                 currentEpoch={epochInfo?.epoch || 0}
-                timeRemaining={timeRemaining}
+                timeRemaining={epochInfo?.timeRemaining || 0}
                 isLoading={isLoading}
               />
             </div>
