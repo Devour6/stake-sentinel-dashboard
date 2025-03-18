@@ -11,6 +11,11 @@ export const HELIUS_PARSE_API = "https://api.helius.xyz/v0/addresses/{address}/t
 // Primary RPC endpoint (now Helius)
 export const RPC_ENDPOINT = HELIUS_RPC_ENDPOINT;
 
+// Reliable community endpoints for epoch info
+export const SOLANABEACH_API = "https://api.solanabeach.io/v1";
+export const SOLSCAN_API = "https://api.solscan.io";
+export const EXPLORER_API = "https://explorer-api.solana.com";
+
 // Fallback RPC endpoints with higher reliability
 export const FALLBACK_RPC_ENDPOINTS = [
   "https://api.mainnet-beta.solana.com",
