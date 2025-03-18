@@ -113,7 +113,7 @@ const ValidatorDashboard = () => {
           </div>
         )}
         
-        {/* Validator metrics - grid layout updated to handle combined commission */}
+        {/* Validator metrics - updated grid layout */}
         <ValidatorMetricsGrid
           totalStake={validatorMetrics?.totalStake || 0}
           pendingStakeChange={validatorMetrics?.pendingStakeChange || 0}
@@ -125,17 +125,17 @@ const ValidatorDashboard = () => {
           hasError={!!error}
         />
         
-        {/* Two column layout for chart and validator info */}
+        {/* Adjusted two column layout with validator info moved up */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-          {/* Chart takes 2/3 of the space on large screens */}
-          <div className="lg:col-span-2">
-            {votePubkey && <StakeHistoryChart vote_identity={votePubkey} />}
-          </div>
-          
-          {/* Validator info card takes 1/3 of the space */}
-          <div className="space-y-6">
+          {/* Validator info card now first in the right column */}
+          <div className="lg:col-span-1 space-y-6">
             <ValidatorInfoCard validatorInfo={validatorInfo} isLoading={isLoading} />
             <EpochStatusCard />
+          </div>
+          
+          {/* Chart now in the second column */}
+          <div className="lg:col-span-2">
+            {votePubkey && <StakeHistoryChart vote_identity={votePubkey} />}
           </div>
         </div>
         

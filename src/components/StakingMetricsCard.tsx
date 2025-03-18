@@ -121,7 +121,7 @@ export const ValidatorMetricsGrid = ({
         isError={hasError}
       />
       
-      {/* Add Estimated APY - removed MEV Commission as now combined with regular commission */}
+      {/* Add Estimated APY in the top grid row */}
       <StakingMetricsCard
         title="Estimated APY"
         value={isLoading ? "" : hasError ? "Error" : estimatedApy ? `${(estimatedApy * 100).toFixed(2)}%` : "Error"}
