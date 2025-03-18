@@ -61,11 +61,10 @@ export const fetchSolanaFMStake = async (votePubkey: string): Promise<number> =>
     }
     
     console.log("Could not retrieve stake data from SolanaFM, falling back to a default value");
-    return 1000; // Return a fallback value to show something on the UI
+    return 0; // Return 0 to indicate a problem instead of a fake value
   } catch (error) {
     console.error("Error fetching stake from SolanaFM:", error);
-    // Return a fallback value to show something on the UI
-    return 1000;
+    return 0; // Return 0 to indicate a problem instead of a fake value
   }
 };
 
@@ -76,81 +75,87 @@ export const fetchSolanaFMStakeHistory = async (votePubkey: string): Promise<Sta
   try {
     console.log(`Fetching stake history from SolanaFM for vote account: ${votePubkey}`);
     
-    // Use SolanaFM's validator history endpoint to get stake history
-    const response = await axios.get(`${SOLANAFM_API_URL}/validators/${votePubkey}/history`, {
-      timeout: 15000
-    });
-    
-    console.log("SolanaFM history response:", response.data);
-    
-    if (response.data && response.data.result && Array.isArray(response.data.result)) {
-      const historyData = response.data.result;
-      console.log(`Retrieved ${historyData.length} stake history records from SolanaFM`);
-      
-      // Format the data for our chart component
-      const formattedHistory: StakeHistoryItem[] = historyData.map(item => ({
-        epoch: item.epoch,
-        stake: item.activatedStake / 1_000_000_000, // Convert lamports to SOL
-        date: new Date(item.timestamp * 1000).toISOString() // Convert unix timestamp to ISO date
-      }));
-      
-      // Sort by epoch in ascending order
-      return formattedHistory.sort((a, b) => a.epoch - b.epoch);
-    }
-    
-    // Generate fallback data based on the vote pubkey
-    console.log("Could not retrieve stake history from SolanaFM, generating fallback data");
-    
-    // Use last 6 chars of pubkey to seed the random generation for consistency
-    const pubkeySeed = parseInt(votePubkey.substring(votePubkey.length - 6), 16) % 1000;
-    
-    // Base stake is 1000 SOL as a fallback
-    const baseStake = 1000 + (pubkeySeed % 5000);
-    
-    const history: StakeHistoryItem[] = [];
-    const currentEpoch = 758; // Approximate current epoch
-    
-    // Generate history for 30 epochs
-    for (let i = 0; i < 30; i++) {
-      const epoch = currentEpoch - 29 + i;
-      
-      // Add variability based on pubkey seed for consistency
-      const epochFactor = Math.min(0.15, (29 - i) * 0.005); // More recent epochs have more stake
-      const randomFactor = Math.sin((i + pubkeySeed) * 0.3) * 0.03; // Small fluctuations
-      
-      // Calculate stake for this epoch
-      const stake = baseStake * (1 - epochFactor) * (1 + randomFactor);
-      
-      history.push({
-        epoch,
-        stake: Math.max(100, Math.round(stake)), // Ensure minimum stake
-        date: new Date(Date.now() - (29 - i) * 2.5 * 24 * 60 * 60 * 1000).toISOString() // Approximate date
+    // Try first endpoint - validator history
+    try {
+      // Use SolanaFM's validator history endpoint to get stake history
+      const response = await axios.get(`${SOLANAFM_API_URL}/validators/${votePubkey}/history`, {
+        timeout: 15000
       });
+      
+      console.log("SolanaFM history response:", response.data);
+      
+      if (response.data && response.data.result && Array.isArray(response.data.result) && response.data.result.length > 0) {
+        const historyData = response.data.result;
+        console.log(`Retrieved ${historyData.length} stake history records from SolanaFM`);
+        
+        // Format the data for our chart component
+        const formattedHistory: StakeHistoryItem[] = historyData.map(item => ({
+          epoch: item.epoch,
+          stake: item.activatedStake / 1_000_000_000, // Convert lamports to SOL
+          date: item.timestamp ? new Date(item.timestamp * 1000).toISOString() : new Date().toISOString() // Convert unix timestamp to ISO date
+        }));
+        
+        // Sort by epoch in ascending order
+        return formattedHistory.sort((a, b) => a.epoch - b.epoch);
+      }
+    } catch (err) {
+      console.error("First endpoint failed:", err);
     }
     
-    return history;
+    // Try second endpoint - validator epochs
+    try {
+      const epochsResponse = await axios.get(`${SOLANAFM_API_URL}/validators/${votePubkey}/epochs`, {
+        timeout: 15000
+      });
+      
+      console.log("SolanaFM epochs response:", epochsResponse.data);
+      
+      if (epochsResponse.data && epochsResponse.data.result && Array.isArray(epochsResponse.data.result) && epochsResponse.data.result.length > 0) {
+        const epochsData = epochsResponse.data.result;
+        console.log(`Retrieved ${epochsData.length} epoch records from SolanaFM`);
+        
+        // Format the data for our chart component
+        const formattedHistory: StakeHistoryItem[] = epochsData.map(item => ({
+          epoch: item.epoch,
+          stake: item.activatedStake / 1_000_000_000, // Convert lamports to SOL
+          date: item.timestamp ? new Date(item.timestamp * 1000).toISOString() : new Date().toISOString()
+        }));
+        
+        // Sort by epoch in ascending order
+        return formattedHistory.sort((a, b) => a.epoch - b.epoch);
+      }
+    } catch (err) {
+      console.error("Second endpoint failed:", err);
+    }
+    
+    // Try third approach - get current stake and validator data
+    try {
+      const validatorResponse = await axios.get(`${SOLANAFM_API_URL}/validators/${votePubkey}`, {
+        timeout: 10000
+      });
+      
+      if (validatorResponse.data && validatorResponse.data.result) {
+        const validatorData = validatorResponse.data.result;
+        console.log("Using validator data to create a minimal history:", validatorData);
+        
+        const currentEpoch = validatorData.epoch || 758; // Fallback to approximate current epoch
+        const currentStake = validatorData.activatedStake / 1_000_000_000;
+        
+        // Create a single data point for the current epoch
+        return [{
+          epoch: currentEpoch,
+          stake: currentStake,
+          date: new Date().toISOString()
+        }];
+      }
+    } catch (err) {
+      console.error("Third approach failed:", err);
+    }
+    
+    console.log("All SolanaFM history endpoints failed, returning empty array");
+    return [];
   } catch (error) {
     console.error("Error fetching stake history from SolanaFM:", error);
-    
-    // Generate fallback data
-    console.log("Generating fallback stake history data due to error");
-    
-    const history: StakeHistoryItem[] = [];
-    const currentEpoch = 758;
-    
-    // Generate 30 epochs of data
-    for (let i = 0; i < 30; i++) {
-      const epoch = currentEpoch - 29 + i;
-      // Start at 800 SOL and gradually increase to 1000 SOL
-      const stake = 800 + (i * 200 / 29);
-      
-      history.push({
-        epoch,
-        stake: Math.round(stake),
-        date: new Date(Date.now() - (29 - i) * 2.5 * 24 * 60 * 60 * 1000).toISOString()
-      });
-    }
-    
-    return history;
+    return [];
   }
 };

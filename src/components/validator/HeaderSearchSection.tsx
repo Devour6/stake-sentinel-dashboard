@@ -2,6 +2,7 @@
 import { useRef } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useNavigate } from "react-router-dom";
 import { useValidatorSearch } from "@/hooks/useValidatorSearch";
 
 interface HeaderSearchSectionProps {
@@ -16,6 +17,7 @@ export const HeaderSearchSection = ({
   handleSearchSubmit
 }: HeaderSearchSectionProps) => {
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
   
   const {
     filteredValidators,

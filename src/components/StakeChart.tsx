@@ -12,12 +12,16 @@ interface StakeChartProps {
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     const epoch = payload[0]?.payload?.epoch;
-    return (
-      <div className="glass-effect p-3 border border-gojira-gray-light rounded-lg shadow-sm">
-        <p className="font-medium">Epoch {epoch}</p>
-        <p className="text-gojira-red font-bold">{`${new Intl.NumberFormat().format(Math.round(payload[0].value * 100) / 100)} SOL`}</p>
-      </div>
-    );
+    const stakeValue = payload[0]?.value;
+    
+    if (epoch !== undefined && stakeValue !== undefined) {
+      return (
+        <div className="glass-effect p-3 border border-gojira-gray-light rounded-lg shadow-sm">
+          <p className="font-medium">Epoch {epoch}</p>
+          <p className="text-gojira-red font-bold">{`${new Intl.NumberFormat().format(Math.round(stakeValue * 100) / 100)} SOL`}</p>
+        </div>
+      );
+    }
   }
 
   return null;
@@ -29,15 +33,22 @@ export const StakeChart = ({ data, isLoading = false }: StakeChartProps) => {
   useEffect(() => {
     // Format data for the chart
     if (data && data.length > 0) {
-      // Filter out invalid data points
+      // Filter out invalid data points and ensure all required fields exist
       const validData = data.filter(item => 
-        item && item.stake !== undefined && !isNaN(Number(item.stake))
+        item && 
+        item.stake !== undefined && 
+        !isNaN(Number(item.stake)) &&
+        item.epoch !== undefined
       );
       
-      console.log("Filtered stake history for chart:", validData);
-      setChartData(validData);
+      // Sort by epoch (ascending)
+      const sortedData = [...validData].sort((a, b) => a.epoch - b.epoch);
+      
+      console.log("Filtered and sorted stake history for chart:", sortedData);
+      setChartData(sortedData);
     } else {
       console.log("No valid data for stake history chart");
+      setChartData([]);
     }
   }, [data]);
 

@@ -78,6 +78,7 @@ export const fetchOnchainStakeChanges = async (votePubkey: string): Promise<{
             }
             
             // Check for deactivating stake (deactivation requested but not yet complete)
+            // 18446744073709551615 is the max u64 value used to represent "not deactivating"
             if (deactivationEpoch !== 18446744073709552000 && deactivationEpoch >= currentEpoch) {
               console.log(`Found deactivating stake: ${stake / LAMPORTS_PER_SOL} SOL, deactivation epoch: ${deactivationEpoch}, current epoch: ${currentEpoch}`);
               deactivatingStake += stake;
@@ -105,7 +106,7 @@ export const fetchOnchainStakeChanges = async (votePubkey: string): Promise<{
   } catch (error) {
     console.error("Error fetching on-chain stake changes:", error);
     
-    // Return zeros if all methods fail, still showing the UI elements
+    // Return zeros if all methods fail
     return {
       activatingStake: 0,
       deactivatingStake: 0

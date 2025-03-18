@@ -1,10 +1,8 @@
-
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ValidatorHeader } from "@/components/validator/ValidatorHeader";
 import { ValidatorMetricsGrid } from "@/components/StakingMetricsCard";
 import { EpochStatusCard } from "@/components/EpochStatusCard";
-import { StakeHistoryChart } from "@/components/stakes/StakeHistoryChart";
 import StakeModal from "@/components/StakeModal";
 import { 
   fetchValidatorInfo, 
@@ -102,16 +100,15 @@ const ValidatorDashboard = () => {
     try {
       console.log("Fetching SolanaFM and on-chain data for validator:", votePubkey);
       
-      // Fetch total stake from SolanaFM
-      const stakeData = await fetchSolanaFMStake(votePubkey);
+      // Fetch data in parallel
+      const [stakeData, historyData, stakeChangesData] = await Promise.all([
+        fetchSolanaFMStake(votePubkey),
+        fetchSolanaFMStakeHistory(votePubkey),
+        fetchOnchainStakeChanges(votePubkey)
+      ]);
+      
       console.log("SolanaFM total stake:", stakeData);
-      
-      // Fetch stake history from SolanaFM
-      const historyData = await fetchSolanaFMStakeHistory(votePubkey);
       console.log("SolanaFM stake history:", historyData);
-      
-      // Fetch stake changes from on-chain data
-      const stakeChangesData = await fetchOnchainStakeChanges(votePubkey);
       console.log("On-chain stake changes:", stakeChangesData);
       
       // Update state with fetched data
@@ -121,11 +118,12 @@ const ValidatorDashboard = () => {
       
     } catch (err) {
       console.error("Error fetching SolanaFM data:", err);
+      
       // Keep previous data if available, otherwise provide fallback
       if (totalStake <= 0) {
         // Use metrics data as fallback
         const fallbackStake = validatorMetrics?.totalStake || validatorInfo?.activatedStake || 0;
-        setTotalStake(fallbackStake > 0 ? fallbackStake : 1000);
+        setTotalStake(fallbackStake > 0 ? fallbackStake : 0);
       }
     }
   };
@@ -172,8 +170,7 @@ const ValidatorDashboard = () => {
   const deactivatingStake = stakeChanges.deactivatingStake || 0;
   
   // Calculate pending stake change
-  const pendingStakeChange = Math.max(activatingStake, deactivatingStake) || 
-    validatorMetrics?.pendingStakeChange || 0;
+  const pendingStakeChange = Math.max(activatingStake, deactivatingStake);
   
   // Determine if deactivating
   const isDeactivating = deactivatingStake > activatingStake;
@@ -225,16 +222,10 @@ const ValidatorDashboard = () => {
           </div>
           
           <div className="lg:col-span-8">
-            {stakeHistory.length > 0 ? (
-              <StakeChart 
-                data={stakeHistory} 
-                isLoading={isLoading} 
-              />
-            ) : (
-              <div className="rounded-lg border border-gojira-gray-light p-6 h-full flex items-center justify-center">
-                <p className="text-muted-foreground">Stake history data is not available</p>
-              </div>
-            )}
+            <StakeChart 
+              data={stakeHistory} 
+              isLoading={isLoading} 
+            />
           </div>
         </div>
         
