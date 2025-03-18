@@ -34,6 +34,7 @@ export interface ValidatorMetrics {
   description?: string;
   uptime?: number;
   version?: string;
+  website?: string | null;
 }
 
 // Raw RPC response interfaces
