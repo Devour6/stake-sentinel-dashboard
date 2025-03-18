@@ -38,11 +38,20 @@ export const EpochTimer = ({
     const days = Math.floor(remainingTime / 86400);
     const hours = Math.floor((remainingTime % 86400) / 3600);
     const minutes = Math.floor((remainingTime % 3600) / 60);
+    const seconds = Math.floor(remainingTime % 60);
     
     if (compact) {
       return `${days}d ${hours}h ${minutes}m`;
     }
-    return `${days}d ${hours}h ${minutes}m`;
+    
+    // More detailed format for full view
+    if (days > 0) {
+      return `${days}d ${hours}h ${minutes}m`;
+    } else if (hours > 0) {
+      return `${hours}h ${minutes}m ${seconds}s`;
+    } else {
+      return `${minutes}m ${seconds}s`;
+    }
   };
 
   if (compact) {

@@ -1,10 +1,11 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock, CalendarClock } from "lucide-react";
+import { Clock, CalendarClock, AlertCircle } from "lucide-react";
 import { EpochTimer } from "./EpochTimer";
 import { fetchEpochInfo } from "@/services/api/epochApi";
 import { Spinner } from "@/components/ui/spinner";
+import { Button } from "@/components/ui/button";
 
 interface EpochStatusCardProps {
   compact?: boolean;
@@ -19,6 +20,7 @@ export const EpochStatusCard = ({ compact = false }: EpochStatusCardProps) => {
   } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     const fetchEpochData = async () => {
@@ -36,11 +38,11 @@ export const EpochStatusCard = ({ compact = false }: EpochStatusCardProps) => {
             timeRemaining: info.timeRemaining || 0
           });
         } else {
-          throw new Error("No epoch data in response");
+          throw new Error("Failed to retrieve epoch data from all sources");
         }
       } catch (error) {
         console.error("Failed to fetch epoch info:", error);
-        setError("Failed to fetch current epoch data");
+        setError("Unable to fetch current epoch data. Network may be unavailable.");
       } finally {
         setIsLoading(false);
       }
@@ -48,10 +50,16 @@ export const EpochStatusCard = ({ compact = false }: EpochStatusCardProps) => {
 
     fetchEpochData();
     
-    // Poll for updates every 30 seconds
-    const intervalId = setInterval(fetchEpochData, 30 * 1000);
-    return () => clearInterval(intervalId);
-  }, []);
+    // Poll for updates every 30 seconds - only if not in error state
+    const intervalId = !error ? setInterval(fetchEpochData, 30 * 1000) : undefined;
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [retryCount, error]);
+
+  const handleRetry = () => {
+    setRetryCount(prev => prev + 1);
+  };
 
   if (compact) {
     return (
@@ -71,12 +79,23 @@ export const EpochStatusCard = ({ compact = false }: EpochStatusCardProps) => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <EpochTimer 
-              currentEpoch={epochInfo?.epoch || 0}
-              timeRemaining={epochInfo?.timeRemaining || 0}
-              isLoading={isLoading}
-              compact={true} 
-            />
+            {error ? (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleRetry}
+                className="h-6 px-2 text-xs"
+              >
+                Retry
+              </Button>
+            ) : (
+              <EpochTimer 
+                currentEpoch={epochInfo?.epoch || 0}
+                timeRemaining={epochInfo?.timeRemaining || 0}
+                isLoading={isLoading}
+                compact={true} 
+              />
+            )}
           </div>
         </CardContent>
       </Card>
@@ -98,8 +117,14 @@ export const EpochStatusCard = ({ compact = false }: EpochStatusCardProps) => {
             <Spinner />
           </div>
         ) : error ? (
-          <div className="py-4 text-center">
+          <div className="py-4 text-center space-y-3">
+            <div className="flex justify-center">
+              <AlertCircle className="h-8 w-8 text-red-500" />
+            </div>
             <p className="text-red-500">{error}</p>
+            <Button onClick={handleRetry} variant="outline" size="sm">
+              Retry Connection
+            </Button>
           </div>
         ) : (
           <div className="space-y-4">
