@@ -1,4 +1,3 @@
-
 // Types for the Solana API responses and data structures
 export interface ValidatorInfo {
   identity: string;
@@ -26,8 +25,12 @@ export interface StakeHistoryItem {
 export interface ValidatorMetrics {
   totalStake: number;
   pendingStakeChange: number;
-  isDeactivating?: boolean;
+  isDeactivating: boolean;
   commission: number;
+  mevCommission?: number;
+  estimatedApy?: number;
+  activatingStake?: number;
+  deactivatingStake?: number;
 }
 
 // Raw RPC response interfaces

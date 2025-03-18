@@ -14,6 +14,7 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { AlertTriangle } from "lucide-react";
 
 // Set up Stakewiz API URL
 const STAKEWIZ_API_URL = "https://api.stakewiz.com";
@@ -34,6 +35,7 @@ export const StakeHistoryChart: FC<StakeHistoryChartProps> = ({ vote_identity })
   const [allStakes, setAllStakes] = useState<StakeData[] | null>(null);
   const [displayedStakes, setDisplayedStakes] = useState<StakeData[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [timeframe, setTimeframe] = useState<TimeframeType>("1M");
   
   // Fetch stake history from Stakewiz API
@@ -42,15 +44,22 @@ export const StakeHistoryChart: FC<StakeHistoryChartProps> = ({ vote_identity })
       if (!vote_identity) return;
       
       setIsLoading(true);
+      setError(null);
       
       try {
-        // Try to fetch stake history from Stakewiz
+        // Fetch stake history from Stakewiz
         const response = await axios.get(`${STAKEWIZ_API_URL}/validator/${vote_identity}/stake_history`, {
           timeout: 10000
         });
         
         if (response.data && Array.isArray(response.data)) {
           console.log("Stake history from Stakewiz:", response.data);
+          
+          if (response.data.length === 0) {
+            setError("No stake history available for this validator");
+            setAllStakes([]);
+            return;
+          }
           
           // Format the data properly
           const formattedData = response.data.map(item => ({
@@ -67,13 +76,10 @@ export const StakeHistoryChart: FC<StakeHistoryChartProps> = ({ vote_identity })
         } else {
           throw new Error("Invalid response from Stakewiz");
         }
-      } catch (error) {
-        console.error("Error fetching stake history:", error);
-        
-        // Generate mock data if API fails
-        const mockData = generateMockStakeHistory(vote_identity);
-        setAllStakes(mockData);
-        filterStakesByTimeframe(mockData, timeframe);
+      } catch (err) {
+        console.error("Error fetching stake history:", err);
+        setError("Failed to load stake history");
+        setAllStakes([]);
       } finally {
         setIsLoading(false);
       }
@@ -137,37 +143,6 @@ export const StakeHistoryChart: FC<StakeHistoryChartProps> = ({ vote_identity })
     
     setDisplayedStakes(result);
   };
-  
-  // Generate mock stake history if API fails
-  const generateMockStakeHistory = (votePubkey: string): StakeData[] => {
-    const data: StakeData[] = [];
-    const now = new Date();
-    const currentEpoch = 758; // Approximate current epoch
-    
-    // Generate up to 50 epochs of data (about a year)
-    for (let i = 0; i < 50; i++) {
-      const epochDate = new Date(now);
-      epochDate.setDate(now.getDate() - (i * 7)); // Roughly 7 days per epoch
-      
-      const epoch = currentEpoch - i;
-      
-      // Base stake amount - use last digits of pubkey to seed the random generation
-      const pubkeyLastDigits = parseInt(votePubkey.substring(votePubkey.length - 6), 16) % 1000;
-      const baseStake = 10000 + (pubkeyLastDigits * 10);
-      
-      // Generate a stake that increases over time with some variations
-      const stake = baseStake * (1 + i * 0.01) + (Math.random() * 5000 - 2500);
-      
-      data.push({
-        epoch,
-        stake,
-        date: epochDate.toISOString()
-      });
-    }
-    
-    // Sort by epoch ascending
-    return data.sort((a, b) => a.epoch - b.epoch);
-  };
 
   return (
     <Card className="glass-card animate-fade-in border-gojira-gray-light">
@@ -190,9 +165,15 @@ export const StakeHistoryChart: FC<StakeHistoryChartProps> = ({ vote_identity })
           <div className="h-[320px] w-full flex items-center justify-center">
             <Spinner />
           </div>
+        ) : error ? (
+          <div className="h-[320px] w-full flex flex-col items-center justify-center text-center gap-4">
+            <AlertTriangle className="h-12 w-12 text-amber-500" />
+            <p className="text-muted-foreground">{error}</p>
+          </div>
         ) : !displayedStakes || displayedStakes.length === 0 ? (
-          <div className="h-[320px] w-full flex items-center justify-center">
-            <p className="text-muted-foreground">No stake history available</p>
+          <div className="h-[320px] w-full flex flex-col items-center justify-center text-center gap-4">
+            <AlertTriangle className="h-12 w-12 text-amber-500" />
+            <p className="text-muted-foreground">No stake history available for this timeframe</p>
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={320}>

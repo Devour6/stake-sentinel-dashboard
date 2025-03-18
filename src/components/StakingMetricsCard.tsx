@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatSol, formatCommission } from "@/services/solanaApi";
-import { ArrowUpRight, ArrowDownRight, Percent, Clock } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Percent, Clock, Gem, TrendingUp } from "lucide-react";
 
 interface StakingMetricsCardProps {
   title: string;
@@ -65,7 +65,10 @@ interface ValidatorMetricsProps {
   pendingStakeChange?: number;
   isDeactivating?: boolean;
   commission: number;
+  mevCommission?: number;
+  estimatedApy?: number;
   isLoading?: boolean;
+  hasError?: boolean;
 }
 
 export const ValidatorMetricsGrid = ({
@@ -73,31 +76,55 @@ export const ValidatorMetricsGrid = ({
   pendingStakeChange = 0,
   isDeactivating = false,
   commission,
+  mevCommission,
+  estimatedApy,
   isLoading = false,
+  hasError = false,
 }: ValidatorMetricsProps) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-slide-up">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 animate-slide-up">
       <StakingMetricsCard
         title="Total Stake"
-        value={isLoading ? "" : formatSol(totalStake)}
+        value={isLoading ? "" : hasError ? "Error" : formatSol(totalStake)}
         icon={<div className="w-4 h-4 bg-gojira-red rounded-full"></div>}
         isLoading={isLoading}
+        isError={hasError}
       />
       <StakingMetricsCard
         title="Pending Change in Stake"
-        value={isLoading ? "" : formatSol(pendingStakeChange)}
+        value={isLoading ? "" : hasError ? "Error" : formatSol(pendingStakeChange)}
         icon={<Clock className="h-4 w-4 text-gojira-red" />}
         trend={pendingStakeChange > 0 ? (isDeactivating ? "down" : "up") : "neutral"}
-        description={pendingStakeChange > 0 
+        description={hasError ? "" : pendingStakeChange > 0 
           ? (isDeactivating ? "Deactivating" : "Activating") 
           : "No pending change"}
         isLoading={isLoading}
+        isError={hasError}
       />
       <StakingMetricsCard
         title="Commission"
-        value={isLoading ? "" : `${formatCommission(commission)}`}
+        value={isLoading ? "" : hasError ? "Error" : `${formatCommission(commission)}`}
         icon={<Percent className="h-4 w-4 text-gojira-red" />}
         isLoading={isLoading}
+        isError={hasError}
+      />
+      
+      {/* Add MEV Commission and APY */}
+      <StakingMetricsCard
+        title="MEV Commission"
+        value={isLoading ? "" : hasError ? "Error" : `${formatCommission(mevCommission || commission)}`}
+        icon={<Gem className="h-4 w-4 text-gojira-red" />}
+        description={hasError ? "" : mevCommission === commission ? "Same as regular commission" : ""}
+        isLoading={isLoading}
+        isError={hasError}
+      />
+      <StakingMetricsCard
+        title="Estimated APY"
+        value={isLoading ? "" : hasError ? "Error" : `${estimatedApy ? (estimatedApy * 100).toFixed(2) : "0"}%`}
+        icon={<TrendingUp className="h-4 w-4 text-gojira-red" />}
+        isEstimated={true}
+        isLoading={isLoading}
+        isError={hasError}
       />
     </div>
   );
