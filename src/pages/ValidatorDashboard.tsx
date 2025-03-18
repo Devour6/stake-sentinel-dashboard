@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ValidatorHeader } from "@/components/validator/ValidatorHeader";
@@ -104,7 +105,17 @@ const ValidatorDashboard = () => {
     setIsStakeModalOpen(false);
   };
 
-  const totalStake = validatorInfo?.activatedStake || validatorMetrics?.totalStake || 0;
+  // Log state variables to help debug
+  useEffect(() => {
+    console.log("Current validator info state:", validatorInfo);
+    console.log("Current validator metrics state:", validatorMetrics);
+  }, [validatorInfo, validatorMetrics]);
+
+  // Properly calculate totalStake with fallback options
+  const totalStake = 
+    (validatorMetrics?.totalStake) || 
+    (validatorInfo?.activatedStake) || 
+    0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gojira-gray to-gojira-gray-dark">
@@ -174,8 +185,8 @@ const ValidatorDashboard = () => {
       <StakeModal 
         isOpen={isStakeModalOpen} 
         onClose={handleStakeModalClose} 
-        validatorPubkey={VALIDATOR_PUBKEY}
-        validatorName="Gojira Validator"
+        validatorPubkey={votePubkey || VALIDATOR_PUBKEY}
+        validatorName={validatorInfo?.name || "Validator"}
       />
     </div>
   );

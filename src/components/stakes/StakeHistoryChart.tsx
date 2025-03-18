@@ -85,6 +85,7 @@ export const StakeHistoryChart: FC<StakeHistoryChartProps> = ({ vote_identity })
       setUsedMockData(false);
       
       try {
+        console.log("Fetching stake history for validator:", vote_identity);
         // Fetch stake history from Stakewiz
         const response = await axios.get(`${STAKEWIZ_API_URL}/validator/${vote_identity}/stake_history`, {
           timeout: 15000
@@ -197,6 +198,7 @@ export const StakeHistoryChart: FC<StakeHistoryChartProps> = ({ vote_identity })
       result.sort((a, b) => a.epoch - b.epoch);
     }
     
+    console.log(`Filtered stake history for ${timeframe}:`, result);
     setDisplayedStakes(result);
   };
 

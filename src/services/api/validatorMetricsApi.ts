@@ -168,10 +168,8 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
       }
     } catch (error) {
       console.error("Primary Stakewiz endpoint failed:", error);
-      toast.error("Primary data source unavailable, trying alternatives...", {
-        duration: 3000,
-        id: "stakewiz-primary-error"
-      });
+      // Don't show toast errors to users for every fallback attempt
+      console.log("Primary data source unavailable, trying alternatives...");
     }
     
     // Try direct RPC calls for core validator data
@@ -267,10 +265,6 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
     
     // Last resort - create fallback metrics
     console.warn("All Stakewiz endpoints failed, creating fallback metrics");
-    toast.error("Unable to fetch live metrics, showing estimates", {
-      duration: 4000,
-      id: "stakewiz-all-endpoints-failed"
-    });
     
     // Generate fallback metrics based on validator pubkey
     // Use last 6 chars of pubkey to create deterministic but realistic values
@@ -298,7 +292,7 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
     return fallbackMetrics;
   } catch (error) {
     console.error("Critical error fetching validator metrics:", error);
-    toast.error("Failed to fetch validator metrics: " + (error instanceof Error ? error.message : "Unknown error"));
+    toast.error("Failed to fetch validator metrics");
     return null;
   }
 };
