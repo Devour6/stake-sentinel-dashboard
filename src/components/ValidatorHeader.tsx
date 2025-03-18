@@ -30,7 +30,6 @@ export const ValidatorHeader = ({
   const navigate = useNavigate();
   const searchInputRef = useRef<HTMLInputElement>(null);
   
-  // Import the same search functionality used on the home page
   const {
     filteredValidators,
     showSuggestions,
@@ -55,7 +54,6 @@ export const ValidatorHeader = ({
       });
   };
 
-  // Solscan URLs instead of Explorer
   const solscanUrl = `https://solscan.io/account/${validatorPubkey}`;
   const identitySolscanUrl = identityPubkey ? `https://solscan.io/account/${identityPubkey}` : null;
 
@@ -88,7 +86,6 @@ export const ValidatorHeader = ({
 
   return (
     <div className="animate-slide-down space-y-4">
-      {/* Main header with validator info and search functionality */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           {onBack && (
@@ -108,7 +105,6 @@ export const ValidatorHeader = ({
                 alt={validatorName || "Validator Logo"}
                 className="object-contain w-full h-full rounded-full"
                 onError={(e) => {
-                  // Fallback to Gojira logo on error
                   (e.target as HTMLImageElement).src = "/lovable-uploads/31314417-ef5b-4d58-ac5e-91a2ab487110.png";
                 }}
               />
@@ -202,9 +198,8 @@ export const ValidatorHeader = ({
           </div>
         </div>
         
-        {/* Search and refresh positioned on the right side, adjust from top */}
-        <div className="flex flex-col sm:flex-row items-center gap-3 mt-3 sm:mt-0">
-          <form onSubmit={handleSearchSubmit} className="relative w-full sm:w-64 search-container">
+        <div className="flex flex-col md:flex-row items-center gap-2 self-start md:self-center">
+          <form onSubmit={handleSearchSubmit} className="relative w-full md:w-64">
             <div className="relative">
               <Input
                 type="text"
@@ -241,7 +236,6 @@ export const ValidatorHeader = ({
                             alt={`${validator.name || 'Validator'} logo`}
                             className="w-6 h-6 rounded-full"
                             onError={(e) => {
-                              // Hide broken images
                               (e.target as HTMLImageElement).style.display = 'none';
                             }}
                           />
@@ -277,7 +271,7 @@ export const ValidatorHeader = ({
           <Button 
             variant="destructive" 
             size="sm"
-            className="rounded-full bg-gojira-red hover:bg-gojira-red-dark transition-all duration-300 flex items-center gap-2"
+            className="rounded-full bg-gojira-red hover:bg-gojira-red-dark transition-all duration-300 flex items-center gap-2 min-w-[100px]"
             onClick={handleRefresh}
             disabled={isLoading}
           >
