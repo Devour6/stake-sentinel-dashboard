@@ -45,6 +45,7 @@ export const ValidatorHeader = ({
     e.preventDefault();
     if (searchInput && searchInput.trim()) {
       handleSearch(e);
+      setSearchInput('');
     }
   };
 

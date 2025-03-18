@@ -52,6 +52,10 @@ export const HeaderSearchSection = ({
               setShowSuggestions(true);
             }
           }}
+          onBlur={() => {
+            // Use setTimeout to allow click events on suggestions to fire before hiding
+            setTimeout(() => setShowSuggestions(false), 200);
+          }}
           disabled={isLoadingValidators}
         />
         
