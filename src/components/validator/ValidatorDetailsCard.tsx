@@ -1,99 +1,112 @@
 
+import { FC } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ValidatorMetrics } from "@/services/api/types";
+import { ExternalLink } from "lucide-react";
+import { ValidatorMetrics } from "@/services/solanaApi";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FileText, Percent, TrendingUp, Info, Activity, Tag } from "lucide-react";
 
 interface ValidatorDetailsCardProps {
   metrics: ValidatorMetrics | null;
-  isLoading: boolean;
+  isLoading?: boolean;
 }
 
-export const ValidatorDetailsCard = ({ metrics, isLoading }: ValidatorDetailsCardProps) => {
+export const ValidatorDetailsCard: FC<ValidatorDetailsCardProps> = ({ 
+  metrics,
+  isLoading = false
+}) => {
   return (
-    <Card className="glass-card animate-fade-in border-gojira-gray-light">
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-start">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Info className="h-4 w-4 text-gojira-red" />
-              Validator Details
-            </CardTitle>
-            <CardDescription>Additional information from Stakewiz</CardDescription>
-          </div>
-        </div>
+    <Card className="glass-card border-gojira-gray-light">
+      <CardHeader>
+        <CardTitle>Validator Details</CardTitle>
+        <CardDescription>Technical information and description</CardDescription>
       </CardHeader>
-      <CardContent className="pt-4">
+      <CardContent>
         {isLoading ? (
           <div className="space-y-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="flex justify-between items-center">
-                <div className="h-4 w-24 bg-muted/30 rounded animate-pulse"></div>
-                <div className="h-4 w-32 bg-muted/30 rounded animate-pulse"></div>
-              </div>
-            ))}
-          </div>
-        ) : !metrics ? (
-          <div className="text-center py-4">
-            <p className="text-muted-foreground">No additional details available</p>
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-11/12" />
+            <Skeleton className="h-4 w-10/12" />
+            <Skeleton className="h-4 w-9/12" />
           </div>
         ) : (
           <div className="space-y-4">
-            {metrics.description && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-3.5 w-3.5 text-gojira-red" />
-                  <span className="text-sm text-muted-foreground">Description</span>
-                </div>
-                <p className="text-sm">{metrics.description}</p>
+            {/* Description */}
+            {metrics?.description && (
+              <div className="bg-gojira-gray-dark/30 p-4 rounded-lg">
+                <h3 className="text-sm font-medium text-muted-foreground mb-2">Validator Description</h3>
+                <p className="text-sm leading-relaxed">{metrics.description}</p>
               </div>
             )}
             
-            {metrics.mevCommission !== undefined && metrics.mevCommission !== metrics.commission && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Percent className="h-3.5 w-3.5 text-gojira-red" />
-                  <span className="text-sm text-muted-foreground">MEV Commission</span>
-                </div>
-                <p className="font-medium">{(metrics.mevCommission).toFixed(2)}%</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Version Information */}
+              <div className="bg-gojira-gray-dark/30 p-3 rounded-lg">
+                <h3 className="text-xs font-medium text-muted-foreground mb-1">Software Version</h3>
+                <p className="text-sm font-mono">{metrics?.version || "Unknown"}</p>
               </div>
-            )}
-            
-            {metrics.estimatedApy !== undefined && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="h-3.5 w-3.5 text-gojira-red" />
-                  <span className="text-sm text-muted-foreground">APY Estimate</span>
-                </div>
-                <p className="font-medium">{(metrics.estimatedApy * 100).toFixed(2)}%</p>
+              
+              {/* Uptime */}
+              <div className="bg-gojira-gray-dark/30 p-3 rounded-lg">
+                <h3 className="text-xs font-medium text-muted-foreground mb-1">30-Day Uptime</h3>
+                <p className="text-sm">
+                  {metrics?.uptime30d !== undefined && metrics?.uptime30d !== null
+                    ? `${metrics.uptime30d}%`
+                    : "Data unavailable"}
+                </p>
               </div>
-            )}
-            
-            {metrics.uptime30d !== undefined && (
-              <div className="space-y-2">
+              
+              {/* Website */}
+              <div className="bg-gojira-gray-dark/30 p-3 rounded-lg">
+                <h3 className="text-xs font-medium text-muted-foreground mb-1">Website</h3>
                 <div className="flex items-center gap-2">
-                  <Activity className="h-3.5 w-3.5 text-gojira-red" />
-                  <span className="text-sm text-muted-foreground">Uptime (30 days)</span>
-                </div>
-                <p className="font-medium">{metrics.uptime30d.toFixed(2)}%</p>
-                <div className="w-full bg-muted/30 rounded-full h-1.5 overflow-hidden">
-                  <div 
-                    className="bg-green-500 h-full rounded-full" 
-                    style={{ width: `${Math.min(100, metrics.uptime30d)}%` }}
-                  ></div>
+                  {metrics?.website ? (
+                    <>
+                      <a 
+                        href={metrics.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-gojira-red hover:underline flex items-center gap-1"
+                      >
+                        {metrics.website.replace(/(^\w+:|^)\/\//, '').replace(/\/$/, '')}
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Not available</p>
+                  )}
                 </div>
               </div>
-            )}
-            
-            {metrics.version && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Tag className="h-3.5 w-3.5 text-gojira-red" />
-                  <span className="text-sm text-muted-foreground">Version</span>
-                </div>
-                <p className="font-medium">{metrics.version}</p>
+              
+              {/* Jito/MEV Configuration */}
+              <div className="bg-gojira-gray-dark/30 p-3 rounded-lg">
+                <h3 className="text-xs font-medium text-muted-foreground mb-1">MEV Configuration</h3>
+                <p className="text-sm">
+                  {metrics?.mevCommission !== undefined && metrics.mevCommission !== metrics.commission
+                    ? `MEV Enabled (${metrics.mevCommission}% commission)`
+                    : "Standard configuration"}
+                </p>
               </div>
-            )}
+              
+              {/* Estimated APY */}
+              <div className="bg-gojira-gray-dark/30 p-3 rounded-lg">
+                <h3 className="text-xs font-medium text-muted-foreground mb-1">Estimated APY</h3>
+                <p className="text-sm font-semibold">
+                  {metrics?.estimatedApy 
+                    ? `${(metrics.estimatedApy * 100).toFixed(2)}%` 
+                    : "Data unavailable"}
+                </p>
+              </div>
+              
+              {/* Commission */}
+              <div className="bg-gojira-gray-dark/30 p-3 rounded-lg">
+                <h3 className="text-xs font-medium text-muted-foreground mb-1">Commission Rate</h3>
+                <p className="text-sm">
+                  {metrics?.commission !== undefined 
+                    ? `${metrics.commission}%` 
+                    : "Unknown"}
+                </p>
+              </div>
+            </div>
           </div>
         )}
       </CardContent>

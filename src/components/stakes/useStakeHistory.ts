@@ -3,9 +3,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "sonner";
 import { StakeData, TimeframeType } from "./types";
-
-// Set up Stakewiz API URL
-const STAKEWIZ_API_URL = "https://api.stakewiz.com";
+import { STAKEWIZ_API_URL } from "@/services/api/constants";
 
 export const useStakeHistory = (vote_identity: string) => {
   const [allStakes, setAllStakes] = useState<StakeData[] | null>(null);
@@ -74,7 +72,7 @@ export const useStakeHistory = (vote_identity: string) => {
       try {
         console.log(`Attempting to fetch stake history from Stakewiz for ${vote_identity}`);
         
-        // Attempt to fetch with increased timeout (30 seconds)
+        // Attempt to fetch with increased timeout (60 seconds)
         const response = await axios.get(`${STAKEWIZ_API_URL}/validator/${vote_identity}/stake_history`, {
           timeout: 60000 // Increased timeout to 60 seconds
         });
@@ -85,6 +83,7 @@ export const useStakeHistory = (vote_identity: string) => {
           if (response.data.length === 0) {
             setError("No stake history data available for this validator");
             setAllStakes([]);
+            setDisplayedStakes([]);
             return;
           }
           
@@ -128,15 +127,37 @@ export const useStakeHistory = (vote_identity: string) => {
             filterStakesByTimeframe(formattedData, timeframe);
             return;
           }
+          
+          // Fallback: Try to create a basic history from the validator's current stake
+          if (alternateResponse.data && alternateResponse.data.activated_stake) {
+            console.log("Creating basic stake history from current stake:", alternateResponse.data.activated_stake);
+            
+            // Create a single point history using the current stake
+            const currentEpoch = alternateResponse.data.epoch || 0;
+            const basicHistory = [
+              {
+                epoch: currentEpoch,
+                stake: alternateResponse.data.activated_stake,
+                date: new Date().toISOString()
+              }
+            ];
+            
+            setAllStakes(basicHistory);
+            setDisplayedStakes(basicHistory);
+            return;
+          }
         } catch (alternateErr) {
           console.error("Error with alternate stake history approach:", alternateErr);
         }
         
         setError(`Failed to fetch stake history: ${err.message || "Unknown error"}`);
         setAllStakes([]);
+        setDisplayedStakes([]);
         
         // Show an error toast
-        toast.error("Failed to fetch validator stake history");
+        toast.error("Failed to fetch validator stake history", {
+          id: "stake-history-error"
+        });
       } finally {
         setIsLoading(false);
       }

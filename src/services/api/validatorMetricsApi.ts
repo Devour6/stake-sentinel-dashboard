@@ -91,7 +91,7 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
         }
         
         // If we still don't have APY, try to get mev commission and estimate
-        if (estimatedApy === null && stakewizData.commission) {
+        if (estimatedApy === null && stakewizData.commission !== undefined) {
           // Rough APY estimate based on commission
           const baseApy = 0.075; // 7.5% base APY estimate
           const commissionDecimal = stakewizData.commission / 100;
@@ -105,11 +105,14 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
         
         // Extract uptime from stakewizData
         let uptime30d = null;
-        if (stakewizData.uptime) {
+        if (stakewizData.uptime !== undefined) {
           uptime30d = stakewizData.uptime;
-        } else if (stakewizData.uptime_30d) {
+        } else if (stakewizData.uptime_30d !== undefined) {
           uptime30d = stakewizData.uptime_30d;
         }
+        
+        // Website
+        const website = stakewizData.website || null;
         
         // Get the proper activated stake value, as Stakewiz may format it in different ways
         // Sometimes it's "activated_stake", sometimes it's "stake", sometimes it's a different format
@@ -139,7 +142,8 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
           deactivatingStake,
           description,
           version,
-          uptime30d
+          uptime30d,
+          website
         };
         
         console.log("Final validator metrics:", metrics);
@@ -186,7 +190,8 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
             deactivatingStake: 0,
             description: validator.description || null,
             version: validator.version || null,
-            uptime30d: validator.uptime || null
+            uptime30d: validator.uptime || null,
+            website: validator.website || null
           };
           
           console.log("Metrics from validators list:", metrics);

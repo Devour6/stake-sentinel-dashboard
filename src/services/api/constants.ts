@@ -1,3 +1,4 @@
+
 // RPC and Validator Constants
 export const VALIDATOR_PUBKEY = "goJiRADNdmfnJ4iWEyft7KaYMPTVsRba2Ee1akDEBXb";
 export const VALIDATOR_IDENTITY = "gojir4WnhS7VS1JdbnanJMzaMfr4UD7KeX1ixWAHEmw";
@@ -9,6 +10,9 @@ export const STAKEWIZ_API_URL = "https://api.stakewiz.com";
 export const HELIUS_RPC_ENDPOINT = "https://nanete-kbmodz-fast-mainnet.helius-rpc.com";
 export const HELIUS_WEBSOCKET_URL = "wss://nanete-kbmodz-fast-mainnet.helius-rpc.com";
 
+// Additional Helius RPC endpoint
+export const HELIUS_PUBLIC_RPC = "https://mainnet.helius-rpc.com/?api-key=389d22ab-25bb-4f64-a36f-96455b26ea2e";
+
 // Primary RPC endpoint (Helius)
 export const RPC_ENDPOINT = HELIUS_RPC_ENDPOINT;
 
@@ -19,6 +23,7 @@ export const EXPLORER_API = "https://explorer-api.solana.com";
 
 // Fallback RPC endpoints with higher reliability
 export const FALLBACK_RPC_ENDPOINTS = [
+  HELIUS_PUBLIC_RPC,
   "https://api.mainnet-beta.solana.com",
   "https://solana-mainnet.g.alchemy.com/v2/demo",
   "https://api.devnet.solana.com", 

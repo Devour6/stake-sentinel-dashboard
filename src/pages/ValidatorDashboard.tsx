@@ -7,6 +7,7 @@ import { ValidatorInfoCard } from "@/components/ValidatorInfoCard";
 import { EpochStatusCard } from "@/components/EpochStatusCard";
 import { StakeHistoryChart } from "@/components/stakes/StakeHistoryChart";
 import { ValidatorDetailsCard } from "@/components/validator/ValidatorDetailsCard";
+import { Button } from "@/components/ui/button";
 import { 
   fetchValidatorInfo, 
   fetchValidatorMetrics, 
@@ -89,22 +90,47 @@ const ValidatorDashboard = () => {
     return () => clearInterval(intervalId);
   }, [votePubkey]);
 
+  const openStakeModal = () => {
+    toast.info("Staking modal would open here", {
+      description: "Staking functionality is coming soon!"
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gojira-gray to-gojira-gray-dark">
       {isRefreshing && <RefreshOverlay />}
       
       <div className="container max-w-7xl mx-auto py-4 sm:py-8 px-3 sm:px-6 lg:px-8">
-        <ValidatorHeader 
-          validatorPubkey={votePubkey || ""}
-          validatorName={validatorInfo?.name}
-          validatorIcon={validatorInfo?.icon}
-          identityPubkey={validatorInfo?.identity}
-          isLoading={isLoading}
-          onRefresh={handleRefresh}
-          onBack={() => navigate("/")}
-        />
-        
-        <div className="mt-4 sm:mt-8"></div>
+        {/* Header section with improved layout */}
+        <div className="mb-8">
+          <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-6">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => navigate("/")}
+              className="text-muted-foreground hover:text-white mb-2 -ml-2"
+            >
+              ← Back to Dashboard
+            </Button>
+            
+            <Button
+              onClick={openStakeModal}
+              className="bg-gojira-red hover:bg-gojira-red/90 text-white"
+            >
+              Stake to Validator
+            </Button>
+          </div>
+          
+          {/* Validator information header */}
+          <ValidatorHeader 
+            validatorPubkey={votePubkey || ""}
+            validatorName={validatorInfo?.name}
+            validatorIcon={validatorInfo?.icon}
+            identityPubkey={validatorInfo?.identity}
+            isLoading={isLoading}
+            onRefresh={handleRefresh}
+          />
+        </div>
         
         {error && !isLoading && (
           <div className="my-4 sm:my-8 p-4 sm:p-6 bg-red-500/10 border border-red-500/30 rounded-lg text-center">
@@ -113,6 +139,7 @@ const ValidatorDashboard = () => {
           </div>
         )}
         
+        {/* Metrics cards row */}
         <ValidatorMetricsGrid
           totalStake={validatorMetrics?.totalStake || 0}
           pendingStakeChange={validatorMetrics?.pendingStakeChange || 0}
@@ -124,15 +151,21 @@ const ValidatorDashboard = () => {
           hasError={!!error}
         />
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mt-4 sm:mt-6">
-          <div className="lg:col-span-1 space-y-4 sm:space-y-6">
-            <ValidatorInfoCard validatorInfo={validatorInfo} isLoading={isLoading} />
+        {/* Redesigned layout with better space utilization */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
+          {/* Left column - validator info and stake history */}
+          <div className="lg:col-span-8 space-y-6">
+            {/* Stake History Chart */}
+            {votePubkey && <StakeHistoryChart vote_identity={votePubkey} />}
+            
+            {/* Validator Description and Details */}
             <ValidatorDetailsCard metrics={validatorMetrics} isLoading={isLoading} />
-            <EpochStatusCard />
           </div>
           
-          <div className="lg:col-span-2">
-            {votePubkey && <StakeHistoryChart vote_identity={votePubkey} />}
+          {/* Right column - technical details and status */}
+          <div className="lg:col-span-4 space-y-6">
+            <ValidatorInfoCard validatorInfo={validatorInfo} isLoading={isLoading} />
+            <EpochStatusCard />
           </div>
         </div>
         
