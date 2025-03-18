@@ -1,34 +1,29 @@
 
-import { useState, forwardRef, useEffect } from "react";
+import { forwardRef, useEffect } from "react";
 import { Search, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ValidatorSearchResult } from "@/services/api/types";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useValidatorSearch } from "@/hooks/useValidatorSearch";
 
 interface SearchBarProps {
-  searchInput: string;
-  setSearchInput: (value: string) => void;
-  isSearching: boolean;
-  isLoadingValidators: boolean;
-  filteredValidators: ValidatorSearchResult[];
-  showSuggestions: boolean;
-  setShowSuggestions: (value: boolean) => void;
-  onSearch: (e: React.FormEvent) => void;
-  onSelectValidator: (votePubkey: string) => void;
+  showStakeAmount?: boolean;
 }
 
 const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(({
-  searchInput,
-  setSearchInput,
-  isSearching,
-  isLoadingValidators,
-  filteredValidators,
-  showSuggestions,
-  setShowSuggestions,
-  onSearch,
-  onSelectValidator
+  showStakeAmount = true
 }, ref) => {
+  const {
+    searchInput,
+    setSearchInput,
+    isSearching,
+    isLoadingValidators,
+    filteredValidators,
+    showSuggestions,
+    setShowSuggestions,
+    handleSearch,
+    handleSelectValidator
+  } = useValidatorSearch();
+
   // Close the dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -56,7 +51,7 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(({
   };
 
   return (
-    <form onSubmit={onSearch} className="flex gap-2 relative search-container">
+    <form onSubmit={handleSearch} className="flex gap-2 relative search-container">
       <div className="relative flex-1">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
         
@@ -111,7 +106,7 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(({
                     )}
                     <div className="flex flex-col">
                       <span className="font-medium">{validator.name || "Unknown Validator"}</span>
-                      {validator.commission !== undefined && (
+                      {showStakeAmount && validator.commission !== undefined && (
                         <span className="text-xs text-muted-foreground">
                           Commission: {validator.commission}%
                         </span>
@@ -122,7 +117,7 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(({
                     <span className="text-xs text-muted-foreground truncate max-w-[180px]">
                       {validator.votePubkey.slice(0, 6)}...{validator.votePubkey.slice(-6)}
                     </span>
-                    {validator.activatedStake !== undefined && (
+                    {showStakeAmount && validator.activatedStake !== undefined && (
                       <span className="text-xs text-muted-foreground">
                         {validator.activatedStake > 0 
                           ? `Stake: ${Math.floor(validator.activatedStake).toLocaleString()} SOL` 
