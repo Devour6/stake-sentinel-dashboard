@@ -6,6 +6,7 @@ import { useValidatorSearch } from "@/hooks/useValidatorSearch";
 import Footer from "@/components/layout/Footer";
 import StakeModal from "@/components/StakeModal";
 import { EpochStatusCard } from "@/components/EpochStatusCard";
+import { VALIDATOR_PUBKEY } from "@/services/api/constants";
 
 const Home = () => {
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -24,6 +25,10 @@ const Home = () => {
 
   const handleStakeModalOpen = () => {
     setIsStakeModalOpen(true);
+  };
+
+  const handleStakeModalClose = () => {
+    setIsStakeModalOpen(false);
   };
 
   return (
@@ -65,7 +70,9 @@ const Home = () => {
       
       <StakeModal 
         isOpen={isStakeModalOpen}
-        setIsOpen={setIsStakeModalOpen}
+        onClose={handleStakeModalClose}
+        validatorPubkey={VALIDATOR_PUBKEY}
+        validatorName="Gojira Validator"
       />
     </PageLayout>
   );
