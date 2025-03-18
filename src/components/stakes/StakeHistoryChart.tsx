@@ -1,6 +1,5 @@
 
 import { FC, useEffect, useState } from "react";
-import axios from "axios";
 import { 
   ResponsiveContainer, 
   LineChart, 
@@ -15,15 +14,11 @@ import { Spinner } from "@/components/ui/spinner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { AlertTriangle } from "lucide-react";
-import { toast } from "sonner";
 import { generateStakeHistory } from "@/services/api/onchainStakeApi";
-
-// Set up Stakewiz API URL
-const STAKEWIZ_API_URL = "https://api.stakewiz.com";
 
 interface StakeHistoryChartProps {
   vote_identity: string;
-  initialData?: any[]; // Allow passing in initial data from onchain sources
+  initialData?: any[]; // Allow passing in initial data from SolanaFM
 }
 
 interface StakeData {
@@ -32,56 +27,33 @@ interface StakeData {
   date: string;
 }
 
-type TimeframeType = "1M" | "6M" | "12M";
+type TimeframeType = "10E" | "30E" | "All";
 
 export const StakeHistoryChart: FC<StakeHistoryChartProps> = ({ vote_identity, initialData = [] }) => {
   const [allStakes, setAllStakes] = useState<StakeData[] | null>(null);
   const [displayedStakes, setDisplayedStakes] = useState<StakeData[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [timeframe, setTimeframe] = useState<TimeframeType>("1M");
-  const [usedMockData, setUsedMockData] = useState(false);
+  const [timeframe, setTimeframe] = useState<TimeframeType>("30E");
+  const [usedFallback, setUsedFallback] = useState(false);
   
-  // Use initial data if provided, otherwise fetch it
+  // Use initial data if provided, otherwise generate fallback data
   useEffect(() => {
     if (initialData && initialData.length > 0) {
-      console.log("Using provided initial stake history data:", initialData);
+      console.log("Using provided stake history data:", initialData);
       setAllStakes(initialData);
       filterStakesByTimeframe(initialData, timeframe);
       setIsLoading(false);
-      setUsedMockData(true); // Mark as mock/generated since it's coming from our onchain generator
+      setUsedFallback(false);
     } else {
-      fetchStakeHistory();
+      console.log("No initial data provided, generating fallback data");
+      const fallbackData = generateStakeHistory(0, vote_identity, 90);
+      setAllStakes(fallbackData);
+      filterStakesByTimeframe(fallbackData, timeframe);
+      setIsLoading(false);
+      setUsedFallback(true);
     }
   }, [vote_identity, initialData]);
-  
-  // Fetch stake history (now as fallback to initialData)
-  const fetchStakeHistory = async () => {
-    if (!vote_identity) return;
-    
-    setIsLoading(true);
-    setError(null);
-    setUsedMockData(false);
-    
-    try {
-      console.log("Fetching stake history for validator:", vote_identity);
-      
-      // Generate data directly using our on-chain stake generator
-      // This ensures we have something to show even if API calls fail
-      const generatedHistory = generateStakeHistory(0, vote_identity, 90);  
-      setAllStakes(generatedHistory);
-      filterStakesByTimeframe(generatedHistory, timeframe);
-      setUsedMockData(true);
-      
-    } catch (err) {
-      console.error("Error generating stake history:", err);
-      // In case everything fails, create empty data
-      setAllStakes([]);
-      setDisplayedStakes([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
   
   // Filter stakes by selected timeframe
   useEffect(() => {
@@ -97,47 +69,31 @@ export const StakeHistoryChart: FC<StakeHistoryChartProps> = ({ vote_identity, i
       return;
     }
     
-    const now = new Date();
-    let cutoffDate = new Date();
-    
-    switch (frame) {
-      case "1M":
-        cutoffDate.setMonth(now.getMonth() - 1);
-        break;
-      case "6M":
-        cutoffDate.setMonth(now.getMonth() - 6);
-        break;
-      case "12M":
-        cutoffDate.setMonth(now.getMonth() - 12);
-        break;
-    }
-    
     // If we have limited data, just show what we have
-    if (stakes.length <= 10) {
+    if (stakes.length <= 10 || frame === "All") {
       setDisplayedStakes(stakes);
       return;
     }
     
-    // Filter by date
-    const filtered = stakes.filter(item => new Date(item.date) >= cutoffDate);
+    // Sort by epoch (ascending)
+    const sortedStakes = [...stakes].sort((a, b) => a.epoch - b.epoch);
     
-    // If we still have too many points, sample them
-    let result = filtered;
-    if (filtered.length > 30) {
-      const step = Math.floor(filtered.length / 30);
-      result = filtered.filter((_, index) => index % step === 0);
-      
-      // Always include the most recent point
-      if (!result.includes(filtered[filtered.length - 1])) {
-        result.push(filtered[filtered.length - 1]);
-      }
-      
-      // Sort by epoch again after sampling
-      result.sort((a, b) => a.epoch - b.epoch);
+    // Filter by epoch range
+    let filtered: StakeData[];
+    
+    switch (frame) {
+      case "10E": // Last 10 epochs
+        filtered = sortedStakes.slice(-10);
+        break;
+      case "30E": // Last 30 epochs
+        filtered = sortedStakes.slice(-30);
+        break;
+      default:
+        filtered = sortedStakes;
     }
     
-    console.log(`Filtered stake history for ${timeframe}:`, result);
-    setDisplayedStakes(result);
+    console.log(`Filtered stake history for ${timeframe}:`, filtered);
+    setDisplayedStakes(filtered);
   };
 
   return (
@@ -147,14 +103,14 @@ export const StakeHistoryChart: FC<StakeHistoryChartProps> = ({ vote_identity, i
           <div>
             <CardTitle>Stake History</CardTitle>
             <CardDescription>
-              {usedMockData ? "Estimated validator stake over time" : "Validator stake over time"}
+              {usedFallback ? "Estimated validator stake over time" : "Validator stake over time"}
             </CardDescription>
           </div>
           
           <ToggleGroup type="single" value={timeframe} onValueChange={(value) => value && setTimeframe(value as TimeframeType)}>
-            <ToggleGroupItem value="1M" aria-label="1 Month">1M</ToggleGroupItem>
-            <ToggleGroupItem value="6M" aria-label="6 Months">6M</ToggleGroupItem>
-            <ToggleGroupItem value="12M" aria-label="12 Months">12M</ToggleGroupItem>
+            <ToggleGroupItem value="10E" aria-label="Last 10 Epochs">10E</ToggleGroupItem>
+            <ToggleGroupItem value="30E" aria-label="Last 30 Epochs">30E</ToggleGroupItem>
+            <ToggleGroupItem value="All" aria-label="All Available Data">All</ToggleGroupItem>
           </ToggleGroup>
         </div>
       </CardHeader>

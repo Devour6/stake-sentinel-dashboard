@@ -1,7 +1,6 @@
 
 import { Connection, PublicKey, StakeProgram, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { RPC_ENDPOINT, FALLBACK_RPC_ENDPOINTS } from "./constants";
-import { toast } from "sonner";
 import { fetchCurrentEpoch } from "./epochApi";
 import { StakeHistoryItem } from "./types";
 
@@ -34,118 +33,6 @@ const getConnection = async (): Promise<Connection> => {
   }
 };
 
-// Fetch a validator's total active stake directly from the vote account
-export const fetchOnchainTotalStake = async (votePubkey: string): Promise<number> => {
-  try {
-    console.log(`Fetching on-chain total stake for vote account: ${votePubkey}`);
-    const connection = await getConnection();
-    
-    // First try to get the vote accounts
-    try {
-      const voteAccounts = await connection.getVoteAccounts();
-      console.log(`Retrieved ${voteAccounts.current.length} current and ${voteAccounts.delinquent.length} delinquent vote accounts`);
-      
-      const validator = [...voteAccounts.current, ...voteAccounts.delinquent]
-        .find(v => v.votePubkey === votePubkey);
-      
-      if (validator) {
-        const totalStakeInSol = validator.activatedStake / LAMPORTS_PER_SOL;
-        console.log(`Found validator in vote accounts with ${totalStakeInSol} SOL stake`);
-        return totalStakeInSol;
-      } else {
-        console.log(`Validator ${votePubkey} not found in vote accounts`);
-      }
-    } catch (voteError) {
-      console.error("Error fetching vote accounts:", voteError);
-    }
-    
-    // If vote account approach fails, try RPC method
-    try {
-      const response = await fetch(RPC_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: 'stake-total',
-          method: 'getVoteAccounts',
-          params: []
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`RPC request failed with status ${response.status}`);
-      }
-      
-      const data = await response.json();
-      if (data.result) {
-        const allAccounts = [...(data.result.current || []), ...(data.result.delinquent || [])];
-        const validator = allAccounts.find(v => v.votePubkey === votePubkey);
-        
-        if (validator) {
-          const stake = validator.activatedStake / LAMPORTS_PER_SOL;
-          console.log(`Found validator in RPC response with ${stake} SOL stake`);
-          return stake;
-        }
-      }
-    } catch (rpcError) {
-      console.error("Error with RPC method:", rpcError);
-    }
-    
-    // If both methods fail, try stake account enumeration
-    try {
-      // Get all stake accounts delegated to this vote account
-      const stakeAccounts = await connection.getProgramAccounts(
-        StakeProgram.programId,
-        {
-          filters: [
-            {
-              memcmp: {
-                offset: 124, // Offset of vote pubkey in stake account data
-                bytes: votePubkey
-              }
-            }
-          ]
-        }
-      );
-      
-      console.log(`Found ${stakeAccounts.length} stake accounts delegated to ${votePubkey}`);
-      
-      // Calculate total active stake
-      let totalActivatedStake = 0;
-      
-      for (const account of stakeAccounts) {
-        try {
-          // Parse stake account data
-          const stakeAccount = await connection.getStakeActivation(account.pubkey);
-          
-          if (stakeAccount.state === 'active') {
-            // Get account balance for active stake
-            const balance = await connection.getBalance(account.pubkey);
-            totalActivatedStake += balance;
-          }
-        } catch (err) {
-          console.error(`Error processing stake account ${account.pubkey.toString()}:`, err);
-        }
-      }
-      
-      // Convert lamports to SOL
-      const totalStakeInSol = totalActivatedStake / LAMPORTS_PER_SOL;
-      console.log(`Total on-chain stake for ${votePubkey}: ${totalStakeInSol} SOL`);
-      
-      return totalStakeInSol > 0 ? totalStakeInSol : 0;
-    } catch (stakeError) {
-      console.error("Error fetching stake accounts:", stakeError);
-    }
-    
-    // If all methods fail, return 0
-    console.warn("All stake fetching methods failed, returning 0");
-    return 0;
-  } catch (error) {
-    console.error("Error fetching on-chain total stake:", error);
-    return 0;
-  }
-};
-
 // Fetch pending stake changes directly from on-chain data
 export const fetchOnchainStakeChanges = async (votePubkey: string): Promise<{
   activatingStake: number;
@@ -153,10 +40,10 @@ export const fetchOnchainStakeChanges = async (votePubkey: string): Promise<{
 }> => {
   try {
     console.log(`Fetching on-chain stake changes for vote account: ${votePubkey}`);
-    const connection = await getConnection();
     
-    // Try direct validator stake API first
+    // First try direct RPC call method
     try {
+      console.log("Using direct RPC call for stake changes");
       const response = await fetch(RPC_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -178,7 +65,8 @@ export const fetchOnchainStakeChanges = async (votePubkey: string): Promise<{
               ]
             }
           ]
-        })
+        }),
+        signal: AbortSignal.timeout(15000)
       });
 
       if (!response.ok) {
@@ -242,6 +130,9 @@ export const fetchOnchainStakeChanges = async (votePubkey: string): Promise<{
     
     // Fallback to web3.js method
     try {
+      console.log("Falling back to web3.js method for stake changes");
+      const connection = await getConnection();
+      
       // Get all stake accounts delegated to this vote account
       const stakeAccounts = await connection.getProgramAccounts(
         StakeProgram.programId,
