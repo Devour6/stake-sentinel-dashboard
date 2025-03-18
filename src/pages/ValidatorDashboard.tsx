@@ -1,8 +1,8 @@
-
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ValidatorHeader } from "@/components/validator/ValidatorHeader";
 import { ValidatorMetricsGrid } from "@/components/StakingMetricsCard";
+import { ValidatorInfoCard } from "@/components/ValidatorInfoCard";
 import { EpochStatusCard } from "@/components/EpochStatusCard";
 import { StakeHistoryChart } from "@/components/stakes/StakeHistoryChart";
 import { 
@@ -13,7 +13,6 @@ import {
 } from "@/services/solanaApi";
 import { useToast } from "@/components/ui/use-toast";
 import { toast } from "sonner";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 const RefreshOverlay = () => (
   <div className="refresh-overlay">
@@ -25,7 +24,6 @@ const ValidatorDashboard = () => {
   const { votePubkey } = useParams<{ votePubkey: string }>();
   const { toast: uiToast } = useToast();
   const navigate = useNavigate();
-  const isMobile = useIsMobile();
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [validatorInfo, setValidatorInfo] = useState<ValidatorInfo | null>(null);
@@ -51,7 +49,6 @@ const ValidatorDashboard = () => {
         throw new Error("Validator not found");
       }
       
-      console.log("Fetched validator metrics:", metrics);
       setValidatorInfo(info);
       setValidatorMetrics(metrics);
       
@@ -92,30 +89,26 @@ const ValidatorDashboard = () => {
     <div className="min-h-screen bg-gradient-to-br from-gojira-gray to-gojira-gray-dark">
       {isRefreshing && <RefreshOverlay />}
       
-      <div className="container max-w-7xl mx-auto py-4 sm:py-8 px-3 sm:px-6 lg:px-8">
-        {/* Header section with improved layout */}
-        <div className="mb-8">
-          {/* Validator information header */}
-          <ValidatorHeader 
-            validatorPubkey={votePubkey || ""}
-            validatorName={validatorInfo?.name}
-            validatorIcon={validatorInfo?.icon}
-            identityPubkey={validatorInfo?.identity}
-            metrics={validatorMetrics}
-            isLoading={isLoading}
-            onRefresh={handleRefresh}
-            onBack={() => navigate("/")}
-          />
-        </div>
+      <div className="container max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <ValidatorHeader 
+          validatorPubkey={votePubkey || ""}
+          validatorName={validatorInfo?.name}
+          validatorIcon={validatorInfo?.icon}
+          identityPubkey={validatorInfo?.identity}
+          isLoading={isLoading}
+          onRefresh={handleRefresh}
+          onBack={() => navigate("/")}
+        />
+        
+        <div className="mt-8"></div>
         
         {error && !isLoading && (
-          <div className="my-4 sm:my-8 p-4 sm:p-6 bg-red-500/10 border border-red-500/30 rounded-lg text-center">
+          <div className="my-8 p-6 bg-red-500/10 border border-red-500/30 rounded-lg text-center">
             <h3 className="text-xl font-semibold text-red-500 mb-2">Error</h3>
             <p className="text-muted-foreground">{error}</p>
           </div>
         )}
         
-        {/* Metrics cards row */}
         <ValidatorMetricsGrid
           totalStake={validatorMetrics?.totalStake || 0}
           pendingStakeChange={validatorMetrics?.pendingStakeChange || 0}
@@ -127,19 +120,18 @@ const ValidatorDashboard = () => {
           hasError={!!error}
         />
         
-        {/* Redesigned layout with better space utilization */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
-          {/* Main column - stake history and epoch status */}
-          <div className="lg:col-span-12 space-y-6">
-            {/* Stake History Chart */}
-            {votePubkey && <StakeHistoryChart vote_identity={votePubkey} />}
-            
-            {/* Epoch status */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+          <div className="lg:col-span-1 space-y-6">
+            <ValidatorInfoCard validatorInfo={validatorInfo} isLoading={isLoading} />
             <EpochStatusCard />
+          </div>
+          
+          <div className="lg:col-span-2">
+            {votePubkey && <StakeHistoryChart vote_identity={votePubkey} />}
           </div>
         </div>
         
-        <div className="mt-8 sm:mt-12 text-center text-sm text-muted-foreground pb-16 sm:pb-8">
+        <div className="mt-12 text-center text-sm text-muted-foreground">
           <p>Data refreshes automatically every 5 minutes. Last updated: {new Date().toLocaleTimeString()}</p>
           <div className="mt-2 flex justify-center gap-1 items-center">
             <span>Powered by</span>
