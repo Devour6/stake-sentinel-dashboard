@@ -87,9 +87,9 @@ export const ValidatorHeader = ({
 
   return (
     <div className="animate-slide-down space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-[1fr,auto] gap-4 items-start">
-        {/* Validator info section */}
-        <div className="flex items-start gap-3">
+      <div className="flex flex-col md:flex-row gap-4 items-start">
+        {/* Validator info section - flex grow to take available space */}
+        <div className="flex items-start gap-3 flex-grow overflow-hidden">
           {onBack && (
             <Button 
               variant="ghost" 
@@ -208,7 +208,7 @@ export const ValidatorHeader = ({
         </div>
         
         {/* Search and refresh section - always visible */}
-        <div className="flex flex-col sm:flex-row gap-3 items-center justify-end">
+        <div className="flex flex-row gap-3 items-center ml-auto max-w-full">
           <form onSubmit={handleSearchSubmit} className="w-full sm:w-52 md:w-64">
             <div className="relative">
               <Input
