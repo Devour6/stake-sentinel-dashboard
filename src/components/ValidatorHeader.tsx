@@ -275,13 +275,13 @@ export const ValidatorHeader = ({
           
           <Button 
             variant="destructive" 
-            size="sm"
-            className="rounded-full bg-gojira-red hover:bg-gojira-red-dark transition-all duration-300 flex items-center gap-1 h-8 min-w-0 px-3"
+            size="icon"
+            className="rounded-full bg-gojira-red hover:bg-gojira-red-dark transition-all duration-300 h-8 w-8 flex items-center justify-center"
             onClick={handleRefresh}
             disabled={isLoading}
+            title="Refresh data"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-            <span className="sm:inline">Refresh</span>
           </Button>
         </div>
       </div>

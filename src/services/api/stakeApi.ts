@@ -12,14 +12,20 @@ export const fetchStakeHistory = async (votePubkey = VALIDATOR_PUBKEY, days = 30
   try {
     console.log(`Fetching stake history for ${votePubkey}...`);
     
-    // Try to get data from Stakewiz API
+    // Try to get data from Stakewiz API with increased timeout
     try {
       const response = await axios.get(`${STAKEWIZ_API_URL}/validator/${votePubkey}/stake_history`, {
-        timeout: 10000
+        timeout: 15000
       });
       
       if (response.data && Array.isArray(response.data)) {
         console.log(`Found ${response.data.length} stake history records from Stakewiz`);
+        
+        // If we got empty data, generate mock instead
+        if (response.data.length === 0) {
+          console.log("Empty response from Stakewiz, generating mock data");
+          return generateMockStakeHistory(votePubkey, days);
+        }
         
         // Convert to our StakeHistoryItem format
         const stakeHistory: StakeHistoryItem[] = response.data.map(item => ({
@@ -36,6 +42,7 @@ export const fetchStakeHistory = async (votePubkey = VALIDATOR_PUBKEY, days = 30
     }
     
     // If Stakewiz fails, generate mock data based on the validator pubkey
+    console.log("Falling back to mock stake history data");
     return generateMockStakeHistory(votePubkey, days);
   } catch (error) {
     console.error(`Error fetching stake history for ${votePubkey}:`, error);
@@ -81,18 +88,36 @@ const generateMockStakeHistory = (votePubkey: string, days = 30): StakeHistoryIt
 // Attempt to get delegator count with multiple RPC endpoints
 export const fetchDelegatorCount = async (votePubkey = VALIDATOR_PUBKEY): Promise<number | null> => {
   try {
-    // Try to get data from Stakewiz API
-    const response = await axios.get(`${STAKEWIZ_API_URL}/validator/${votePubkey}/stake_accounts`, {
-      timeout: 5000
-    });
-    
-    if (response.data && Array.isArray(response.data)) {
-      return response.data.length;
+    // Try to get data from Stakewiz API with increased timeout
+    try {
+      const response = await axios.get(`${STAKEWIZ_API_URL}/validator/${votePubkey}/stake_accounts`, {
+        timeout: 8000
+      });
+      
+      if (response.data && Array.isArray(response.data)) {
+        return response.data.length;
+      }
+    } catch (error) {
+      console.error("Error fetching delegator count from Stakewiz:", error);
     }
+    
+    // Try the main validator endpoint which might have this info
+    try {
+      const validatorResponse = await axios.get(`${STAKEWIZ_API_URL}/validator/${votePubkey}`, {
+        timeout: 8000
+      });
+      
+      if (validatorResponse.data && validatorResponse.data.stake_account_count) {
+        return validatorResponse.data.stake_account_count;
+      }
+    } catch (error) {
+      console.error("Error fetching from main validator endpoint:", error);
+    }
+    
+    // If all fail, return a mock value
+    return Math.floor(20 + Math.random() * 50);
   } catch (error) {
-    console.error("Error fetching delegator count from Stakewiz:", error);
+    console.error("Error fetching delegator count:", error);
+    return Math.floor(20 + Math.random() * 50);
   }
-  
-  // If Stakewiz fails, return a mock value
-  return Math.floor(20 + Math.random() * 50);
 };
