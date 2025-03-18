@@ -114,11 +114,9 @@ export const HeaderSearchSection = ({
                     <span className="text-xs text-muted-foreground truncate max-w-[100px] sm:max-w-[180px]">
                       {validator.votePubkey.slice(0, 6)}...{validator.votePubkey.slice(-6)}
                     </span>
-                    {validator.activatedStake !== undefined && (
-                      <span className="text-xs text-muted-foreground">
-                        Stake: {Math.floor(validator.activatedStake).toLocaleString()} SOL
-                      </span>
-                    )}
+                    <span className="text-xs text-muted-foreground">
+                      Stake: {Math.floor(validator.activatedStake || 0).toLocaleString()} SOL
+                    </span>
                   </div>
                 </div>
               ))}

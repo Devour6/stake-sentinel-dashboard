@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useMemo } from 'react';
-import { fetchAllValidators } from '@/services/api/validatorSearchApi';
+import { fetchAllValidators } from '@/services/solanaApi';
 import { ValidatorSearchResult } from '@/services/api/types';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -102,7 +102,7 @@ export function useValidatorSearch() {
       v => 
         (v.name && v.name.toLowerCase() === searchInput.toLowerCase()) ||
         v.votePubkey.toLowerCase() === searchInput.toLowerCase() ||
-        v.identity.toLowerCase() === searchInput.toLowerCase()
+        (v.identity && v.identity.toLowerCase() === searchInput.toLowerCase())
     );
     
     if (exactMatch) {
@@ -117,7 +117,7 @@ export function useValidatorSearch() {
       const fuzzyMatch = allValidators.find(v => 
         (v.name && v.name.toLowerCase().includes(searchInput.toLowerCase())) ||
         v.votePubkey.toLowerCase().includes(searchInput.toLowerCase()) ||
-        v.identity.toLowerCase().includes(searchInput.toLowerCase())
+        (v.identity && v.identity.toLowerCase().includes(searchInput.toLowerCase()))
       );
       
       if (fuzzyMatch) {

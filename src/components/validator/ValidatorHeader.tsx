@@ -10,9 +10,9 @@ interface ValidatorHeaderProps {
   validatorName?: string;
   validatorIcon?: string | null;
   identityPubkey?: string;
-  description?: string; // Added
-  version?: string; // Added
-  uptime?: number; // Added
+  description?: string;
+  version?: string;
+  uptime?: number;
   isLoading?: boolean;
   onRefresh: () => void;
   onBack?: () => void;
@@ -35,23 +35,21 @@ export const ValidatorHeader = ({
   return (
     <div className="animate-slide-down space-y-4">
       <div className="flex flex-col md:flex-row gap-4 items-start justify-between">
-        <div className="flex flex-row gap-4 items-start">
-          <HeaderInfoSection 
-            validatorName={validatorName}
-            validatorIcon={validatorIcon}
-            isLoading={isLoading}
-            onBack={onBack}
-          />
-        </div>
+        <HeaderInfoSection 
+          validatorName={validatorName}
+          validatorIcon={validatorIcon}
+          isLoading={isLoading}
+          onBack={onBack}
+        />
         
-        <div className="flex flex-col md:flex-row items-center gap-4">
+        <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
           <Button 
             variant="outline" 
-            className="border-gojira-red text-gojira-red hover:bg-gojira-red/10"
+            className="border-gojira-red text-gojira-red hover:bg-gojira-red/10 w-full md:w-auto"
             onClick={onStakeModalOpen}
           >
             <Wallet className="mr-2 h-4 w-4" />
-            Stake to Gojira
+            Stake to Validator
           </Button>
           
           <HeaderSearchSection 

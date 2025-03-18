@@ -16,7 +16,7 @@ export const HeaderInfoSection = ({
   onBack
 }: HeaderInfoSectionProps) => {
   return (
-    <div className="flex items-start gap-3 flex-grow overflow-visible">
+    <div className="flex items-center gap-3 flex-grow overflow-visible">
       {onBack && (
         <Button 
           variant="ghost" 

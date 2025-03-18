@@ -100,7 +100,7 @@ const ValidatorDashboard = () => {
     <div className="min-h-screen bg-gradient-to-br from-gojira-gray to-gojira-gray-dark">
       {isRefreshing && <RefreshOverlay />}
       
-      <div className="container max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      <div className="container max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         <ValidatorHeader 
           validatorPubkey={votePubkey || ""}
           validatorName={validatorInfo?.name}
@@ -115,20 +115,20 @@ const ValidatorDashboard = () => {
           onStakeModalOpen={handleStakeModalOpen}
         />
         
-        <div className="mt-8"></div>
+        <div className="mt-6"></div>
         
         {error && !isLoading && (
-          <div className="my-8 p-6 bg-red-500/10 border border-red-500/30 rounded-lg text-center">
+          <div className="my-6 p-6 bg-red-500/10 border border-red-500/30 rounded-lg text-center">
             <h3 className="text-xl font-semibold text-red-500 mb-2">Error</h3>
             <p className="text-muted-foreground">{error}</p>
           </div>
         )}
         
         <ValidatorMetricsGrid
-          totalStake={validatorMetrics?.totalStake || 0}
+          totalStake={validatorInfo?.activatedStake || validatorMetrics?.totalStake || 0}
           pendingStakeChange={validatorMetrics?.pendingStakeChange || 0}
           isDeactivating={validatorMetrics?.isDeactivating || false}
-          commission={validatorMetrics?.commission || 0}
+          commission={validatorMetrics?.commission || validatorInfo?.commission || 0}
           mevCommission={validatorMetrics?.mevCommission}
           estimatedApy={validatorMetrics?.estimatedApy}
           uptime={validatorMetrics?.uptime}
@@ -147,7 +147,7 @@ const ValidatorDashboard = () => {
           </div>
         </div>
         
-        <div className="mt-12 text-center text-sm text-muted-foreground">
+        <div className="mt-8 text-center text-sm text-muted-foreground">
           <p>Data refreshes automatically every 5 minutes. Last updated: {new Date().toLocaleTimeString()}</p>
           <div className="mt-2 flex justify-center gap-1 items-center">
             <span>Powered by</span>
