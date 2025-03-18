@@ -112,7 +112,7 @@ export const ValidatorHeader = ({
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm uppercase tracking-widest text-gojira-red mb-1">Solana Validator</p>
-            <h1 className="text-3xl font-bold tracking-tight mb-2 text-white truncate">
+            <h1 className="text-3xl font-bold tracking-tight mb-3 text-white truncate">
               {isLoading ? (
                 <div className="h-8 w-64 bg-muted/30 rounded animate-pulse"></div>
               ) : (

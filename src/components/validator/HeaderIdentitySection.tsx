@@ -61,7 +61,7 @@ export const HeaderIdentitySection = ({
   return (
     <div className="space-y-4">
       {description && (
-        <div className="text-sm text-muted-foreground mb-2 max-w-3xl pl-0">
+        <div className="text-sm text-white mb-4 max-w-3xl bg-gojira-gray-dark/30 p-3 rounded-md border border-gojira-gray-light/20">
           {description}
         </div>
       )}
@@ -133,18 +133,26 @@ export const HeaderIdentitySection = ({
         {website && (
           <div className="flex items-center gap-1 bg-gojira-gray-dark/30 px-2 py-1 rounded-md">
             <span className="text-sm whitespace-nowrap">Website:</span>
-            <a 
-              href={website} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-gojira-red hover:text-gojira-red-light transition-colors flex items-center"
-              title={website}
-            >
-              <ExternalLink className="h-3.5 w-3.5 mr-1" />
-              <span className="text-sm truncate max-w-[120px] sm:max-w-[150px] md:max-w-[200px]">
-                {truncateUrl(website)}
-              </span>
-            </a>
+            <TooltipProvider delayDuration={300}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <a 
+                    href={website} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-gojira-red hover:text-gojira-red-light transition-colors flex items-center"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5 mr-1" />
+                    <span className="text-sm truncate max-w-[120px] sm:max-w-[200px] md:max-w-[300px] xl:max-w-[400px]">
+                      {truncateUrl(website, 50)}
+                    </span>
+                  </a>
+                </TooltipTrigger>
+                <TooltipContent className="glass-effect">
+                  <p>{website}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         )}
         

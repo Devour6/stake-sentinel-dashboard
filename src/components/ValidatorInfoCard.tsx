@@ -13,7 +13,6 @@ interface ValidatorInfoCardProps {
 
 export const ValidatorInfoCard = ({ 
   validatorInfo,
-  description,
   isLoading 
 }: ValidatorInfoCardProps) => {
   const getStatusColor = () => {
@@ -74,13 +73,6 @@ export const ValidatorInfoCard = ({
           </div>
         ) : (
           <div className="space-y-4">
-            {description && (
-              <div className="space-y-2 border-b border-gray-700 pb-4">
-                <div className="font-medium">Description</div>
-                <p className="text-sm text-muted-foreground">{description}</p>
-              </div>
-            )}
-            
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Clock className="h-3.5 w-3.5 text-gojira-red" />
