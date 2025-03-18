@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ValidatorHeader } from "@/components/validator/ValidatorHeader";
@@ -76,7 +77,7 @@ const ValidatorDashboard = () => {
       setDelegatorCount(delegators);
       
       // Fetch SolanaFM and on-chain data in parallel
-      fetchSolanaData(votePubkey);
+      await fetchSolanaData(votePubkey);
       
       if (showToast && info) {
         uiToast({
@@ -112,8 +113,20 @@ const ValidatorDashboard = () => {
       console.log("On-chain stake changes:", stakeChangesData);
       
       // Update state with fetched data
-      setTotalStake(stakeData);
-      setStakeHistory(historyData);
+      if (stakeData > 0) {
+        setTotalStake(stakeData);
+      } else if (validatorMetrics?.totalStake) {
+        // Fallback to metrics data if SolanaFM returns 0
+        setTotalStake(validatorMetrics.totalStake);
+      } else if (validatorInfo?.activatedStake) {
+        // Further fallback
+        setTotalStake(validatorInfo.activatedStake);
+      }
+      
+      if (historyData && historyData.length > 0) {
+        setStakeHistory(historyData);
+      }
+      
       setStakeChanges(stakeChangesData);
       
     } catch (err) {

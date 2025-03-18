@@ -39,30 +39,33 @@ export const StakeHistoryChart: FC<StakeHistoryChartProps> = ({ vote_identity, i
   
   // Use initial data if provided, otherwise generate fallback data
   useEffect(() => {
-    if (initialData && initialData.length > 0) {
-      console.log("Using provided stake history data:", initialData);
-      setAllStakes(initialData);
-      filterStakesByTimeframe(initialData, timeframe);
-      setIsLoading(false);
-      setUsedFallback(false);
-    } else {
-      console.log("No initial data provided, generating fallback data");
-      const fallbackData = generateStakeHistory(0, vote_identity, 90);
-      setAllStakes(fallbackData);
-      filterStakesByTimeframe(fallbackData, timeframe);
-      setIsLoading(false);
-      setUsedFallback(true);
-    }
-  }, [vote_identity, initialData]);
+    const processInitialData = () => {
+      if (initialData && initialData.length > 0) {
+        console.log("Using provided stake history data:", initialData);
+        // Ensure each item in the data has a valid stake value
+        const validatedData = initialData.map(item => ({
+          ...item,
+          stake: typeof item.stake === 'number' && !isNaN(item.stake) ? item.stake : 0
+        }));
+        setAllStakes(validatedData);
+        filterStakesByTimeframe(validatedData, timeframe);
+        setIsLoading(false);
+        setUsedFallback(false);
+      } else {
+        console.log("No initial data provided, generating fallback data");
+        const fallbackData = generateStakeHistory(1000, vote_identity, 90);
+        setAllStakes(fallbackData);
+        filterStakesByTimeframe(fallbackData, timeframe);
+        setIsLoading(false);
+        setUsedFallback(true);
+      }
+    };
+    
+    setIsLoading(true);
+    processInitialData();
+  }, [vote_identity, initialData, timeframe]);
   
   // Filter stakes by selected timeframe
-  useEffect(() => {
-    if (allStakes) {
-      filterStakesByTimeframe(allStakes, timeframe);
-    }
-  }, [timeframe, allStakes]);
-  
-  // Helper function to filter stakes by timeframe
   const filterStakesByTimeframe = (stakes: StakeData[], frame: TimeframeType) => {
     if (!stakes || stakes.length === 0) {
       setDisplayedStakes([]);

@@ -1,6 +1,6 @@
 
 import { useRef } from "react";
-import { Search } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useValidatorSearch } from "@/hooks/useValidatorSearch";
 
@@ -59,6 +59,12 @@ export const HeaderSearchSection = ({
           disabled={isLoadingValidators}
         />
         
+        {isLoadingValidators && (
+          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+          </div>
+        )}
+        
         {showSuggestions && filteredValidators.length > 0 && (
           <div className="absolute z-50 w-full mt-1 bg-gojira-gray-dark border border-gojira-gray-light rounded-md shadow-lg max-h-[300px] overflow-y-auto">
             {filteredValidators.map((validator) => (
@@ -105,6 +111,12 @@ export const HeaderSearchSection = ({
                 </div>
               </div>
             ))}
+          </div>
+        )}
+        
+        {showSuggestions && searchInput.trim().length > 2 && filteredValidators.length === 0 && (
+          <div className="absolute z-50 w-full mt-1 bg-gojira-gray-dark border border-gojira-gray-light rounded-md shadow-lg p-4 text-center">
+            No validators found matching "{searchInput}"
           </div>
         )}
       </div>
