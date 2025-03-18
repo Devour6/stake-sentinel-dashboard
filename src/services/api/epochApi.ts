@@ -1,6 +1,6 @@
 
 import { RPC_ENDPOINT } from "./constants";
-import { EpochInfo } from "./types";
+import { EpochInfo, RpcVoteAccount } from "./types";
 import { toast } from "sonner";
 
 /**
@@ -72,4 +72,42 @@ export const fetchCurrentEpoch = async (): Promise<number> => {
 export const fetchExtendedEpochInfo = async (): Promise<any> => {
   const epochInfo = await fetchEpochInfo();
   return epochInfo;
+};
+
+/**
+ * Fetches current and delinquent vote accounts
+ */
+export const fetchVoteAccounts = async (): Promise<{ current: RpcVoteAccount[], delinquent: RpcVoteAccount[] }> => {
+  try {
+    console.log("Fetching vote accounts from Solana RPC...");
+    
+    const response = await fetch(RPC_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'getVoteAccounts',
+        params: []
+      })
+    });
+
+    const data = await response.json();
+    console.log("Vote accounts response:", data);
+    
+    if (!data.result) {
+      throw new Error("Failed to fetch vote accounts");
+    }
+    
+    return {
+      current: data.result.current || [],
+      delinquent: data.result.delinquent || []
+    };
+  } catch (error) {
+    console.error("Error fetching vote accounts:", error);
+    toast.error("Failed to fetch validator vote accounts");
+    return { current: [], delinquent: [] };
+  }
 };

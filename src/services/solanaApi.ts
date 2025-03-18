@@ -17,11 +17,12 @@ import {
 } from "./api/validatorApi";
 import {
   fetchEpochInfo,
-  fetchCurrentEpoch
+  fetchCurrentEpoch,
+  fetchVoteAccounts
 } from "./api/epochApi";
 
 // Type imports
-import type { ValidatorInfo, ValidatorMetrics, StakeHistoryItem, ValidatorSearchResult, EpochInfo } from "./api/types";
+import type { ValidatorInfo, ValidatorMetrics, StakeHistoryItem, ValidatorSearchResult, EpochInfo, RpcVoteAccount } from "./api/types";
 import type { ValidatorI, ClusterStatsI, EpochInfoI } from "./api/interfaces";
 
 // Re-export everything
@@ -40,6 +41,7 @@ export {
   type ClusterStatsI,
   type EpochInfoI,
   type EpochInfo,
+  type RpcVoteAccount,
   
   // API methods
   fetchValidatorInfo,
@@ -48,6 +50,7 @@ export {
   fetchAllValidators,
   fetchEpochInfo,
   fetchCurrentEpoch,
+  fetchVoteAccounts,
   
   // Utils
   validateVotePubkey,
