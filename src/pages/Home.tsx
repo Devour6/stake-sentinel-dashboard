@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { fetchValidatorMetrics, fetchValidatorInfo } from "@/services/solanaApi";
 import { formatSol, formatCommission } from "@/services/solanaApi";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import AppHeader from '@/components/AppHeader';
+import { useValidatorSearch } from "@/hooks/useValidatorSearch";
 
 interface HomeProps {
   setIsStakeModalOpen: (isOpen: boolean) => void;
@@ -35,9 +35,152 @@ const Home = ({ setIsStakeModalOpen }: HomeProps) => {
     refetchInterval: 60000, // Refetch every 60 seconds
   });
   
+  const {
+    searchInput,
+    setSearchInput,
+    isSearching,
+    isLoadingValidators,
+    filteredValidators,
+    showSuggestions,
+    setShowSuggestions,
+    handleSearch,
+    handleSelectValidator
+  } = useValidatorSearch();
+  
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <AppHeader setIsStakeModalOpen={setIsStakeModalOpen} />
+      <header className="w-full bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+        <div className="container flex items-center justify-between h-16 px-4 mx-auto">
+          <div className="flex items-center space-x-2">
+            <Link to="/" className="flex items-center space-x-2">
+              <img 
+                src="/lovable-uploads/373e9dfd-22f8-47a8-971e-5dcb53f5aae2.png" 
+                alt="NodeScan Logo" 
+                className="h-8 w-auto" 
+              />
+              <span className="text-xl font-bold text-gray-900 dark:text-white">NodeScan</span>
+            </Link>
+          </div>
+          
+          <div className="flex-1 max-w-xl mx-4">
+            <form onSubmit={handleSearch} className="flex gap-2 relative search-container">
+              <div className="relative flex-1">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3">
+                  <svg
+                    className="w-5 h-5 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    ></path>
+                  </svg>
+                </div>
+                
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder={isLoadingValidators ? "Loading validators..." : "Search by validator name, vote account, or identity..."}
+                    className="w-full py-2 pl-10 pr-4 text-sm text-gray-700 bg-gray-100 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    value={searchInput}
+                    onChange={(e) => {
+                      setSearchInput(e.target.value);
+                      if (e.target.value.length > 2) {
+                        setShowSuggestions(true);
+                      } else {
+                        setShowSuggestions(false);
+                      }
+                    }}
+                    onFocus={() => {
+                      if (searchInput.length > 2 && filteredValidators.length > 0) {
+                        setShowSuggestions(true);
+                      }
+                    }}
+                    disabled={isLoadingValidators && !searchInput.trim()}
+                  />
+                  
+                  {showSuggestions && filteredValidators.length > 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-[300px] overflow-y-auto dark:bg-gray-800 dark:border-gray-700">
+                      {filteredValidators.map((validator) => (
+                        <div
+                          key={validator.votePubkey}
+                          className="flex items-center justify-between p-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            handleSelectValidator(validator.votePubkey);
+                          }}
+                        >
+                          <div className="flex items-center gap-3">
+                            {validator.icon ? (
+                              <img 
+                                src={validator.icon} 
+                                alt={`${validator.name || 'Validator'} logo`}
+                                className="w-6 h-6 rounded-full"
+                                onError={(e) => {
+                                  // Hide broken images
+                                  (e.target as HTMLImageElement).style.display = 'none';
+                                }}
+                              />
+                            ) : (
+                              <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-xs">
+                                {validator.name?.[0] || 'V'}
+                              </div>
+                            )}
+                            <div className="flex flex-col">
+                              <span className="font-medium">{validator.name || "Unknown Validator"}</span>
+                              {validator.commission !== undefined && (
+                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                  Commission: {validator.commission}%
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end">
+                            <span className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[180px]">
+                              {validator.votePubkey.slice(0, 6)}...{validator.votePubkey.slice(-6)}
+                            </span>
+                            {validator.activatedStake !== undefined && (
+                              <span className="text-xs text-gray-500 dark:text-gray-400">
+                                {validator.activatedStake > 0 
+                                  ? `Stake: ${Math.floor(validator.activatedStake).toLocaleString()} SOL` 
+                                  : ''}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <Button 
+                type="submit" 
+                variant="destructive"
+                disabled={isSearching || (isLoadingValidators && !searchInput.trim())}
+              >
+                {isSearching ? (
+                  <div className="h-5 w-5 border-2 border-white/20 border-t-white rounded-full animate-spin mr-2" />
+                ) : null}
+                Search
+              </Button>
+            </form>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            <Button 
+              onClick={() => setIsStakeModalOpen(true)} 
+              className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+            >
+              Stake to Validator
+            </Button>
+          </div>
+        </div>
+      </header>
       
       <main className="container mx-auto px-4 py-8">
         <section className="mb-8">
