@@ -40,19 +40,7 @@ export const fetchSolanaFMStake = async (votePubkey: string): Promise<number> =>
       }
     }
     
-    // If we can't get data from SolanaFM, try one more endpoint
-    const stakingEndpoint = `${SOLANAFM_API_URL}/staking/validators/${votePubkey}`;
-    const stakingResponse = await axios.get(stakingEndpoint, {
-      timeout: 10000
-    });
-    
-    if (stakingResponse.data && stakingResponse.data.result && stakingResponse.data.result.activatedStake) {
-      const totalStake = stakingResponse.data.result.activatedStake / 1_000_000_000;
-      console.log(`Got stake from SolanaFM staking endpoint: ${totalStake} SOL`);
-      return totalStake;
-    }
-    
-    // If we still can't get data, throw error to trigger fallback
+    // If we can't get data from SolanaFM, throw error to trigger fallback
     throw new Error("Could not retrieve stake data from SolanaFM");
   } catch (error) {
     console.error("Error fetching stake from SolanaFM:", error);
@@ -132,32 +120,7 @@ export const fetchSolanaFMStakeHistory = async (votePubkey: string): Promise<Sta
       }
     }
     
-    // Try yet another approach - direct staking history
-    try {
-      const stakingHistoryResponse = await axios.get(
-        `${SOLANAFM_API_URL}/staking/validators/${votePubkey}/history`,
-        { timeout: 10000 }
-      );
-      
-      if (stakingHistoryResponse.data && stakingHistoryResponse.data.result && 
-          Array.isArray(stakingHistoryResponse.data.result)) {
-        const stakingHistory = stakingHistoryResponse.data.result;
-        console.log(`Got ${stakingHistory.length} stake history points from staking endpoint`);
-        
-        // Format the data
-        const formattedHistory: StakeHistoryItem[] = stakingHistory.map(item => ({
-          epoch: item.epoch,
-          stake: item.activatedStake / 1_000_000_000,
-          date: new Date(item.timestamp * 1000).toISOString()
-        }));
-        
-        return formattedHistory.sort((a, b) => a.epoch - b.epoch);
-      }
-    } catch (stakingHistoryError) {
-      console.error("Error fetching from staking history endpoint:", stakingHistoryError);
-    }
-    
-    // If we still don't have data, throw error to trigger fallback
+    // If we still don't have data, generate fallback data based on current stake
     throw new Error("Could not retrieve stake history from SolanaFM");
   } catch (error) {
     console.error("Error fetching stake history from SolanaFM:", error);
