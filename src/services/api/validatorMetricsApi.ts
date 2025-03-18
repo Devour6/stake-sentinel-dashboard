@@ -53,7 +53,7 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
       }
     } catch (stakeError) {
       console.error("Error fetching stake data from Stakewiz:", stakeError);
-      throw new Error("Failed to fetch stake change data");
+      // Continue with default values instead of throwing
     }
     
     // Get network data for APY calculation

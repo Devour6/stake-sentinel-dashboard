@@ -81,6 +81,17 @@ export const ValidatorMetricsGrid = ({
   isLoading = false,
   hasError = false,
 }: ValidatorMetricsProps) => {
+  // Format the combined commission display
+  const hasMevCommission = mevCommission !== undefined && mevCommission !== commission;
+  const commissionDisplay = hasMevCommission
+    ? `${formatCommission(commission)} / ${formatCommission(mevCommission!)}`
+    : `${formatCommission(commission)}`;
+  
+  // Format the commission description
+  const commissionDescription = hasMevCommission
+    ? "Standard / MEV Commission"
+    : "";
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 animate-slide-up">
       <StakingMetricsCard
@@ -103,21 +114,14 @@ export const ValidatorMetricsGrid = ({
       />
       <StakingMetricsCard
         title="Commission"
-        value={isLoading ? "" : hasError ? "Error" : `${formatCommission(commission)}`}
+        value={isLoading ? "" : hasError ? "Error" : commissionDisplay}
+        description={commissionDescription}
         icon={<Percent className="h-4 w-4 text-gojira-red" />}
         isLoading={isLoading}
         isError={hasError}
       />
       
-      {/* Add MEV Commission and APY */}
-      <StakingMetricsCard
-        title="MEV Commission"
-        value={isLoading ? "" : hasError ? "Error" : `${formatCommission(mevCommission || commission)}`}
-        icon={<Gem className="h-4 w-4 text-gojira-red" />}
-        description={hasError ? "" : mevCommission === commission ? "Same as regular commission" : ""}
-        isLoading={isLoading}
-        isError={hasError}
-      />
+      {/* Add Estimated APY - removed MEV Commission as now combined with regular commission */}
       <StakingMetricsCard
         title="Estimated APY"
         value={isLoading ? "" : hasError ? "Error" : `${estimatedApy ? (estimatedApy * 100).toFixed(2) : "0"}%`}

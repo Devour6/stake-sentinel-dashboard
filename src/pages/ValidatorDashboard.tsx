@@ -113,7 +113,7 @@ const ValidatorDashboard = () => {
           </div>
         )}
         
-        {/* Validator metrics */}
+        {/* Validator metrics - grid layout updated to handle combined commission */}
         <ValidatorMetricsGrid
           totalStake={validatorMetrics?.totalStake || 0}
           pendingStakeChange={validatorMetrics?.pendingStakeChange || 0}
