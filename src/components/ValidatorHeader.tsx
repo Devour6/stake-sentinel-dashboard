@@ -1,3 +1,4 @@
+
 import { useState, useRef } from "react";
 import { ExternalLink, Info, Copy, RefreshCw, ArrowLeft, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -86,8 +87,9 @@ export const ValidatorHeader = ({
 
   return (
     <div className="animate-slide-down space-y-4">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-[1fr,auto] gap-4 items-start">
+        {/* Validator info section */}
+        <div className="flex items-start gap-3">
           {onBack && (
             <Button 
               variant="ghost" 
@@ -116,16 +118,16 @@ export const ValidatorHeader = ({
               />
             )}
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             <p className="text-sm uppercase tracking-widest text-gojira-red mb-1">Solana Validator</p>
-            <h1 className="text-3xl font-bold tracking-tight mb-2 text-white">
+            <h1 className="text-3xl font-bold tracking-tight mb-2 text-white truncate">
               {isLoading ? (
                 <div className="h-8 w-64 bg-muted/30 rounded animate-pulse"></div>
               ) : (
                 validatorName || "Validator Dashboard"
               )}
             </h1>
-            <div className="flex flex-col sm:flex-row gap-2 sm:items-center text-muted-foreground">
+            <div className="flex flex-col sm:flex-row gap-2 sm:items-center text-muted-foreground flex-wrap">
               <div className="flex items-center gap-1">
                 <span className="text-sm">Vote Account:</span>
                 {isLoading ? (
@@ -198,8 +200,9 @@ export const ValidatorHeader = ({
           </div>
         </div>
         
-        <div className="flex flex-col md:flex-row items-center gap-2 self-start md:self-center">
-          <form onSubmit={handleSearchSubmit} className="relative w-full md:w-64">
+        {/* Search and refresh section - always visible */}
+        <div className="flex flex-col sm:flex-row gap-3 items-center justify-end">
+          <form onSubmit={handleSearchSubmit} className="w-full sm:w-52 md:w-64">
             <div className="relative">
               <Input
                 type="text"
@@ -250,7 +253,7 @@ export const ValidatorHeader = ({
                         </div>
                       </div>
                       <div className="flex flex-col items-end">
-                        <span className="text-xs text-muted-foreground truncate max-w-[180px]">
+                        <span className="text-xs text-muted-foreground truncate max-w-[100px] sm:max-w-[180px]">
                           {validator.votePubkey.slice(0, 6)}...{validator.votePubkey.slice(-6)}
                         </span>
                         {validator.activatedStake !== undefined && (
