@@ -72,92 +72,133 @@ export const useStakeHistory = (vote_identity: string) => {
       try {
         console.log(`Attempting to fetch stake history from Stakewiz for ${vote_identity}`);
         
-        // Attempt to fetch with increased timeout (60 seconds)
-        const response = await axios.get(`${STAKEWIZ_API_URL}/validator/${vote_identity}/stake_history`, {
-          timeout: 60000 // Increased timeout to 60 seconds
-        });
-        
-        if (response.data && Array.isArray(response.data)) {
-          console.log("Stake history from Stakewiz:", response.data);
-          
-          if (response.data.length === 0) {
-            setError("No stake history data available for this validator");
-            setAllStakes([]);
-            setDisplayedStakes([]);
-            return;
-          }
-          
-          // Format the data properly
-          const formattedData = response.data.map((item: any) => ({
-            epoch: item.epoch,
-            stake: item.stake,
-            date: new Date(item.date).toISOString()
-          }));
-          
-          // Sort by epoch ascending
-          formattedData.sort((a: StakeData, b: StakeData) => a.epoch - b.epoch);
-          
-          setAllStakes(formattedData);
-          filterStakesByTimeframe(formattedData, timeframe);
-        } else {
-          throw new Error("Invalid response from Stakewiz");
-        }
-      } catch (err: any) {
-        console.error("Error fetching stake history:", err);
-        
-        // Try alternate endpoint format
+        // First try the dedicated stake_history endpoint
         try {
-          const alternateResponse = await axios.get(`${STAKEWIZ_API_URL}/validator/${vote_identity}`, {
-            timeout: 30000
+          const response = await axios.get(`${STAKEWIZ_API_URL}/validator/${vote_identity}/stake_history`, {
+            timeout: 15000
           });
           
-          if (alternateResponse.data && alternateResponse.data.stake_history && 
-              Array.isArray(alternateResponse.data.stake_history)) {
-            console.log("Found stake history in main validator response:", alternateResponse.data.stake_history);
+          if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+            console.log(`Found ${response.data.length} stake history items from dedicated endpoint`);
             
-            const formattedData = alternateResponse.data.stake_history.map((item: any) => ({
+            // Format the data properly
+            const formattedData = response.data.map((item: any) => ({
               epoch: item.epoch,
               stake: item.stake,
-              date: new Date(item.date || Date.now()).toISOString()
+              date: new Date(item.date).toISOString()
             }));
             
+            // Sort by epoch ascending
             formattedData.sort((a: StakeData, b: StakeData) => a.epoch - b.epoch);
             
             setAllStakes(formattedData);
             filterStakesByTimeframe(formattedData, timeframe);
+            setIsLoading(false);
             return;
           }
-          
-          // Fallback: Try to create a basic history from the validator's current stake
-          if (alternateResponse.data && alternateResponse.data.activated_stake) {
-            console.log("Creating basic stake history from current stake:", alternateResponse.data.activated_stake);
-            
-            // Create a single point history using the current stake
-            const currentEpoch = alternateResponse.data.epoch || 0;
-            const basicHistory = [
-              {
-                epoch: currentEpoch,
-                stake: alternateResponse.data.activated_stake,
-                date: new Date().toISOString()
-              }
-            ];
-            
-            setAllStakes(basicHistory);
-            setDisplayedStakes(basicHistory);
-            return;
-          }
-        } catch (alternateErr) {
-          console.error("Error with alternate stake history approach:", alternateErr);
+        } catch (err) {
+          console.error("Error fetching from stake_history endpoint:", err);
         }
         
+        // Next, try the main validator endpoint that may include stake_history
+        try {
+          console.log("Trying main validator endpoint for stake history...");
+          const validatorResponse = await axios.get(`${STAKEWIZ_API_URL}/validator/${vote_identity}`, {
+            timeout: 15000
+          });
+          
+          if (validatorResponse.data) {
+            // Check if the response has a stake_history array
+            if (validatorResponse.data.stake_history && 
+                Array.isArray(validatorResponse.data.stake_history) && 
+                validatorResponse.data.stake_history.length > 0) {
+              
+              console.log(`Found ${validatorResponse.data.stake_history.length} stake history items in main validator response`);
+              
+              const formattedData = validatorResponse.data.stake_history.map((item: any) => ({
+                epoch: item.epoch,
+                stake: item.stake,
+                date: new Date(item.date || Date.now()).toISOString()
+              }));
+              
+              formattedData.sort((a: StakeData, b: StakeData) => a.epoch - b.epoch);
+              
+              setAllStakes(formattedData);
+              filterStakesByTimeframe(formattedData, timeframe);
+              setIsLoading(false);
+              return;
+            }
+            
+            // If there's no stake_history array but we have current stake and epoch, create a minimal history
+            if (validatorResponse.data.activated_stake !== undefined || 
+                validatorResponse.data.stake !== undefined) {
+              console.log("Creating minimal stake history from current validator data");
+              
+              const currentStake = validatorResponse.data.activated_stake || 
+                                  validatorResponse.data.stake || 0;
+              const currentEpoch = validatorResponse.data.epoch || 0;
+              
+              // Create a single-point history
+              const minimalHistory: StakeData[] = [{
+                epoch: currentEpoch,
+                stake: currentStake,
+                date: new Date().toISOString()
+              }];
+              
+              setAllStakes(minimalHistory);
+              setDisplayedStakes(minimalHistory);
+              setIsLoading(false);
+              return;
+            }
+          }
+        } catch (validatorErr) {
+          console.error("Error fetching from main validator endpoint:", validatorErr);
+        }
+        
+        // Try the validators list as a last resort
+        try {
+          console.log("Trying validators list for stake data...");
+          const validatorsResponse = await axios.get(`${STAKEWIZ_API_URL}/validators`, {
+            timeout: 15000
+          });
+          
+          if (validatorsResponse.data && Array.isArray(validatorsResponse.data)) {
+            const validator = validatorsResponse.data.find(
+              (v: any) => v.vote_account === vote_identity || 
+                          v.vote_identity === vote_identity || 
+                          v.vote_pubkey === vote_identity
+            );
+            
+            if (validator && (validator.activated_stake !== undefined || validator.stake !== undefined)) {
+              console.log("Creating minimal stake history from validators list");
+              
+              const stake = validator.activated_stake || validator.stake || 0;
+              const epoch = validator.epoch || 0;
+              
+              const minimalHistory: StakeData[] = [{
+                epoch: epoch,
+                stake: stake,
+                date: new Date().toISOString()
+              }];
+              
+              setAllStakes(minimalHistory);
+              setDisplayedStakes(minimalHistory);
+              setIsLoading(false);
+              return;
+            }
+          }
+        } catch (validatorsErr) {
+          console.error("Error fetching from validators list:", validatorsErr);
+        }
+        
+        // If we've tried everything and still have no data
+        throw new Error("No stake history data could be retrieved");
+      } catch (err: any) {
+        console.error("Failed to fetch stake history data:", err);
         setError(`Failed to fetch stake history: ${err.message || "Unknown error"}`);
         setAllStakes([]);
         setDisplayedStakes([]);
-        
-        // Show an error toast
-        toast.error("Failed to fetch validator stake history", {
-          id: "stake-history-error"
-        });
+        toast.error("Could not fetch validator stake history");
       } finally {
         setIsLoading(false);
       }

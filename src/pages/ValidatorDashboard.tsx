@@ -3,11 +3,9 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ValidatorHeader } from "@/components/validator/ValidatorHeader";
 import { ValidatorMetricsGrid } from "@/components/StakingMetricsCard";
-import { ValidatorInfoCard } from "@/components/ValidatorInfoCard";
 import { EpochStatusCard } from "@/components/EpochStatusCard";
 import { StakeHistoryChart } from "@/components/stakes/StakeHistoryChart";
 import { ValidatorDetailsCard } from "@/components/validator/ValidatorDetailsCard";
-import { Button } from "@/components/ui/button";
 import { 
   fetchValidatorInfo, 
   fetchValidatorMetrics, 
@@ -90,12 +88,6 @@ const ValidatorDashboard = () => {
     return () => clearInterval(intervalId);
   }, [votePubkey]);
 
-  const openStakeModal = () => {
-    toast.info("Staking modal would open here", {
-      description: "Staking functionality is coming soon!"
-    });
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gojira-gray to-gojira-gray-dark">
       {isRefreshing && <RefreshOverlay />}
@@ -103,24 +95,6 @@ const ValidatorDashboard = () => {
       <div className="container max-w-7xl mx-auto py-4 sm:py-8 px-3 sm:px-6 lg:px-8">
         {/* Header section with improved layout */}
         <div className="mb-8">
-          <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-6">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => navigate("/")}
-              className="text-muted-foreground hover:text-white mb-2 -ml-2"
-            >
-              ← Back to Dashboard
-            </Button>
-            
-            <Button
-              onClick={openStakeModal}
-              className="bg-gojira-red hover:bg-gojira-red/90 text-white"
-            >
-              Stake to Validator
-            </Button>
-          </div>
-          
           {/* Validator information header */}
           <ValidatorHeader 
             validatorPubkey={votePubkey || ""}
@@ -129,6 +103,7 @@ const ValidatorDashboard = () => {
             identityPubkey={validatorInfo?.identity}
             isLoading={isLoading}
             onRefresh={handleRefresh}
+            onBack={() => navigate("/")}
           />
         </div>
         
@@ -153,19 +128,18 @@ const ValidatorDashboard = () => {
         
         {/* Redesigned layout with better space utilization */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
-          {/* Left column - validator info and stake history */}
+          {/* Main column - stake history and epoch status */}
           <div className="lg:col-span-8 space-y-6">
             {/* Stake History Chart */}
             {votePubkey && <StakeHistoryChart vote_identity={votePubkey} />}
             
-            {/* Validator Description and Details */}
-            <ValidatorDetailsCard metrics={validatorMetrics} isLoading={isLoading} />
+            {/* Epoch status */}
+            <EpochStatusCard />
           </div>
           
-          {/* Right column - technical details and status */}
+          {/* Right column - validator details */}
           <div className="lg:col-span-4 space-y-6">
-            <ValidatorInfoCard validatorInfo={validatorInfo} isLoading={isLoading} />
-            <EpochStatusCard />
+            <ValidatorDetailsCard metrics={validatorMetrics} isLoading={isLoading} />
           </div>
         </div>
         

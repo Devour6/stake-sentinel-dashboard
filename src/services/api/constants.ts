@@ -1,40 +1,14 @@
 
-// RPC and Validator Constants
-export const VALIDATOR_PUBKEY = "goJiRADNdmfnJ4iWEyft7KaYMPTVsRba2Ee1akDEBXb";
-export const VALIDATOR_IDENTITY = "gojir4WnhS7VS1JdbnanJMzaMfr4UD7KeX1ixWAHEmw";
-
-// Set up Stakewiz API URL
+// API endpoints
 export const STAKEWIZ_API_URL = "https://api.stakewiz.com";
 
-// Helius paid RPC endpoint (primary) - more reliable and private endpoint
-export const HELIUS_RPC_ENDPOINT = "https://nanete-kbmodz-fast-mainnet.helius-rpc.com";
-export const HELIUS_WEBSOCKET_URL = "wss://nanete-kbmodz-fast-mainnet.helius-rpc.com";
+// Default Helius RPC endpoint - with fallback
+export const RPC_ENDPOINT = "https://mainnet.helius-rpc.com/?api-key=389d22ab-25bb-4f64-a36f-96455b26ea2e";
+export const FALLBACK_RPC_ENDPOINT = "https://nanete-kbmodz-fast-mainnet.helius-rpc.com";
 
-// Additional Helius RPC endpoint
-export const HELIUS_PUBLIC_RPC = "https://mainnet.helius-rpc.com/?api-key=389d22ab-25bb-4f64-a36f-96455b26ea2e";
+// Explorer API
+export const SOLANA_EXPLORER_API = "https://explorer-api.solana.com";
 
-// Primary RPC endpoint (Helius)
-export const RPC_ENDPOINT = HELIUS_RPC_ENDPOINT;
-
-// Reliable community endpoints for epoch info
-export const SOLANABEACH_API = "https://api.solanabeach.io/v1";
-export const SOLSCAN_API = "https://api.solscan.io";
-export const EXPLORER_API = "https://explorer-api.solana.com";
-
-// Fallback RPC endpoints with higher reliability
-export const FALLBACK_RPC_ENDPOINTS = [
-  HELIUS_PUBLIC_RPC,
-  "https://api.mainnet-beta.solana.com",
-  "https://solana-mainnet.g.alchemy.com/v2/demo",
-  "https://api.devnet.solana.com", 
-  "https://solana-api.projectserum.com"
-];
-
-// Array of all available endpoints for retry logic
-export const ALL_RPC_ENDPOINTS = [RPC_ENDPOINT, ...FALLBACK_RPC_ENDPOINTS];
-
-// Additional public endpoints if needed for future use
-export const ADDITIONAL_RPC_ENDPOINTS = [
-  "https://rpc.ankr.com/solana",
-  "https://solana.public-rpc.com"
-];
+// Default validator information
+export const VALIDATOR_PUBKEY = "9QU2QSxhb24FUX3Tu2FpczXjpK3VYrvRudywSZaM29mF";
+export const VALIDATOR_IDENTITY = "AKoVXpZmi8wSz3sGvCYEygbpdHvSRysWsh36b97iPvKh";

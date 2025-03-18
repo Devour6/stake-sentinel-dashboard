@@ -22,100 +22,20 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
       return metrics;
     }
     
-    // Primary source: Stakewiz validator endpoint
+    // Primary direct API call to Stakewiz
     try {
+      console.log(`Making direct request to ${STAKEWIZ_API_URL}/validator/${votePubkey}`);
+      
       const stakewizResponse = await axios.get(
         `${STAKEWIZ_API_URL}/validator/${votePubkey}`,
-        { timeout: 60000 } // Increased timeout for slower connections
+        { timeout: 15000 }
       );
       
       if (stakewizResponse.data) {
         const stakewizData = stakewizResponse.data;
         console.log("Stakewiz validator data:", stakewizData);
         
-        // Get stake changes from Stakewiz - but don't fail the whole request if this fails
-        let activatingStake = 0;
-        let deactivatingStake = 0;
-        
-        try {
-          const stakeResponse = await axios.get(`${STAKEWIZ_API_URL}/validator/${votePubkey}/stake`, {
-            timeout: 30000
-          });
-          
-          if (stakeResponse.data) {
-            console.log("Stakewiz stake data:", stakeResponse.data);
-            activatingStake = stakeResponse.data.activating || 0;
-            deactivatingStake = stakeResponse.data.deactivating || 0;
-          }
-        } catch (stakeError) {
-          console.error("Error fetching stake data from Stakewiz:", stakeError);
-          // Try to extract stake changes directly from the main validator response
-          if (stakewizData.activating_stake !== undefined) {
-            activatingStake = stakewizData.activating_stake || 0;
-            deactivatingStake = stakewizData.deactivating_stake || 0;
-          }
-        }
-        
-        // Calculate APY from multiple possible sources
-        let estimatedApy = null;
-        
-        // First try network endpoint for overall network APY
-        try {
-          const networkResponse = await axios.get(`${STAKEWIZ_API_URL}/network`, {
-            timeout: 10000
-          });
-          
-          if (networkResponse.data && networkResponse.data.apy) {
-            estimatedApy = networkResponse.data.apy / 100; // Convert percentage to decimal
-            console.log("Network APY from Stakewiz:", estimatedApy);
-          }
-        } catch (networkError) {
-          console.error("Error fetching network APY from Stakewiz:", networkError);
-        }
-        
-        // If network APY fails, try using validator's APY data
-        if (estimatedApy === null) {
-          if (stakewizData.total_apy) {
-            estimatedApy = stakewizData.total_apy / 100; // Convert percentage to decimal
-            console.log("Using validator total APY:", estimatedApy);
-          } else if (stakewizData.apy_estimate) {
-            estimatedApy = stakewizData.apy_estimate / 100;
-            console.log("Using validator APY estimate:", estimatedApy);
-          } else if (stakewizData.staking_apy) {
-            // If we have staking_apy and jito_apy, combine them
-            const stakingApy = stakewizData.staking_apy / 100;
-            const jitoApy = (stakewizData.jito_apy || 0) / 100;
-            estimatedApy = stakingApy + jitoApy;
-            console.log("Using combined staking + jito APY:", estimatedApy);
-          }
-        }
-        
-        // If we still don't have APY, try to get mev commission and estimate
-        if (estimatedApy === null && stakewizData.commission !== undefined) {
-          // Rough APY estimate based on commission
-          const baseApy = 0.075; // 7.5% base APY estimate
-          const commissionDecimal = stakewizData.commission / 100;
-          estimatedApy = baseApy * (1 - commissionDecimal);
-          console.log("Estimated APY based on commission:", estimatedApy);
-        }
-        
-        // Extract description and version from stakewizData if available
-        const description = stakewizData.description || null;
-        const version = stakewizData.version || null;
-        
-        // Extract uptime from stakewizData
-        let uptime30d = null;
-        if (stakewizData.uptime !== undefined) {
-          uptime30d = stakewizData.uptime;
-        } else if (stakewizData.uptime_30d !== undefined) {
-          uptime30d = stakewizData.uptime_30d;
-        }
-        
-        // Website - make sure to include this property
-        const website = stakewizData.website || null;
-        
-        // Get the proper activated stake value, as Stakewiz may format it in different ways
-        // Sometimes it's "activated_stake", sometimes it's "stake", sometimes it's a different format
+        // Extract stake amounts - Stakewiz uses different field names in different endpoints
         let totalStake = 0;
         if (stakewizData.activated_stake !== undefined) {
           totalStake = stakewizData.activated_stake;
@@ -127,65 +47,133 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
           totalStake = stakewizData.active_stake;
         }
         
-        console.log("Activated stake value:", totalStake);
+        console.log("Extracted total stake:", totalStake);
         
-        const metrics = {
+        // Get activating/deactivating stake
+        let activatingStake = 0;
+        let deactivatingStake = 0;
+        
+        // Try to get stake changes from the main response first
+        if (stakewizData.activating_stake !== undefined) {
+          activatingStake = stakewizData.activating_stake;
+          deactivatingStake = stakewizData.deactivating_stake || 0;
+        } else if (stakewizData.activating !== undefined) {
+          activatingStake = stakewizData.activating;
+          deactivatingStake = stakewizData.deactivating || 0;
+        }
+        
+        // If not found in main response, try dedicated stake endpoint
+        if (activatingStake === 0 && deactivatingStake === 0) {
+          try {
+            const stakeResponse = await axios.get(
+              `${STAKEWIZ_API_URL}/validator/${votePubkey}/stake`,
+              { timeout: 10000 }
+            );
+            
+            if (stakeResponse.data) {
+              console.log("Stakewiz stake data:", stakeResponse.data);
+              activatingStake = stakeResponse.data.activating || 0;
+              deactivatingStake = stakeResponse.data.deactivating || 0;
+            }
+          } catch (stakeError) {
+            console.error("Error fetching stake data:", stakeError);
+          }
+        }
+        
+        console.log("Stake changes - Activating:", activatingStake, "Deactivating:", deactivatingStake);
+        
+        // Extract commission and calculate APY
+        const commission = stakewizData.commission !== undefined ? stakewizData.commission : 0;
+        
+        // Extract APY from various possible fields
+        let estimatedApy = null;
+        if (stakewizData.total_apy) {
+          estimatedApy = stakewizData.total_apy / 100;
+        } else if (stakewizData.apy_estimate) {
+          estimatedApy = stakewizData.apy_estimate / 100;
+        } else if (stakewizData.staking_apy) {
+          const stakingApy = stakewizData.staking_apy / 100;
+          const jitoApy = (stakewizData.jito_apy || 0) / 100;
+          estimatedApy = stakingApy + jitoApy;
+        } else {
+          // Fallback estimation
+          const baseApy = 0.075; // 7.5% base APY estimate
+          const commissionDecimal = commission / 100;
+          estimatedApy = baseApy * (1 - commissionDecimal);
+        }
+        
+        // Extract other validator metadata
+        const description = stakewizData.description || null;
+        const version = stakewizData.version || null;
+        const uptime30d = stakewizData.uptime !== undefined ? 
+                          stakewizData.uptime : 
+                          stakewizData.uptime_30d !== undefined ? 
+                          stakewizData.uptime_30d : null;
+        
+        // Website
+        const website = stakewizData.website || null;
+        
+        // MEV commission handling
+        const mevCommission = stakewizData.jito_commission_bps !== undefined ? 
+                             stakewizData.jito_commission_bps / 100 : commission;
+        
+        // Create metrics object
+        const metrics: ValidatorMetrics = {
           totalStake: totalStake,
           pendingStakeChange: Math.max(activatingStake, deactivatingStake),
           isDeactivating: deactivatingStake > activatingStake,
-          commission: stakewizData.commission || 0,
-          mevCommission: stakewizData.jito_commission_bps !== undefined ? 
-                        stakewizData.jito_commission_bps / 100 : 
-                        stakewizData.commission || 0,
-          estimatedApy,
-          activatingStake,
-          deactivatingStake,
-          description,
-          version,
-          uptime30d,
-          website  // Include website in the metrics
+          commission: commission,
+          mevCommission: mevCommission,
+          estimatedApy: estimatedApy,
+          activatingStake: activatingStake,
+          deactivatingStake: deactivatingStake,
+          description: description,
+          version: version,
+          uptime30d: uptime30d,
+          website: website
         };
         
         console.log("Final validator metrics:", metrics);
         validatorMetricsCache.set(votePubkey, { ...metrics, timestamp: now });
         return metrics;
       }
-    } catch (error) {
-      console.error("Primary Stakewiz endpoint failed:", error);
-      toast.error("Primary data source unavailable, trying alternatives...", {
-        duration: 3000,
-        id: "stakewiz-primary-error"
-      });
+    } catch (primaryError) {
+      console.error("Error with primary Stakewiz endpoint:", primaryError);
     }
     
-    // If primary source fails, try alternate Stakewiz validators endpoint
+    // Fallback to validators list endpoint
     try {
-      console.log("Trying alternate validators list endpoint...");
+      console.log("Trying validators list endpoint...");
       const validatorsResponse = await axios.get(
         `${STAKEWIZ_API_URL}/validators`,
-        { timeout: 20000 }
+        { timeout: 15000 }
       );
       
       if (validatorsResponse.data && Array.isArray(validatorsResponse.data)) {
-        const validator = validatorsResponse.data.find(
-          (v) => v.vote_identity === votePubkey
+        // Find the validator in the list
+        const validator = validatorsResponse.data.find(v => 
+          v.vote_account === votePubkey || 
+          v.vote_identity === votePubkey || 
+          v.vote_pubkey === votePubkey
         );
         
         if (validator) {
           console.log("Found validator in validators list:", validator);
           
-          // Estimate APY based on commission
+          // Extract data from the validator object
+          const totalStake = validator.activated_stake || validator.stake || 0;
+          const commission = validator.commission || 0;
           const baseApy = 0.075; // 7.5% base estimate
-          const commissionDecimal = validator.commission / 100;
+          const commissionDecimal = commission / 100;
           const estimatedApy = baseApy * (1 - commissionDecimal);
           
-          const metrics = {
-            totalStake: validator.activated_stake || validator.stake || 0,
-            pendingStakeChange: 0,
+          const metrics: ValidatorMetrics = {
+            totalStake: totalStake,
+            pendingStakeChange: 0, // No pending change info in this endpoint
             isDeactivating: false,
-            commission: validator.commission || 0,
-            mevCommission: validator.commission || 0,
-            estimatedApy,
+            commission: commission,
+            mevCommission: commission,
+            estimatedApy: estimatedApy,
             activatingStake: 0,
             deactivatingStake: 0,
             description: validator.description || null,
@@ -199,22 +187,22 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
           return metrics;
         }
       }
-    } catch (error) {
-      console.error("Alternate Stakewiz endpoint failed:", error);
+    } catch (fallbackError) {
+      console.error("Fallback endpoint failed:", fallbackError);
     }
     
-    // Last resort - try to fetch directly from Stakewiz website
-    try {
-      // This is just for logging, we can't actually scrape from our frontend
-      console.log(`Consider checking https://stakewiz.com/validator/${votePubkey} manually`);
-      return null;
-    } catch (error) {
-      console.error("Failed to get data from all sources:", error);
-      return null;
-    }
+    // Last resort - return a minimal object with whatever data we have
+    console.log("All Stakewiz methods failed, returning minimal data");
+    return {
+      totalStake: 0,
+      pendingStakeChange: 0,
+      isDeactivating: false,
+      commission: 0,
+      website: null
+    };
   } catch (error) {
     console.error("Critical error fetching validator metrics:", error);
-    toast.error("Failed to fetch validator metrics: " + (error instanceof Error ? error.message : "Unknown error"));
+    toast.error("Failed to fetch validator metrics");
     return null;
   }
 };
