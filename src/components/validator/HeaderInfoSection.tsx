@@ -16,7 +16,7 @@ export const HeaderInfoSection = ({
   onBack
 }: HeaderInfoSectionProps) => {
   return (
-    <div className="flex items-center gap-3 flex-grow overflow-visible">
+    <div className="flex items-start gap-3 w-full">
       {onBack && (
         <Button 
           variant="ghost" 
@@ -27,7 +27,7 @@ export const HeaderInfoSection = ({
           <ArrowLeft className="h-5 w-5" />
         </Button>
       )}
-      <div className="w-12 h-12 md:w-16 md:h-16 relative animate-pulse-subtle">
+      <div className="w-12 h-12 md:w-16 md:h-16 relative animate-pulse-subtle shrink-0">
         {validatorIcon ? (
           <img 
             src={validatorIcon} 
@@ -45,7 +45,7 @@ export const HeaderInfoSection = ({
           />
         )}
       </div>
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 w-full">
         <h1 className="text-3xl font-bold tracking-tight mb-2 text-white truncate">
           {isLoading ? (
             <div className="h-8 w-64 bg-muted/30 rounded animate-pulse"></div>
