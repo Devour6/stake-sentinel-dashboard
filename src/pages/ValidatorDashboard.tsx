@@ -56,6 +56,20 @@ const ValidatorDashboard = () => {
     try {
       console.log("Fetching data for validator:", votePubkey);
       
+      // First directly fetch the current stake from SolanaFM as highest priority
+      let currentStake = 0;
+      try {
+        console.log("Attempting to fetch current stake from SolanaFM directly...");
+        const solanaFmStake = await fetchSolanaFMStake(votePubkey);
+        if (solanaFmStake > 0) {
+          console.log("Successfully got stake from SolanaFM:", solanaFmStake);
+          currentStake = solanaFmStake;
+          setTotalStake(solanaFmStake);
+        }
+      } catch (stakeError) {
+        console.error("Error fetching stake from SolanaFM:", stakeError);
+      }
+      
       // Fetch validator info and metrics in parallel
       const [info, metrics] = await Promise.all([
         fetchValidatorInfo(votePubkey),
@@ -72,31 +86,48 @@ const ValidatorDashboard = () => {
       setValidatorInfo(info);
       setValidatorMetrics(metrics);
       
-      // Get active stake, history, pending changes and delegator count in parallel
-      const [stakeData, historyData, stakeChangesData, delegatorCountData] = await Promise.allSettled([
-        fetchSolanaFMStake(votePubkey),
+      // If we didn't get stake from SolanaFM, use metrics or info
+      if (currentStake <= 0) {
+        // Try metrics first
+        if (metrics?.totalStake && metrics.totalStake > 0) {
+          console.log("Using stake from metrics:", metrics.totalStake);
+          currentStake = metrics.totalStake;
+          setTotalStake(metrics.totalStake);
+        } 
+        // Then try info
+        else if (info?.activatedStake && info.activatedStake > 0) {
+          console.log("Using stake from validator info:", info.activatedStake);
+          currentStake = info.activatedStake;
+          setTotalStake(info.activatedStake);
+        }
+        // Fallback in case both are zero or undefined
+        else {
+          console.log("No valid stake found, using fallback");
+          // Use a meaningful fallback or error state
+          setTotalStake(0);
+        }
+      }
+      
+      // Get active stake history, pending changes and delegator count in parallel
+      const [historyData, stakeChangesData, delegatorCountData] = await Promise.allSettled([
         fetchSolanaFMStakeHistory(votePubkey),
         fetchOnchainStakeChanges(votePubkey),
         fetchDelegatorCount(votePubkey)
       ]);
       
-      // ENHANCEMENT: Prioritize SolanaFM active stake as the source of truth
-      if (stakeData.status === 'fulfilled' && stakeData.value > 0) {
-        console.log("SolanaFM total stake:", stakeData.value);
-        setTotalStake(stakeData.value);
-      } else {
-        // Fallback to metrics or info if SolanaFM fails
-        const fallbackStake = Math.max(
-          metrics?.totalStake || 0, 
-          info?.activatedStake || 0
-        );
-        console.log("Using fallback stake value:", fallbackStake);
-        setTotalStake(fallbackStake);
-      }
-      
       if (historyData.status === 'fulfilled' && historyData.value && historyData.value.length > 0) {
         console.log("SolanaFM stake history:", historyData.value);
         setStakeHistory(historyData.value);
+        
+        // If we still don't have stake data, try to get it from the most recent history entry
+        if (currentStake <= 0 && historyData.value.length > 0) {
+          // Sort by epoch desc and get the most recent
+          const sortedHistory = [...historyData.value].sort((a, b) => b.epoch - a.epoch);
+          if (sortedHistory[0]?.stake > 0) {
+            console.log("Using stake from most recent history:", sortedHistory[0].stake);
+            setTotalStake(sortedHistory[0].stake);
+          }
+        }
       }
       
       if (stakeChangesData.status === 'fulfilled') {
