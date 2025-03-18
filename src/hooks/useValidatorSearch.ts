@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { fetchAllValidators } from '@/services/api/validatorSearchApi';
 import { ValidatorSearchResult } from '@/services/api/types';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 export function useValidatorSearch() {
   const [allValidators, setAllValidators] = useState<ValidatorSearchResult[]>([]);

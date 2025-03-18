@@ -3,10 +3,13 @@ import axios from "axios";
 import { getAllWellKnownValidators } from "./data/wellKnownValidators";
 import { ValidatorSearchResult } from "./types";
 
+// Set up base URLs
+const STAKEWIZ_API_URL = "https://api.stakewiz.com";
+
 // Cache for validator details
 const validatorDetailsCache = new Map<string, any>();
 
-// Function to fetch validator details from Solscan - with caching
+// Function to fetch validator details - prioritizing Stakewiz API
 export const fetchValidatorDetailsFromSolscan = async (votePubkey: string) => {
   try {
     // Check cache first
@@ -16,7 +19,29 @@ export const fetchValidatorDetailsFromSolscan = async (votePubkey: string) => {
     
     console.log("Fetching details for validator:", votePubkey);
     
-    // Check if it's in our well-known validators list first
+    // Try to fetch from Stakewiz API first (most reliable)
+    try {
+      const stakewizResponse = await axios.get(
+        `${STAKEWIZ_API_URL}/validator/${votePubkey}`,
+        { timeout: 10000 }
+      );
+      
+      if (stakewizResponse.data) {
+        console.log("Retrieved validator data from Stakewiz API:", stakewizResponse.data);
+        const data = stakewizResponse.data;
+        const result = {
+          name: data.name || null,
+          logo: data.image || null,
+          website: data.website || null
+        };
+        validatorDetailsCache.set(votePubkey, result);
+        return result;
+      }
+    } catch (stakewizError) {
+      console.log("Could not fetch from Stakewiz API, using fallback", stakewizError);
+    }
+    
+    // Check if it's in our well-known validators list as fallback
     const wellKnownValidators = getAllWellKnownValidators();
     const knownValidator = wellKnownValidators.find(v => v.votePubkey === votePubkey);
     
@@ -29,28 +54,6 @@ export const fetchValidatorDetailsFromSolscan = async (votePubkey: string) => {
       };
       validatorDetailsCache.set(votePubkey, result);
       return result;
-    }
-    
-    // Try to fetch from Stakewiz API (more reliable than direct scraping)
-    try {
-      const stakewizResponse = await axios.get(
-        `https://api.stakewiz.com/validator/${votePubkey}`,
-        { timeout: 5000 }
-      );
-      
-      if (stakewizResponse.data) {
-        console.log("Retrieved validator data from Stakewiz API");
-        const data = stakewizResponse.data;
-        const result = {
-          name: data.name || null,
-          logo: data.image || null,
-          website: data.website || null
-        };
-        validatorDetailsCache.set(votePubkey, result);
-        return result;
-      }
-    } catch (stakewizError) {
-      console.log("Could not fetch from Stakewiz API, using fallback");
     }
     
     // Create a fallback name from the vote pubkey
@@ -84,7 +87,7 @@ export const enhanceValidatorWithSolscanData = async (validators: ValidatorSearc
     return validators;
   }
   
-  console.log(`Enhancing ${validatorsToEnhance.length} validators with Solscan data`);
+  console.log(`Enhancing ${validatorsToEnhance.length} validators with Stakewiz data`);
   
   // Create a map for easy lookup
   const votePubkeyToValidator = new Map<string, ValidatorSearchResult>();

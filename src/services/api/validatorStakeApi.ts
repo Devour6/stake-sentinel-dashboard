@@ -3,6 +3,10 @@ import { RPC_ENDPOINT } from "./constants";
 import { StakeAccountInfo } from "./types";
 import { lamportsToSol } from "./utils";
 import { fetchCurrentEpoch } from "./epochApi";
+import axios from "axios";
+
+// Set up Stakewiz API URL
+const STAKEWIZ_API_URL = "https://api.stakewiz.com";
 
 // Improved function to fetch stake accounts for a specific validator
 export async function fetchValidatorStake(voteAccount: string): Promise<{
@@ -12,7 +16,46 @@ export async function fetchValidatorStake(voteAccount: string): Promise<{
   try {
     console.log(`Fetching stake changes for vote account: ${voteAccount}`);
     
-    // First try using getProgramAccounts with filters
+    // First try using Stakewiz API - most reliable source
+    try {
+      const stakeResponse = await axios.get(
+        `${STAKEWIZ_API_URL}/validator/${voteAccount}/stake`, 
+        { timeout: 8000 }
+      );
+      
+      if (stakeResponse.data) {
+        console.log("Stakewiz stake data:", stakeResponse.data);
+        
+        return {
+          activatingStake: stakeResponse.data.activating || 0,
+          deactivatingStake: stakeResponse.data.deactivating || 0
+        };
+      }
+    } catch (stakewizError) {
+      console.error("Error fetching from Stakewiz stake API:", stakewizError);
+    }
+    
+    // Try main Stakewiz endpoint as fallback
+    try {
+      const validatorResponse = await axios.get(
+        `${STAKEWIZ_API_URL}/validator/${voteAccount}`,
+        { timeout: 8000 }
+      );
+      
+      if (validatorResponse.data) {
+        console.log("Main Stakewiz validator data:", validatorResponse.data);
+        
+        // Some basic info may be available here
+        return {
+          activatingStake: 0, // Not directly available in main endpoint
+          deactivatingStake: 0 // Not directly available in main endpoint
+        };
+      }
+    } catch (mainStakewizError) {
+      console.error("Error fetching from main Stakewiz API:", mainStakewizError);
+    }
+    
+    // Fallback to RPC if Stakewiz fails
     try {
       const response = await fetch(RPC_ENDPOINT, {
         method: 'POST',
@@ -36,7 +79,7 @@ export async function fetchValidatorStake(voteAccount: string): Promise<{
             }
           ]
         }),
-        signal: AbortSignal.timeout(15000)
+        signal: AbortSignal.timeout(8000)
       });
 
       if (!response.ok) {
@@ -44,7 +87,7 @@ export async function fetchValidatorStake(voteAccount: string): Promise<{
       }
 
       const data = await response.json();
-      console.log(`Received ${data.result?.length || 0} stake accounts`);
+      console.log(`Received ${data.result?.length || 0} stake accounts from RPC`);
 
       let activatingStake = 0;
       let deactivatingStake = 0;
@@ -88,24 +131,8 @@ export async function fetchValidatorStake(voteAccount: string): Promise<{
         activatingStake: lamportsToSol(activatingStake),
         deactivatingStake: lamportsToSol(deactivatingStake)
       };
-    } catch (firstError) {
-      console.error("Error with primary RPC method, trying fallback:", firstError);
-      
-      // Fallback - try to get data from Stakewiz API
-      const stakewizResponse = await fetch(`https://api.stakewiz.com/validator/${voteAccount}/stake`);
-      if (stakewizResponse.ok) {
-        const stakewizData = await stakewizResponse.json();
-        console.log("Stakewiz stake data:", stakewizData);
-        
-        // Extract stake changes from Stakewiz data
-        if (stakewizData && stakewizData.active !== undefined) {
-          return {
-            activatingStake: stakewizData.activating || 0,
-            deactivatingStake: stakewizData.deactivating || 0
-          };
-        }
-      }
-      
+    } catch (rpcError) {
+      console.error("Error with RPC method:", rpcError);
       // If all else fails, return zeros
       return {
         activatingStake: 0,
