@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ValidatorHeader } from "@/components/ValidatorHeader";
@@ -41,7 +40,6 @@ const ValidatorDashboard = () => {
     setError(null);
     
     try {
-      // Fetch data from Stakewiz with the provided vote pubkey
       const [info, metrics] = await Promise.all([
         fetchValidatorInfo(votePubkey),
         fetchValidatorMetrics(votePubkey)
@@ -74,7 +72,6 @@ const ValidatorDashboard = () => {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     await fetchData(true);
-    // Add a small delay to ensure smooth transition
     setTimeout(() => {
       setIsRefreshing(false);
     }, 800);
@@ -83,7 +80,6 @@ const ValidatorDashboard = () => {
   useEffect(() => {
     fetchData();
     
-    // Set up polling interval (every 5 minutes)
     const intervalId = setInterval(() => fetchData(), 5 * 60 * 1000);
     
     return () => clearInterval(intervalId);
@@ -93,7 +89,6 @@ const ValidatorDashboard = () => {
     <div className="min-h-screen bg-gradient-to-br from-gojira-gray to-gojira-gray-dark">
       {isRefreshing && <RefreshOverlay />}
       
-      {/* Glass container */}
       <div className="container max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <ValidatorHeader 
           validatorPubkey={votePubkey || ""}
@@ -105,7 +100,8 @@ const ValidatorDashboard = () => {
           onBack={() => navigate("/")}
         />
         
-        {/* Error message for entire page if needed */}
+        <div className="mt-8"></div>
+        
         {error && !isLoading && (
           <div className="my-8 p-6 bg-red-500/10 border border-red-500/30 rounded-lg text-center">
             <h3 className="text-xl font-semibold text-red-500 mb-2">Error</h3>
@@ -113,7 +109,6 @@ const ValidatorDashboard = () => {
           </div>
         )}
         
-        {/* Validator metrics */}
         <ValidatorMetricsGrid
           totalStake={validatorMetrics?.totalStake || 0}
           pendingStakeChange={validatorMetrics?.pendingStakeChange || 0}
@@ -125,21 +120,17 @@ const ValidatorDashboard = () => {
           hasError={!!error}
         />
         
-        {/* Epoch status card and chart in two column layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-          {/* Left column for cards */}
           <div className="lg:col-span-1 space-y-6">
             <ValidatorInfoCard validatorInfo={validatorInfo} isLoading={isLoading} />
             <EpochStatusCard />
           </div>
           
-          {/* Right column for chart */}
           <div className="lg:col-span-2">
             {votePubkey && <StakeHistoryChart vote_identity={votePubkey} />}
           </div>
         </div>
         
-        {/* Footer */}
         <div className="mt-12 text-center text-sm text-muted-foreground">
           <p>Data refreshes automatically every 5 minutes. Last updated: {new Date().toLocaleTimeString()}</p>
           <div className="mt-2 flex justify-center gap-1 items-center">
