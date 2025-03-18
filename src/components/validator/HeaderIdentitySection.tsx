@@ -59,9 +59,9 @@ export const HeaderIdentitySection = ({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 w-full">
       {description && (
-        <div className="text-sm text-white mb-4 max-w-3xl bg-gojira-gray-dark/30 p-3 rounded-md border border-gojira-gray-light/20">
+        <div className="text-sm text-white mb-4 w-full bg-gojira-gray-dark/30 p-3 rounded-md border border-gojira-gray-light/20">
           {description}
         </div>
       )}

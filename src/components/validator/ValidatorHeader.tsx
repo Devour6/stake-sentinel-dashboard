@@ -80,8 +80,8 @@ export const ValidatorHeader = ({
 
   return (
     <div className="animate-slide-down">
-      <div className="flex flex-col md:flex-row gap-4 items-start">
-        <div className="flex items-start gap-3 flex-grow overflow-visible">
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="flex items-start gap-3 flex-grow overflow-visible w-full">
           {onBack && (
             <Button 
               variant="ghost" 
@@ -110,7 +110,7 @@ export const ValidatorHeader = ({
               />
             )}
           </div>
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 w-full">
             <h1 className="text-3xl font-bold tracking-tight mb-2 text-white truncate">
               {isLoading ? (
                 <div className="h-8 w-64 bg-muted/30 rounded animate-pulse"></div>
