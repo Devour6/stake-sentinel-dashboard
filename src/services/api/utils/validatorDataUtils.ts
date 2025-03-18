@@ -1,6 +1,5 @@
 
 import { ValidatorSearchResult } from "../types";
-import { enhanceValidatorWithSolscanData } from "../solscanApi";
 
 // Function to process validators from vote accounts data
 export const processVoteAccountValidators = (
@@ -15,7 +14,8 @@ export const processVoteAccountValidators = (
       icon: null, // Initialize with null, will be populated later
       activatedStake: parseFloat(validator.activatedStake) / 10**9, // Convert lamports to SOL
       commission: validator.commission,
-      delinquent: false
+      delinquent: false,
+      website: null
     })),
     ...delinquent.map(validator => ({
       name: null,
@@ -24,7 +24,8 @@ export const processVoteAccountValidators = (
       icon: null,
       activatedStake: parseFloat(validator.activatedStake) / 10**9,
       commission: validator.commission,
-      delinquent: true
+      delinquent: true,
+      website: null
     }))
   ];
 };
@@ -55,40 +56,35 @@ export const matchValidatorsWithConfigs = (
     if (validator) {
       validator.name = configValidator.name;
       if (configValidator.icon) validator.icon = configValidator.icon;
-      console.log(`Matched on-chain name for identity ${validator.identity}: ${validator.name}`);
+      if (configValidator.website) validator.website = configValidator.website;
       
       // Since we matched by identity, we might need to update our maps
       if (validator.votePubkey) {
         votePubkeyToValidator.set(validator.votePubkey, validator);
       }
-    } else {
-      // If we have on-chain info but no matching validator in our list, add it
-      console.log(`Found on-chain validator with no matching identity: ${configValidator.name} (${configValidator.identity})`);
-      
+    } else if (configValidator.votePubkey && votePubkeyToValidator.has(configValidator.votePubkey)) {
       // Check if we have a matching vote pubkey even though identity doesn't match
-      if (configValidator.votePubkey && votePubkeyToValidator.has(configValidator.votePubkey)) {
-        const voteValidator = votePubkeyToValidator.get(configValidator.votePubkey);
-        voteValidator.name = configValidator.name;
-        if (configValidator.icon) voteValidator.icon = configValidator.icon;
-        console.log(`Matched on-chain name by vote pubkey: ${voteValidator.votePubkey} -> ${voteValidator.name}`);
-      } else {
-        // Add as a new validator
-        const newValidator = {
-          ...configValidator,
-          activatedStake: 0,
-          commission: 0,
-          delinquent: false
-        };
-        
-        validators.push(newValidator);
-        
-        // Update maps
-        if (newValidator.identity) {
-          identityToValidator.set(newValidator.identity, newValidator);
-        }
-        if (newValidator.votePubkey) {
-          votePubkeyToValidator.set(newValidator.votePubkey, newValidator);
-        }
+      const voteValidator = votePubkeyToValidator.get(configValidator.votePubkey);
+      voteValidator.name = configValidator.name;
+      if (configValidator.icon) voteValidator.icon = configValidator.icon;
+      if (configValidator.website) voteValidator.website = configValidator.website;
+    } else {
+      // Add as a new validator
+      const newValidator = {
+        ...configValidator,
+        activatedStake: 0,
+        commission: 0,
+        delinquent: false
+      };
+      
+      validators.push(newValidator);
+      
+      // Update maps
+      if (newValidator.identity) {
+        identityToValidator.set(newValidator.identity, newValidator);
+      }
+      if (newValidator.votePubkey) {
+        votePubkeyToValidator.set(newValidator.votePubkey, newValidator);
       }
     }
   }
@@ -96,7 +92,7 @@ export const matchValidatorsWithConfigs = (
   return validators;
 };
 
-// Apply well-known validator data to the validator list
+// Apply well-known validator data to the validator list - optimized
 export const applyWellKnownValidatorData = (
   validators: ValidatorSearchResult[],
   wellKnownValidators: any[]
@@ -124,7 +120,7 @@ export const applyWellKnownValidatorData = (
       if (!existingByVote.name || existingByVote.name === '') {
         existingByVote.name = known.name;
         if (known.icon) existingByVote.icon = known.icon;
-        console.log(`Added well-known name by vote pubkey for ${known.name} (${known.votePubkey})`);
+        if (known.website) existingByVote.website = known.website;
       }
       continue; // Skip to next known validator
     }
@@ -137,14 +133,13 @@ export const applyWellKnownValidatorData = (
         if (!existingByIdentity.name || existingByIdentity.name === '') {
           existingByIdentity.name = known.name;
           if (known.icon) existingByIdentity.icon = known.icon;
-          console.log(`Added well-known name by identity for ${known.name} (${known.identity})`);
+          if (known.website) existingByIdentity.website = known.website;
         }
         continue; // Skip to next known validator
       }
     }
     
     // If not found at all, add it
-    console.log(`Adding missing well-known validator: ${known.name} (${known.votePubkey})`);
     const newValidator = {
       ...known,
       activatedStake: 0,
@@ -166,40 +161,6 @@ export const applyWellKnownValidatorData = (
   return validators;
 };
 
-// Enhance validators with Solscan data
-export const enhanceTopValidatorsWithSolscan = async (validators: ValidatorSearchResult[]): Promise<ValidatorSearchResult[]> => {
-  try {
-    const topValidators = validators
-      .filter(v => v.activatedStake > 1000 && (!v.name || v.name.startsWith('Validator ')))
-      .slice(0, 25);
-    
-    console.log(`Enhancing ${topValidators.length} top validators with Solscan data`);
-    const enhancedTopValidators = await enhanceValidatorWithSolscanData(topValidators);
-    
-    // Create map for easy lookup
-    const votePubkeyToValidator = new Map<string, ValidatorSearchResult>();
-    validators.forEach(validator => {
-      if (validator.votePubkey) {
-        votePubkeyToValidator.set(validator.votePubkey, validator);
-      }
-    });
-    
-    // Update the name and icon for enhanced validators
-    enhancedTopValidators.forEach(validator => {
-      const existingValidator = votePubkeyToValidator.get(validator.votePubkey);
-      if (existingValidator) {
-        if (validator.name) existingValidator.name = validator.name;
-        if (validator.icon) existingValidator.icon = validator.icon;
-      }
-    });
-    
-    return validators;
-  } catch (error) {
-    console.error("Error enhancing validators with Solscan data:", error);
-    return validators;
-  }
-};
-
 // Fill missing validator names with default format
 export const fillMissingValidatorNames = (validators: ValidatorSearchResult[]): ValidatorSearchResult[] => {
   validators.forEach(validator => {
@@ -215,3 +176,5 @@ export const fillMissingValidatorNames = (validators: ValidatorSearchResult[]): 
 export const sortValidatorsByStake = (validators: ValidatorSearchResult[]): ValidatorSearchResult[] => {
   return [...validators].sort((a, b) => (b.activatedStake || 0) - (a.activatedStake || 0));
 };
+
+// We've removed the enhanceTopValidatorsWithSolscan function since it was causing performance issues

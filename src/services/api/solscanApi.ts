@@ -1,11 +1,19 @@
 
 import axios from "axios";
-import { toast } from "sonner";
 import { getAllWellKnownValidators } from "./data/wellKnownValidators";
+import { ValidatorSearchResult } from "./types";
 
-// Function to fetch validator details from Solscan
+// Cache for validator details
+const validatorDetailsCache = new Map<string, any>();
+
+// Function to fetch validator details from Solscan - with caching
 export const fetchValidatorDetailsFromSolscan = async (votePubkey: string) => {
   try {
+    // Check cache first
+    if (validatorDetailsCache.has(votePubkey)) {
+      return validatorDetailsCache.get(votePubkey);
+    }
+    
     console.log("Fetching details for validator:", votePubkey);
     
     // Check if it's in our well-known validators list first
@@ -14,16 +22,17 @@ export const fetchValidatorDetailsFromSolscan = async (votePubkey: string) => {
     
     if (knownValidator && knownValidator.name) {
       console.log("Found validator in well-known list:", knownValidator.name);
-      return { 
+      const result = { 
         name: knownValidator.name, 
         logo: knownValidator.icon || null,
         website: knownValidator.website || null
       };
+      validatorDetailsCache.set(votePubkey, result);
+      return result;
     }
     
-    // Try to fetch from alternative sources
+    // Try to fetch from Stakewiz API (more reliable than direct scraping)
     try {
-      // Try to fetch from Stakewiz API (more reliable than direct scraping)
       const stakewizResponse = await axios.get(
         `https://api.stakewiz.com/validator/${votePubkey}`,
         { timeout: 5000 }
@@ -32,71 +41,27 @@ export const fetchValidatorDetailsFromSolscan = async (votePubkey: string) => {
       if (stakewizResponse.data) {
         console.log("Retrieved validator data from Stakewiz API");
         const data = stakewizResponse.data;
-        return {
+        const result = {
           name: data.name || null,
           logo: data.image || null,
           website: data.website || null
         };
+        validatorDetailsCache.set(votePubkey, result);
+        return result;
       }
     } catch (stakewizError) {
-      console.log("Could not fetch from Stakewiz API, trying Solscan scraping");
+      console.log("Could not fetch from Stakewiz API, using fallback");
     }
     
-    // If Stakewiz fails, try Solscan direct scraping as fallback
-    try {
-      const response = await axios.get(`https://solscan.io/account/${votePubkey}`, {
-        headers: {
-          'Accept': 'text/html',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        },
-        timeout: 8000
-      });
-      
-      const html = response.data;
-      
-      // Extract validator name - look for pattern "[Validator Name] vote account"
-      let validatorName = null;
-      const nameRegex = /<title>(.*?) vote account \| Solscan<\/title>/i;
-      const nameMatch = html.match(nameRegex);
-      if (nameMatch && nameMatch[1]) {
-        validatorName = nameMatch[1].trim();
-        console.log("Extracted validator name from Solscan:", validatorName);
-      }
-      
-      // Extract validator logo
-      let logoUrl = null;
-      const logoRegex = /<img[^>]*class="[^"]*avatar[^"]*"[^>]*src="([^"]+)"/i;
-      const logoMatch = html.match(logoRegex);
-      if (logoMatch && logoMatch[1]) {
-        logoUrl = logoMatch[1].trim();
-        console.log("Extracted validator logo URL from Solscan:", logoUrl);
-      }
-      
-      // Extract website if available
-      let website = null;
-      const websiteRegex = /Website<\/div><div[^>]*><a[^>]*href="([^"]+)"/i;
-      const websiteMatch = html.match(websiteRegex);
-      if (websiteMatch && websiteMatch[1]) {
-        website = websiteMatch[1].trim();
-        console.log("Extracted validator website from Solscan:", website);
-      }
-      
-      return { 
-        name: validatorName, 
-        logo: logoUrl,
-        website: website
-      };
-    } catch (solscanError) {
-      console.error("Error fetching from Solscan:", solscanError);
-      
-      // Create a fallback name from the vote pubkey
-      const shortPubkey = `${votePubkey.substring(0, 6)}...${votePubkey.substring(votePubkey.length - 4)}`;
-      return { 
-        name: `Validator ${shortPubkey}`, 
-        logo: null,
-        website: null
-      };
-    }
+    // Create a fallback name from the vote pubkey
+    const shortPubkey = `${votePubkey.substring(0, 6)}...${votePubkey.substring(votePubkey.length - 4)}`;
+    const result = { 
+      name: `Validator ${shortPubkey}`, 
+      logo: null,
+      website: null
+    };
+    validatorDetailsCache.set(votePubkey, result);
+    return result;
   } catch (error) {
     console.error("Error fetching validator details:", error);
     const shortPubkey = `${votePubkey.substring(0, 6)}...${votePubkey.substring(votePubkey.length - 4)}`;
@@ -108,41 +73,45 @@ export const fetchValidatorDetailsFromSolscan = async (votePubkey: string) => {
   }
 };
 
-// Function to enhance validator data with details
-export const enhanceValidatorWithSolscanData = async (validators) => {
-  const enhancedValidators = [...validators];
+// Optimized function that doesn't try to enhance every validator
+export const enhanceValidatorWithSolscanData = async (validators: ValidatorSearchResult[]) => {
+  // Only enhance validators that don't have names or have generic names
+  const validatorsToEnhance = validators
+    .filter(v => (!v.name || v.name.startsWith('Validator ')))
+    .slice(0, 20); // Only enhance a small batch to improve performance
   
-  // Limit to 2 concurrent requests to avoid being rate-limited
-  const concurrentLimit = 2;
-  const chunks = [];
-  
-  for (let i = 0; i < enhancedValidators.length; i += concurrentLimit) {
-    chunks.push(enhancedValidators.slice(i, i + concurrentLimit));
+  if (validatorsToEnhance.length === 0) {
+    return validators;
   }
   
-  for (const chunk of chunks) {
-    await Promise.all(chunk.map(async (validator) => {
-      try {
-        if (!validator.name || validator.name.startsWith('Validator ')) {
-          const details = await fetchValidatorDetailsFromSolscan(validator.votePubkey);
-          if (details.name) {
-            validator.name = details.name;
-          }
-          if (details.logo) {
-            validator.icon = details.logo;
-          }
-          if (details.website) {
-            validator.website = details.website;
-          }
-        }
-      } catch (error) {
-        console.error(`Error enhancing validator ${validator.votePubkey}:`, error);
+  console.log(`Enhancing ${validatorsToEnhance.length} validators with Solscan data`);
+  
+  // Create a map for easy lookup
+  const votePubkeyToValidator = new Map<string, ValidatorSearchResult>();
+  validators.forEach(validator => {
+    if (validator.votePubkey) {
+      votePubkeyToValidator.set(validator.votePubkey, validator);
+    }
+  });
+  
+  // Process validators in sequence to avoid rate limiting
+  for (const validator of validatorsToEnhance) {
+    try {
+      const details = await fetchValidatorDetailsFromSolscan(validator.votePubkey);
+      
+      const existingValidator = votePubkeyToValidator.get(validator.votePubkey);
+      if (existingValidator) {
+        if (details.name) existingValidator.name = details.name;
+        if (details.logo) existingValidator.icon = details.logo;
+        if (details.website) existingValidator.website = details.website;
       }
-    }));
-    
-    // Add a delay between chunks to avoid rate limiting
-    await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Add a small delay to avoid overwhelming the API
+      await new Promise(resolve => setTimeout(resolve, 100));
+    } catch (error) {
+      console.error(`Error enhancing validator ${validator.votePubkey}:`, error);
+    }
   }
   
-  return enhancedValidators;
+  return validators;
 };

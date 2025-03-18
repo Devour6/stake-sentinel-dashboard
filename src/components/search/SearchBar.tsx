@@ -1,9 +1,10 @@
 
-import { useState, useRef, forwardRef, useEffect } from "react";
-import { Search } from "lucide-react";
+import { useState, forwardRef, useEffect } from "react";
+import { Search, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ValidatorSearchResult } from "@/services/api/types";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface SearchBarProps {
   searchInput: string;
@@ -28,8 +29,6 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(({
   onSearch,
   onSelectValidator
 }, ref) => {
-  const [menuOpen, setMenuOpen] = useState(false);
-  
   // Close the dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -74,8 +73,14 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(({
                 setShowSuggestions(true);
               }
             }}
-            disabled={isLoadingValidators}
+            disabled={isLoadingValidators && !searchInput.trim()} // Allow typing even when loading
           />
+          
+          {isLoadingValidators && !searchInput.trim() && (
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            </div>
+          )}
           
           {showSuggestions && filteredValidators.length > 0 && (
             <div className="absolute z-50 w-full mt-1 bg-gojira-gray-dark border border-gojira-gray-light rounded-md shadow-lg max-h-[300px] overflow-y-auto">
@@ -89,7 +94,7 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(({
                   }}
                 >
                   <div className="flex items-center gap-3">
-                    {validator.icon && (
+                    {validator.icon ? (
                       <img 
                         src={validator.icon} 
                         alt={`${validator.name || 'Validator'} logo`}
@@ -99,6 +104,10 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(({
                           (e.target as HTMLImageElement).style.display = 'none';
                         }}
                       />
+                    ) : (
+                      <div className="w-6 h-6 rounded-full bg-gojira-gray-light flex items-center justify-center text-xs">
+                        {validator.name?.[0] || 'V'}
+                      </div>
                     )}
                     <div className="flex flex-col">
                       <span className="font-medium">{validator.name || "Unknown Validator"}</span>
@@ -125,13 +134,19 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(({
               ))}
             </div>
           )}
+          
+          {showSuggestions && filteredValidators.length === 0 && searchInput.trim().length > 2 && (
+            <div className="absolute z-50 w-full mt-1 bg-gojira-gray-dark border border-gojira-gray-light rounded-md shadow-lg p-4 text-center">
+              No validators found matching "{searchInput}"
+            </div>
+          )}
         </div>
       </div>
       <Button 
         type="submit" 
         variant="destructive"
         className="bg-gojira-red hover:bg-gojira-red-dark"
-        disabled={isSearching || isLoadingValidators || !searchInput.trim()}
+        disabled={isSearching || (isLoadingValidators && !searchInput.trim())}
       >
         {isSearching ? (
           <div className="h-5 w-5 border-2 border-white/20 border-t-white rounded-full animate-spin mr-2" />

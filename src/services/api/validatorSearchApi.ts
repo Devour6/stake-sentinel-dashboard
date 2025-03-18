@@ -8,12 +8,11 @@ import {
   processVoteAccountValidators,
   matchValidatorsWithConfigs,
   applyWellKnownValidatorData,
-  enhanceTopValidatorsWithSolscan,
   fillMissingValidatorNames,
   sortValidatorsByStake
 } from "./utils/validatorDataUtils";
 
-// Main function to fetch all validators for search
+// Main function to fetch all validators for search - optimized
 export const fetchAllValidators = async (): Promise<ValidatorSearchResult[]> => {
   try {
     console.log("Fetching all validators...");
@@ -28,30 +27,24 @@ export const fetchAllValidators = async (): Promise<ValidatorSearchResult[]> => 
     
     console.log(`Processed ${allValidators.length} total validators`);
     
-    // Fetch on-chain validator info for names and websites
-    try {
-      console.log("Fetching on-chain validator configurations...");
-      const onChainValidators = await fetchValidatorConfig();
-      console.log(`Fetched ${onChainValidators.length} on-chain validator configurations`);
-      
-      // Match on-chain config with validators by identity key
-      allValidators = matchValidatorsWithConfigs(allValidators, onChainValidators);
-    } catch (error) {
-      console.error("Error fetching validator on-chain info:", error);
-      // Continue with fallback names
-    }
-
-    // Add well-known validators if they're not already in the list
-    // or update names for existing validators
+    // Get well-known validators to speed up the process
     const wellKnownValidators = getAllWellKnownValidators();
-    allValidators = applyWellKnownValidatorData(allValidators, wellKnownValidators);
     
-    // Try to enhance data with Solscan for popular validators (limit to reduce API load)
-    try {
-      allValidators = await enhanceTopValidatorsWithSolscan(allValidators);
-    } catch (error) {
-      console.error("Error enhancing validators with Solscan data:", error);
-    }
+    // Enhance with on-chain data in a non-blocking way
+    fetchValidatorConfig().then(onChainValidators => {
+      try {
+        // Match on-chain config with validators by identity key
+        matchValidatorsWithConfigs(allValidators, onChainValidators);
+        console.log("Enhanced validators with on-chain data");
+      } catch (error) {
+        console.error("Error matching validators with configs:", error);
+      }
+    }).catch(error => {
+      console.error("Error fetching validator on-chain info:", error);
+    });
+    
+    // Immediately apply well-known validators data - this is fast since it's local
+    allValidators = applyWellKnownValidatorData(allValidators, wellKnownValidators);
     
     // Fill missing names with first characters of vote pubkey
     allValidators = fillMissingValidatorNames(allValidators);

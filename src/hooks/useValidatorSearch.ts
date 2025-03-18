@@ -1,6 +1,6 @@
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { fetchAllValidators } from '@/services/api/validatorApi';
+import { useState, useEffect, useMemo } from 'react';
+import { fetchAllValidators } from '@/services/api/validatorSearchApi';
 import { ValidatorSearchResult } from '@/services/api/types';
 import { useNavigate } from 'react-router-dom';
 
@@ -21,9 +21,10 @@ export function useValidatorSearch() {
         const validators = await fetchAllValidators();
         console.log(`Loaded ${validators.length} validators for search`);
         setAllValidators(validators);
+        // Allow the search bar to be used as soon as we have any validators
+        setIsLoadingValidators(false);
       } catch (error) {
         console.error("Error fetching validators:", error);
-      } finally {
         setIsLoadingValidators(false);
       }
     }
@@ -31,8 +32,8 @@ export function useValidatorSearch() {
     loadValidators();
   }, []);
 
-  // Filter validators based on search input
-  useEffect(() => {
+  // Filter validators based on search input - optimized with useMemo
+  useMemo(() => {
     if (searchInput.trim().length < 2) {
       setFilteredValidators([]);
       return;
@@ -40,48 +41,51 @@ export function useValidatorSearch() {
 
     const searchTerm = searchInput.toLowerCase().trim();
     
-    // First try exact match on name, then partial name, then identity and vote pubkey
-    const exactNameMatches: ValidatorSearchResult[] = [];
-    const partialNameMatches: ValidatorSearchResult[] = [];
-    const identityMatches: ValidatorSearchResult[] = [];
-    const voteKeyMatches: ValidatorSearchResult[] = [];
-
-    allValidators.forEach(validator => {
-      // Check for exact name match first (case insensitive)
-      if (validator.name && validator.name.toLowerCase() === searchTerm) {
-        exactNameMatches.push(validator);
-        return;
-      }
+    // Process in batches to avoid UI freezing
+    setTimeout(() => {
+      // First try exact match on name, then partial name, then identity and vote pubkey
+      const exactNameMatches: ValidatorSearchResult[] = [];
+      const partialNameMatches: ValidatorSearchResult[] = [];
+      const identityMatches: ValidatorSearchResult[] = [];
+      const voteKeyMatches: ValidatorSearchResult[] = [];
+  
+      allValidators.forEach(validator => {
+        // Check for exact name match first (case insensitive)
+        if (validator.name && validator.name.toLowerCase() === searchTerm) {
+          exactNameMatches.push(validator);
+          return;
+        }
+        
+        // Check for partial name match
+        if (validator.name && validator.name.toLowerCase().includes(searchTerm)) {
+          partialNameMatches.push(validator);
+          return;
+        }
+        
+        // Check identity and vote pubkey
+        if (validator.identity && validator.identity.toLowerCase().includes(searchTerm)) {
+          identityMatches.push(validator);
+        } else if (validator.votePubkey && validator.votePubkey.toLowerCase().includes(searchTerm)) {
+          voteKeyMatches.push(validator);
+        }
+      });
+  
+      // Combine matches in priority order
+      const matches = [
+        ...exactNameMatches,
+        ...partialNameMatches,
+        ...identityMatches,
+        ...voteKeyMatches
+      ];
+  
+      // Sort by stake (if available)
+      matches.sort((a, b) => (b.activatedStake || 0) - (a.activatedStake || 0));
+  
+      // Limit suggestions to avoid overwhelming UI
+      const limitedMatches = matches.slice(0, 10);
       
-      // Check for partial name match
-      if (validator.name && validator.name.toLowerCase().includes(searchTerm)) {
-        partialNameMatches.push(validator);
-        return;
-      }
-      
-      // Check identity and vote pubkey
-      if (validator.identity && validator.identity.toLowerCase().includes(searchTerm)) {
-        identityMatches.push(validator);
-      } else if (validator.votePubkey && validator.votePubkey.toLowerCase().includes(searchTerm)) {
-        voteKeyMatches.push(validator);
-      }
-    });
-
-    // Combine matches in priority order
-    const matches = [
-      ...exactNameMatches,
-      ...partialNameMatches,
-      ...identityMatches,
-      ...voteKeyMatches
-    ];
-
-    // Sort by stake (if available)
-    matches.sort((a, b) => (b.activatedStake || 0) - (a.activatedStake || 0));
-
-    // Limit suggestions to avoid overwhelming UI
-    const limitedMatches = matches.slice(0, 10);
-    
-    setFilteredValidators(limitedMatches);
+      setFilteredValidators(limitedMatches);
+    }, 0);
   }, [searchInput, allValidators]);
 
   // Handle search submission
@@ -120,7 +124,7 @@ export function useValidatorSearch() {
         navigate(`/validator/${fuzzyMatch.votePubkey}`);
       } else {
         console.log("No validator matches found for:", searchInput);
-        // Could show a "no results" message here
+        toast.error("No validator matches found");
       }
     }
     
