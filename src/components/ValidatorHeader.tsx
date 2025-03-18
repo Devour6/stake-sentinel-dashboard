@@ -1,3 +1,4 @@
+
 import { useState, useRef } from "react";
 import { ExternalLink, Info, Copy, RefreshCw, ArrowLeft, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -87,7 +88,7 @@ export const ValidatorHeader = ({
   return (
     <div className="animate-slide-down space-y-4">
       <div className="flex flex-col md:flex-row gap-4 items-start">
-        <div className="flex items-start gap-3 flex-grow overflow-hidden">
+        <div className="flex items-start gap-3 flex-grow overflow-visible">
           {onBack && (
             <Button 
               variant="ghost" 
@@ -126,15 +127,15 @@ export const ValidatorHeader = ({
               )}
             </h1>
             
-            <div className="text-muted-foreground">
+            <div className="text-muted-foreground relative z-10">
               {isLoading ? (
                 <div className="flex flex-col space-y-2">
                   <div className="h-5 w-32 bg-muted/30 rounded animate-pulse"></div>
                   <div className="h-5 w-32 bg-muted/30 rounded animate-pulse"></div>
                 </div>
               ) : (
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                  <div className="flex items-center gap-1">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 relative">
+                  <div className="flex items-center gap-1 relative z-10">
                     <span className="text-sm whitespace-nowrap">Vote Account:</span>
                     <code className="bg-gojira-gray-dark/50 px-2 py-0.5 rounded text-sm font-mono">
                       {truncateAddress(validatorPubkey, 6)}
@@ -172,7 +173,7 @@ export const ValidatorHeader = ({
                   {identityPubkey && (
                     <>
                       <span className="hidden sm:inline text-muted-foreground">•</span>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 relative z-10">
                         <span className="text-sm whitespace-nowrap">Identity:</span>
                         <code className="bg-gojira-gray-dark/50 px-2 py-0.5 rounded text-sm font-mono">
                           {truncateAddress(identityPubkey, 6)}
@@ -202,15 +203,15 @@ export const ValidatorHeader = ({
           </div>
         </div>
         
-        <div className="flex flex-row gap-3 items-center ml-auto max-w-full">
-          <form onSubmit={handleSearchSubmit} className="w-full sm:w-52 md:w-64">
+        <div className="flex flex-row gap-2 items-center ml-auto max-w-full shrink-0">
+          <form onSubmit={handleSearchSubmit} className="w-full sm:w-48 md:w-56">
             <div className="relative">
               <Input
                 type="text"
                 placeholder="Search validator..."
                 value={searchInput}
                 onChange={handleInputChange}
-                className="pl-8 h-9 w-full bg-gojira-gray-dark border-gojira-gray-light"
+                className="pl-7 h-8 w-full bg-gojira-gray-dark border-gojira-gray-light text-sm"
                 ref={searchInputRef}
                 onFocus={() => {
                   if (searchInput.length > 2 && filteredValidators.length > 0) {
@@ -219,7 +220,7 @@ export const ValidatorHeader = ({
                 }}
                 disabled={isLoadingValidators}
               />
-              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               
               {showSuggestions && filteredValidators.length > 0 && (
                 <div className="absolute z-50 w-full mt-1 bg-gojira-gray-dark border border-gojira-gray-light rounded-md shadow-lg max-h-[300px] overflow-y-auto">
@@ -275,12 +276,12 @@ export const ValidatorHeader = ({
           <Button 
             variant="destructive" 
             size="sm"
-            className="rounded-full bg-gojira-red hover:bg-gojira-red-dark transition-all duration-300 flex items-center gap-2 min-w-[100px]"
+            className="rounded-full bg-gojira-red hover:bg-gojira-red-dark transition-all duration-300 flex items-center gap-1 h-8 min-w-0 px-3"
             onClick={handleRefresh}
             disabled={isLoading}
           >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
+            <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+            <span className="sm:inline">Refresh</span>
           </Button>
         </div>
       </div>
