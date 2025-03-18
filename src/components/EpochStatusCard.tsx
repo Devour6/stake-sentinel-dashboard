@@ -42,14 +42,14 @@ export const EpochStatusCard = ({ compact = false }: EpochStatusCardProps) => {
           
           // Show toast on successful refresh if it was previously in error state
           if (error && retryCount > 0) {
-            toast.success("Successfully connected to Solana network");
+            toast.success("Successfully connected to Solana network using Helius RPC");
           }
         } else {
           throw new Error("Failed to retrieve epoch data from all sources");
         }
       } catch (error) {
         console.error("Failed to fetch epoch info:", error);
-        setError("Unable to fetch current epoch data. Network may be unavailable.");
+        setError("Unable to fetch current epoch data. Connection issue with all RPC providers.");
       } finally {
         setIsLoading(false);
         setIsRefreshing(false);
@@ -68,7 +68,7 @@ export const EpochStatusCard = ({ compact = false }: EpochStatusCardProps) => {
   const handleRetry = () => {
     setIsRefreshing(true);
     setRetryCount(prev => prev + 1);
-    toast.info("Attempting to reconnect to Solana network...");
+    toast.info("Attempting to reconnect using Helius RPC...");
   };
 
   if (compact) {
@@ -82,7 +82,7 @@ export const EpochStatusCard = ({ compact = false }: EpochStatusCardProps) => {
               {isLoading ? (
                 <span className="text-sm animate-pulse">Loading...</span>
               ) : error ? (
-                <span className="text-sm text-red-500">Error</span>
+                <span className="text-sm text-red-500">RPC Error</span>
               ) : (
                 <span className="text-sm font-bold">{epochInfo?.epoch}</span>
               )}
@@ -137,6 +137,7 @@ export const EpochStatusCard = ({ compact = false }: EpochStatusCardProps) => {
               <AlertCircle className="h-8 w-8 text-red-500" />
             </div>
             <p className="text-red-500">{error}</p>
+            <p className="text-sm text-muted-foreground">Using Helius RPC endpoint for reliability</p>
             <Button 
               onClick={handleRetry} 
               variant="outline" 
