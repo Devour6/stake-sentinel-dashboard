@@ -5,7 +5,6 @@ import { ValidatorHeader } from "@/components/validator/ValidatorHeader";
 import { ValidatorMetricsGrid } from "@/components/StakingMetricsCard";
 import { EpochStatusCard } from "@/components/EpochStatusCard";
 import { StakeHistoryChart } from "@/components/stakes/StakeHistoryChart";
-import { ValidatorDetailsCard } from "@/components/validator/ValidatorDetailsCard";
 import { 
   fetchValidatorInfo, 
   fetchValidatorMetrics, 
@@ -52,6 +51,7 @@ const ValidatorDashboard = () => {
         throw new Error("Validator not found");
       }
       
+      console.log("Fetched validator metrics:", metrics);
       setValidatorInfo(info);
       setValidatorMetrics(metrics);
       
@@ -101,6 +101,7 @@ const ValidatorDashboard = () => {
             validatorName={validatorInfo?.name}
             validatorIcon={validatorInfo?.icon}
             identityPubkey={validatorInfo?.identity}
+            metrics={validatorMetrics}
             isLoading={isLoading}
             onRefresh={handleRefresh}
             onBack={() => navigate("/")}
@@ -129,17 +130,12 @@ const ValidatorDashboard = () => {
         {/* Redesigned layout with better space utilization */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
           {/* Main column - stake history and epoch status */}
-          <div className="lg:col-span-8 space-y-6">
+          <div className="lg:col-span-12 space-y-6">
             {/* Stake History Chart */}
             {votePubkey && <StakeHistoryChart vote_identity={votePubkey} />}
             
             {/* Epoch status */}
             <EpochStatusCard />
-          </div>
-          
-          {/* Right column - validator details */}
-          <div className="lg:col-span-4 space-y-6">
-            <ValidatorDetailsCard metrics={validatorMetrics} isLoading={isLoading} />
           </div>
         </div>
         

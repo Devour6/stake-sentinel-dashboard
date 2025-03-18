@@ -7,12 +7,14 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useValidatorSearch } from "@/hooks/useValidatorSearch";
+import { ValidatorMetrics } from "@/services/solanaApi";
 
 interface ValidatorHeaderProps {
   validatorPubkey: string;
   validatorName?: string;
   validatorIcon?: string | null;
   identityPubkey?: string;
+  metrics?: ValidatorMetrics | null;
   isLoading?: boolean;
   onRefresh: () => void;
   onBack?: () => void;
@@ -23,6 +25,7 @@ export const ValidatorHeader = ({
   validatorName,
   validatorIcon,
   identityPubkey,
+  metrics,
   isLoading = false,
   onRefresh,
   onBack
@@ -132,7 +135,7 @@ export const ValidatorHeader = ({
                 )}
               </h1>
               
-              {/* Validator addresses */}
+              {/* Validator details */}
               <div className="mt-3 space-y-2">
                 {isLoading ? (
                   <div className="space-y-2">
@@ -206,6 +209,43 @@ export const ValidatorHeader = ({
                             <ExternalLink className="h-3.5 w-3.5" />
                           </a>
                         </div>
+                      </div>
+                    )}
+                    
+                    {/* Essential Validator Details */}
+                    {metrics && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2 mt-4">
+                        {/* Software Version */}
+                        {metrics.version && (
+                          <div className="bg-gojira-gray-dark/60 px-3 py-2 rounded-md">
+                            <span className="text-xs text-muted-foreground">Software:</span>
+                            <p className="text-sm font-mono">{metrics.version}</p>
+                          </div>
+                        )}
+                        
+                        {/* Uptime */}
+                        {metrics.uptime30d !== undefined && metrics.uptime30d !== null && (
+                          <div className="bg-gojira-gray-dark/60 px-3 py-2 rounded-md">
+                            <span className="text-xs text-muted-foreground">30-Day Uptime:</span>
+                            <p className="text-sm">{metrics.uptime30d}%</p>
+                          </div>
+                        )}
+                        
+                        {/* Website */}
+                        {metrics.website && (
+                          <div className="bg-gojira-gray-dark/60 px-3 py-2 rounded-md">
+                            <span className="text-xs text-muted-foreground">Website:</span>
+                            <a 
+                              href={metrics.website}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm text-gojira-red hover:underline flex items-center gap-1"
+                            >
+                              {metrics.website.replace(/(^\w+:|^)\/\//, '').replace(/\/$/, '')}
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          </div>
+                        )}
                       </div>
                     )}
                   </>

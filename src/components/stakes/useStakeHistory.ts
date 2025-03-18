@@ -70,16 +70,19 @@ export const useStakeHistory = (vote_identity: string) => {
       setError(null);
       
       try {
-        console.log(`Attempting to fetch stake history from Stakewiz for ${vote_identity}`);
+        console.log(`Attempting to fetch stake history for ${vote_identity}`);
         
-        // First try the dedicated stake_history endpoint
+        // DIRECT STAKEWIZ STAKE HISTORY ENDPOINT
+        const stakewizStakeHistoryUrl = `${STAKEWIZ_API_URL}/validator/${vote_identity}/stake_history`;
+        console.log(`Trying direct stake history endpoint: ${stakewizStakeHistoryUrl}`);
+        
         try {
-          const response = await axios.get(`${STAKEWIZ_API_URL}/validator/${vote_identity}/stake_history`, {
+          const response = await axios.get(stakewizStakeHistoryUrl, {
             timeout: 15000
           });
           
           if (response.data && Array.isArray(response.data) && response.data.length > 0) {
-            console.log(`Found ${response.data.length} stake history items from dedicated endpoint`);
+            console.log(`Success! Found ${response.data.length} stake history records`);
             
             // Format the data properly
             const formattedData = response.data.map((item: any) => ({
@@ -95,25 +98,31 @@ export const useStakeHistory = (vote_identity: string) => {
             filterStakesByTimeframe(formattedData, timeframe);
             setIsLoading(false);
             return;
+          } else {
+            console.log("Stake history endpoint returned empty array or invalid data");
           }
         } catch (err) {
           console.error("Error fetching from stake_history endpoint:", err);
         }
         
-        // Next, try the main validator endpoint that may include stake_history
+        // FALLBACK #1: MAIN VALIDATOR ENDPOINT
+        console.log("Trying main validator endpoint for stake info...");
+        const validatorUrl = `${STAKEWIZ_API_URL}/validator/${vote_identity}`;
+        
         try {
-          console.log("Trying main validator endpoint for stake history...");
-          const validatorResponse = await axios.get(`${STAKEWIZ_API_URL}/validator/${vote_identity}`, {
+          const validatorResponse = await axios.get(validatorUrl, {
             timeout: 15000
           });
           
           if (validatorResponse.data) {
+            console.log("Successfully fetched main validator data:", validatorResponse.data);
+            
             // Check if the response has a stake_history array
             if (validatorResponse.data.stake_history && 
                 Array.isArray(validatorResponse.data.stake_history) && 
                 validatorResponse.data.stake_history.length > 0) {
               
-              console.log(`Found ${validatorResponse.data.stake_history.length} stake history items in main validator response`);
+              console.log(`Found ${validatorResponse.data.stake_history.length} stake history items`);
               
               const formattedData = validatorResponse.data.stake_history.map((item: any) => ({
                 epoch: item.epoch,
@@ -155,9 +164,9 @@ export const useStakeHistory = (vote_identity: string) => {
           console.error("Error fetching from main validator endpoint:", validatorErr);
         }
         
-        // Try the validators list as a last resort
+        // FALLBACK #2: VALIDATORS LIST
+        console.log("Trying validators list endpoint...");
         try {
-          console.log("Trying validators list for stake data...");
           const validatorsResponse = await axios.get(`${STAKEWIZ_API_URL}/validators`, {
             timeout: 15000
           });
@@ -169,8 +178,8 @@ export const useStakeHistory = (vote_identity: string) => {
                           v.vote_pubkey === vote_identity
             );
             
-            if (validator && (validator.activated_stake !== undefined || validator.stake !== undefined)) {
-              console.log("Creating minimal stake history from validators list");
+            if (validator) {
+              console.log("Found validator in validators list:", validator);
               
               const stake = validator.activated_stake || validator.stake || 0;
               const epoch = validator.epoch || 0;
@@ -185,14 +194,54 @@ export const useStakeHistory = (vote_identity: string) => {
               setDisplayedStakes(minimalHistory);
               setIsLoading(false);
               return;
+            } else {
+              console.log("Validator not found in validators list");
             }
           }
         } catch (validatorsErr) {
           console.error("Error fetching from validators list:", validatorsErr);
         }
         
-        // If we've tried everything and still have no data
-        throw new Error("No stake history data could be retrieved");
+        // FALLBACK #3: HACK - SCRAPE STAKEWIZ WEBSITE
+        console.log("Last resort: attempting to scrape from Stakewiz website...");
+        
+        try {
+          // We'll use a proxy service to avoid CORS issues
+          const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://stakewiz.com/validator/${vote_identity}`)}`;
+          const scrapeResponse = await axios.get(proxyUrl, {
+            timeout: 20000
+          });
+          
+          if (scrapeResponse.data) {
+            const html = scrapeResponse.data;
+            console.log("Successfully scraped Stakewiz HTML");
+            
+            // Very simple parsing for demonstration
+            // In a production app, you'd use a proper HTML parser
+            const stakeMatch = html.match(/"active_stake":(\d+)/);
+            if (stakeMatch && stakeMatch[1]) {
+              const stake = parseInt(stakeMatch[1], 10) / 1000000000; // lamports to SOL
+              console.log("Extracted stake from scraped data:", stake);
+              
+              const minimalHistory: StakeData[] = [{
+                epoch: 0, // We don't know the epoch
+                stake: stake,
+                date: new Date().toISOString()
+              }];
+              
+              setAllStakes(minimalHistory);
+              setDisplayedStakes(minimalHistory);
+              setIsLoading(false);
+              return;
+            }
+          }
+        } catch (scrapeErr) {
+          console.error("Error scraping Stakewiz website:", scrapeErr);
+        }
+
+        // If all methods failed
+        throw new Error("Could not retrieve stake history data from any source");
+        
       } catch (err: any) {
         console.error("Failed to fetch stake history data:", err);
         setError(`Failed to fetch stake history: ${err.message || "Unknown error"}`);
