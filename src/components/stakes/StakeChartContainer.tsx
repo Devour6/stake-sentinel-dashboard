@@ -2,7 +2,7 @@
 import { FC } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CustomTooltip } from "./CustomTooltip";
+import CustomTooltip from "./CustomTooltip";
 import { StakeChartContainerProps } from "./types";
 import { useIsMobile } from "@/hooks/use-mobile";
 

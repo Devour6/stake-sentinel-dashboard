@@ -4,9 +4,10 @@ import Footer from "@/components/layout/Footer";
 
 interface PageLayoutProps {
   children: React.ReactNode;
+  onStakeModalOpen?: () => void;
 }
 
-const PageLayout = ({ children }: PageLayoutProps) => {
+const PageLayout = ({ children, onStakeModalOpen }: PageLayoutProps) => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gojira-gray to-gojira-gray-dark p-4">
       <div className="w-full max-w-3xl mx-auto text-center mb-6 animate-fade-in">
