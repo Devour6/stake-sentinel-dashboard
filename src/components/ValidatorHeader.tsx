@@ -180,7 +180,7 @@ export const ValidatorHeader = ({
                       <div className="flex items-center gap-1">
                         <span className="text-sm whitespace-nowrap">Identity:</span>
                         <code className="bg-gojira-gray-dark/50 px-2 py-0.5 rounded text-sm font-mono">
-                          {truncateAddress(identityPubkey, 6)}
+                          {identityPubkey}
                         </code>
                         <Button 
                           variant="ghost" 
