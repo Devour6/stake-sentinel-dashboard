@@ -79,59 +79,20 @@ export const ValidatorHeader = ({
   };
 
   return (
-    <div className="animate-slide-down">
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="flex items-start gap-3 flex-grow overflow-visible w-full">
-          {onBack && (
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={onBack}
-              className="mr-2 text-muted-foreground hover:text-white"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          )}
-          <div className="w-12 h-12 md:w-16 md:h-16 relative animate-pulse-subtle">
-            {validatorIcon ? (
-              <img 
-                src={validatorIcon} 
-                alt={validatorName || "Validator Logo"}
-                className="object-contain w-full h-full rounded-full"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/lovable-uploads/31314417-ef5b-4d58-ac5e-91a2ab487110.png";
-                }}
-              />
-            ) : (
-              <img 
-                src="/lovable-uploads/31314417-ef5b-4d58-ac5e-91a2ab487110.png" 
-                alt="Gojira Logo" 
-                className="object-contain w-full h-full animate-roar"
-              />
-            )}
-          </div>
-          <div className="flex-1 min-w-0 w-full">
-            <h1 className="text-3xl font-bold tracking-tight mb-2 text-white truncate">
-              {isLoading ? (
-                <div className="h-8 w-64 bg-muted/30 rounded animate-pulse"></div>
-              ) : (
-                validatorName || "Validator Dashboard"
-              )}
-            </h1>
-            
-            <HeaderIdentitySection
-              validatorPubkey={validatorPubkey}
-              identityPubkey={identityPubkey}
-              isLoading={isLoading}
-              version={version}
-              uptime={uptime}
-              description={description}
-              website={website}
-            />
-          </div>
-        </div>
+    <div className="animate-slide-down space-y-4">
+      <div className="flex flex-row items-center justify-between gap-4">
+        {onBack && (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={onBack}
+            className="text-muted-foreground hover:text-white"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+        )}
         
-        <div className="flex flex-row gap-2 items-center ml-auto max-w-full shrink-0">
+        <div className="flex flex-row gap-2 items-center ml-auto">
           <form onSubmit={handleSearchSubmit} className="w-full sm:w-48 md:w-56">
             <div className="relative search-container">
               <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -222,6 +183,46 @@ export const ValidatorHeader = ({
               Stake to Gojira
             </Button>
           )}
+        </div>
+      </div>
+      
+      <div className="flex items-start gap-3 w-full">
+        <div className="w-12 h-12 md:w-16 md:h-16 relative animate-pulse-subtle shrink-0">
+          {validatorIcon ? (
+            <img 
+              src={validatorIcon} 
+              alt={validatorName || "Validator Logo"}
+              className="object-contain w-full h-full rounded-full"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "/lovable-uploads/31314417-ef5b-4d58-ac5e-91a2ab487110.png";
+              }}
+            />
+          ) : (
+            <img 
+              src="/lovable-uploads/31314417-ef5b-4d58-ac5e-91a2ab487110.png" 
+              alt="Gojira Logo" 
+              className="object-contain w-full h-full animate-roar"
+            />
+          )}
+        </div>
+        <div className="flex-1 min-w-0 w-full">
+          <h1 className="text-3xl font-bold tracking-tight mb-2 text-white truncate">
+            {isLoading ? (
+              <div className="h-8 w-64 bg-muted/30 rounded animate-pulse"></div>
+            ) : (
+              validatorName || "Validator Dashboard"
+            )}
+          </h1>
+          
+          <HeaderIdentitySection
+            validatorPubkey={validatorPubkey}
+            identityPubkey={identityPubkey}
+            isLoading={isLoading}
+            version={version}
+            uptime={uptime}
+            description={description}
+            website={website}
+          />
         </div>
       </div>
     </div>

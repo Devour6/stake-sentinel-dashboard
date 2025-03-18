@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ValidatorHeader } from "@/components/validator/ValidatorHeader";
@@ -110,7 +111,7 @@ const ValidatorDashboard = () => {
     <div className="min-h-screen bg-gradient-to-br from-gojira-gray to-gojira-gray-dark">
       {isRefreshing && <RefreshOverlay />}
       
-      <div className="container max-w-7xl mx-auto py-3 px-3 sm:px-5 lg:px-6">
+      <div className="container max-w-7xl mx-auto py-4 px-3 sm:px-5 lg:px-6">
         <ValidatorHeader 
           validatorPubkey={votePubkey || ""}
           validatorName={validatorInfo?.name}
@@ -126,7 +127,7 @@ const ValidatorDashboard = () => {
           onStakeModalOpen={handleStakeModalOpen}
         />
         
-        <div className="mt-3"></div>
+        <div className="mt-6"></div>
         
         {error && !isLoading && (
           <div className="my-4 p-5 bg-red-500/10 border border-red-500/30 rounded-lg text-center">
@@ -147,7 +148,7 @@ const ValidatorDashboard = () => {
           hasError={!!error}
         />
         
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mt-5">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mt-6">
           <div className="lg:col-span-4">
             <EpochStatusCard />
           </div>
