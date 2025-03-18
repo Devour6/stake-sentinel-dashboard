@@ -38,8 +38,13 @@ const AppHeader = ({ setIsStakeModalOpen }: AppHeaderProps) => {
   return (
     <header className="w-full bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
       <div className="container flex items-center justify-between h-16 px-4 mx-auto">
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2">
           <Link to="/" className="flex items-center space-x-2">
+            <img 
+              src="/lovable-uploads/373e9dfd-22f8-47a8-971e-5dcb53f5aae2.png" 
+              alt="NodeScan Logo" 
+              className="h-8 w-auto" 
+            />
             <span className="text-xl font-bold text-gray-900 dark:text-white">NodeScan</span>
           </Link>
         </div>
