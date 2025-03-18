@@ -11,9 +11,10 @@ interface StakeChartProps {
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
+    const epoch = payload[0]?.payload?.epoch;
     return (
       <div className="glass-effect p-3 border border-gojira-gray-light rounded-lg shadow-sm">
-        <p className="font-medium">{label}</p>
+        <p className="font-medium">Epoch {epoch}</p>
         <p className="text-gojira-red font-bold">{`${new Intl.NumberFormat().format(Math.round(payload[0].value * 100) / 100)} SOL`}</p>
       </div>
     );
@@ -27,8 +28,16 @@ export const StakeChart = ({ data, isLoading = false }: StakeChartProps) => {
 
   useEffect(() => {
     // Format data for the chart
-    if (data.length > 0) {
-      setChartData(data);
+    if (data && data.length > 0) {
+      // Filter out invalid data points
+      const validData = data.filter(item => 
+        item && item.stake !== undefined && !isNaN(Number(item.stake))
+      );
+      
+      console.log("Filtered stake history for chart:", validData);
+      setChartData(validData);
+    } else {
+      console.log("No valid data for stake history chart");
     }
   }, [data]);
 
@@ -38,7 +47,7 @@ export const StakeChart = ({ data, isLoading = false }: StakeChartProps) => {
         <div className="flex items-start justify-between">
           <div>
             <CardTitle>Stake History</CardTitle>
-            <CardDescription>Validator stake over time</CardDescription>
+            <CardDescription>Validator stake over time by epoch</CardDescription>
           </div>
           {isLoading && (
             <div className="h-4 w-20 bg-muted/30 rounded animate-pulse"></div>
@@ -50,7 +59,7 @@ export const StakeChart = ({ data, isLoading = false }: StakeChartProps) => {
           <div className="h-[300px] w-full bg-muted/20 rounded animate-pulse flex items-center justify-center">
             <p className="text-muted-foreground">Loading chart data...</p>
           </div>
-        ) : (
+        ) : chartData.length > 0 ? (
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
@@ -70,14 +79,11 @@ export const StakeChart = ({ data, isLoading = false }: StakeChartProps) => {
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} />
                 <XAxis 
-                  dataKey="date" 
+                  dataKey="epoch" 
                   axisLine={false} 
                   tickLine={false}
                   tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
-                  tickFormatter={(value) => {
-                    const date = new Date(value);
-                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                  }}
+                  label={{ value: 'Epoch', position: 'insideBottomRight', offset: -5 }}
                 />
                 <YAxis 
                   axisLine={false} 
@@ -89,6 +95,7 @@ export const StakeChart = ({ data, isLoading = false }: StakeChartProps) => {
                       maximumFractionDigits: 1
                     }).format(value);
                   }}
+                  label={{ value: 'Stake (SOL)', angle: -90, position: 'insideLeft' }}
                 />
                 <Tooltip content={<CustomTooltip />} />
                 <Area
@@ -102,6 +109,10 @@ export const StakeChart = ({ data, isLoading = false }: StakeChartProps) => {
                 />
               </AreaChart>
             </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="h-[300px] w-full flex items-center justify-center">
+            <p className="text-muted-foreground">No stake history data available</p>
           </div>
         )}
       </CardContent>

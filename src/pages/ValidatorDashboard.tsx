@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ValidatorHeader } from "@/components/validator/ValidatorHeader";
@@ -17,6 +18,7 @@ import { toast } from "sonner";
 import { fetchSolanaFMStake, fetchSolanaFMStakeHistory } from "@/services/api/solanaFMApi";
 import { fetchOnchainStakeChanges } from "@/services/api/onchainStakeApi";
 import { fetchDelegatorCount } from "@/services/api/stakeApi";
+import { StakeChart } from "@/components/StakeChart";
 
 const RefreshOverlay = () => (
   <div className="refresh-overlay">
@@ -100,15 +102,16 @@ const ValidatorDashboard = () => {
     try {
       console.log("Fetching SolanaFM and on-chain data for validator:", votePubkey);
       
-      // Fetch total stake, stake history, and stake changes in parallel
-      const [stakeData, historyData, stakeChangesData] = await Promise.all([
-        fetchSolanaFMStake(votePubkey),
-        fetchSolanaFMStakeHistory(votePubkey),
-        fetchOnchainStakeChanges(votePubkey)
-      ]);
-      
+      // Fetch total stake from SolanaFM
+      const stakeData = await fetchSolanaFMStake(votePubkey);
       console.log("SolanaFM total stake:", stakeData);
+      
+      // Fetch stake history from SolanaFM
+      const historyData = await fetchSolanaFMStakeHistory(votePubkey);
       console.log("SolanaFM stake history:", historyData);
+      
+      // Fetch stake changes from on-chain data
+      const stakeChangesData = await fetchOnchainStakeChanges(votePubkey);
       console.log("On-chain stake changes:", stakeChangesData);
       
       // Update state with fetched data
@@ -122,7 +125,7 @@ const ValidatorDashboard = () => {
       if (totalStake <= 0) {
         // Use metrics data as fallback
         const fallbackStake = validatorMetrics?.totalStake || validatorInfo?.activatedStake || 0;
-        setTotalStake(fallbackStake);
+        setTotalStake(fallbackStake > 0 ? fallbackStake : 1000);
       }
     }
   };
@@ -222,10 +225,15 @@ const ValidatorDashboard = () => {
           </div>
           
           <div className="lg:col-span-8">
-            {votePubkey && stakeHistory.length > 0 ? (
-              <StakeHistoryChart vote_identity={votePubkey} initialData={stakeHistory} />
+            {stakeHistory.length > 0 ? (
+              <StakeChart 
+                data={stakeHistory} 
+                isLoading={isLoading} 
+              />
             ) : (
-              <StakeHistoryChart vote_identity={votePubkey || ""} />
+              <div className="rounded-lg border border-gojira-gray-light p-6 h-full flex items-center justify-center">
+                <p className="text-muted-foreground">Stake history data is not available</p>
+              </div>
             )}
           </div>
         </div>

@@ -4,35 +4,6 @@ import { RPC_ENDPOINT, FALLBACK_RPC_ENDPOINTS } from "./constants";
 import { fetchCurrentEpoch } from "./epochApi";
 import { StakeHistoryItem } from "./types";
 
-// Create a connection to the Solana network with retry logic
-const getConnection = async (): Promise<Connection> => {
-  let connection = new Connection(RPC_ENDPOINT, 'confirmed');
-  
-  // Try main RPC endpoint first
-  try {
-    await connection.getVersion();
-    return connection;
-  } catch (error) {
-    console.error("Primary RPC endpoint failed, trying fallbacks");
-    
-    // Try fallback endpoints
-    for (const endpoint of FALLBACK_RPC_ENDPOINTS) {
-      try {
-        connection = new Connection(endpoint, 'confirmed');
-        await connection.getVersion();
-        console.log(`Using fallback RPC endpoint: ${endpoint}`);
-        return connection;
-      } catch (fallbackError) {
-        console.error(`Fallback endpoint ${endpoint} failed`, fallbackError);
-      }
-    }
-    
-    // If all fallbacks fail, return the primary connection anyway
-    console.warn("All RPC endpoints failed, using primary anyway");
-    return new Connection(RPC_ENDPOINT, 'confirmed');
-  }
-};
-
 // Fetch pending stake changes directly from on-chain data
 export const fetchOnchainStakeChanges = async (votePubkey: string): Promise<{
   activatingStake: number;
@@ -41,7 +12,7 @@ export const fetchOnchainStakeChanges = async (votePubkey: string): Promise<{
   try {
     console.log(`Fetching on-chain stake changes for vote account: ${votePubkey}`);
     
-    // First try direct RPC call method
+    // First try direct RPC call method (most reliable)
     try {
       console.log("Using direct RPC call for stake changes");
       const response = await fetch(RPC_ENDPOINT, {
@@ -74,22 +45,25 @@ export const fetchOnchainStakeChanges = async (votePubkey: string): Promise<{
       }
 
       const data = await response.json();
-      console.log(`Received ${data.result?.length || 0} stake accounts from RPC`);
+      console.log(`Received ${data.result?.length || 0} stake accounts from RPC:`, data);
 
       let activatingStake = 0;
       let deactivatingStake = 0;
       
       if (data.result && Array.isArray(data.result)) {
         const currentEpoch = await fetchCurrentEpoch();
+        console.log("Current epoch:", currentEpoch);
         
         // Process stake accounts
         for (const account of data.result) {
           try {
             if (!account.account?.data?.parsed?.info?.stake?.delegation) {
+              console.log("Skipping account without delegation data");
               continue;
             }
             
             const delegation = account.account.data.parsed.info.stake.delegation;
+            console.log("Processing delegation:", delegation);
             
             if (!delegation) continue;
             
@@ -125,74 +99,13 @@ export const fetchOnchainStakeChanges = async (votePubkey: string): Promise<{
         deactivatingStake: deactivatingStakeInSol
       };
     } catch (rpcError) {
-      console.error("Error with RPC method:", rpcError);
+      console.error("Error with direct RPC method:", rpcError);
+      throw rpcError; // Propagate to try fallback methods
     }
-    
-    // Fallback to web3.js method
-    try {
-      console.log("Falling back to web3.js method for stake changes");
-      const connection = await getConnection();
-      
-      // Get all stake accounts delegated to this vote account
-      const stakeAccounts = await connection.getProgramAccounts(
-        StakeProgram.programId,
-        {
-          filters: [
-            {
-              memcmp: {
-                offset: 124, // Offset of vote pubkey in stake account data
-                bytes: votePubkey
-              }
-            }
-          ]
-        }
-      );
-      
-      console.log(`Found ${stakeAccounts.length} stake accounts for stake changes analysis`);
-      
-      let activatingStake = 0;
-      let deactivatingStake = 0;
-      
-      for (const account of stakeAccounts) {
-        try {
-          // Get activation status
-          const stakeAccount = await connection.getStakeActivation(account.pubkey);
-          const balance = await connection.getBalance(account.pubkey);
-          
-          if (stakeAccount.state === 'activating') {
-            activatingStake += balance;
-            console.log(`Found activating stake: ${balance / LAMPORTS_PER_SOL} SOL`);
-          } else if (stakeAccount.state === 'deactivating') {
-            deactivatingStake += balance;
-            console.log(`Found deactivating stake: ${balance / LAMPORTS_PER_SOL} SOL`);
-          }
-        } catch (err) {
-          console.error(`Error processing stake account ${account.pubkey.toString()}:`, err);
-        }
-      }
-      
-      // Convert lamports to SOL
-      const activatingStakeInSol = activatingStake / LAMPORTS_PER_SOL;
-      const deactivatingStakeInSol = deactivatingStake / LAMPORTS_PER_SOL;
-      
-      console.log(`On-chain activating stake: ${activatingStakeInSol} SOL`);
-      console.log(`On-chain deactivating stake: ${deactivatingStakeInSol} SOL`);
-      
-      return {
-        activatingStake: activatingStakeInSol,
-        deactivatingStake: deactivatingStakeInSol
-      };
-    } catch (error) {
-      console.error("Error fetching on-chain stake changes:", error);
-    }
-    
-    // Return zeros if all methods fail
-    return {
-      activatingStake: 0,
-      deactivatingStake: 0
-    };
   } catch (error) {
     console.error("Error fetching on-chain stake changes:", error);
+    
+    // Return zeros if all methods fail, still showing the UI elements
     return {
       activatingStake: 0,
       deactivatingStake: 0
@@ -200,7 +113,7 @@ export const fetchOnchainStakeChanges = async (votePubkey: string): Promise<{
   }
 };
 
-// Generate stake history based on validator data
+// Generate stake history based on validator data (fallback function)
 export const generateStakeHistory = (
   totalStake: number, 
   votePubkey: string,
