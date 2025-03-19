@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ValidatorHeader } from "@/components/validator/ValidatorHeader";
@@ -19,6 +18,7 @@ import {
 } from "@/services/solanaApi";
 import { useToast } from "@/components/ui/use-toast";
 import { toast } from "sonner";
+import { getReliableStakeValue } from "@/services/api/utils/stakeUtils";
 
 // Overlay component shown during refresh
 const RefreshOverlay = () => (
@@ -103,52 +103,29 @@ const ValidatorDashboard = () => {
         }
       }
       
-      // Process total stake
-      let currentTotalStake = 0;
-      
-      // Try getting stake from direct total stake fetch first
-      if (totalStakeResult.status === 'fulfilled' && totalStakeResult.value > 0) {
-        console.log("Total stake result:", totalStakeResult.value);
-        currentTotalStake = totalStakeResult.value;
-      } 
-      // Then try metrics if direct fetch failed
-      else if (metricsResult.status === 'fulfilled' && metricsResult.value?.totalStake > 0) {
-        console.log("Using metrics total stake:", metricsResult.value.totalStake);
-        currentTotalStake = metricsResult.value.totalStake;
-      } 
-      // Last resort: use validator info stake
-      else if (infoResult.status === 'fulfilled' && infoResult.value?.activatedStake > 0) {
-        console.log("Using info stake:", infoResult.value.activatedStake);
-        currentTotalStake = infoResult.value.activatedStake;
-      }
-      
-      // If stake history has data but total stake is still zero, try to use latest history point
-      if (currentTotalStake <= 0 && 
-          stakeHistoryResult.status === 'fulfilled' && 
+      // Save stake history data first so we can use it as a fallback for total stake
+      let historyData: StakeHistoryItem[] = [];
+      if (stakeHistoryResult.status === 'fulfilled' && 
           stakeHistoryResult.value && 
           stakeHistoryResult.value.length > 0) {
-        const latestPoint = [...stakeHistoryResult.value].sort((a, b) => b.epoch - a.epoch)[0];
-        if (latestPoint && latestPoint.stake > 0) {
-          console.log("Using latest stake history point as total stake:", latestPoint.stake);
-          currentTotalStake = latestPoint.stake;
-        }
+        console.log("Stake history:", stakeHistoryResult.value.length, "points");
+        historyData = stakeHistoryResult.value;
+        setStakeHistory(historyData);
       }
       
-      // Set total stake with the most reliable value we found
-      setTotalStake(currentTotalStake);
+      // Get the most reliable total stake value using our utility
+      const directStake = totalStakeResult.status === 'fulfilled' ? totalStakeResult.value : 0;
+      const metricsStake = metricsResult.status === 'fulfilled' ? metricsResult.value?.totalStake || 0 : 0;
+      const infoStake = infoResult.status === 'fulfilled' ? infoResult.value?.activatedStake || 0 : 0;
+      
+      const reliableStake = getReliableStakeValue(directStake, metricsStake, infoStake, historyData);
+      console.log("Final reliable stake value:", reliableStake);
+      setTotalStake(reliableStake);
       
       // Process stake changes
       if (stakeChangesResult.status === 'fulfilled') {
         console.log("Stake changes:", stakeChangesResult.value);
         setStakeChanges(stakeChangesResult.value);
-      }
-      
-      // Process stake history
-      if (stakeHistoryResult.status === 'fulfilled' && 
-          stakeHistoryResult.value && 
-          stakeHistoryResult.value.length > 0) {
-        console.log("Stake history:", stakeHistoryResult.value.length, "points");
-        setStakeHistory(stakeHistoryResult.value);
       }
       
       if (showToast && infoResult.status === 'fulfilled' && infoResult.value) {

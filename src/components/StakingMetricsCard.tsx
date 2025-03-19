@@ -104,8 +104,9 @@ export const ValidatorMetricsGrid = ({
     : "No pending change";
 
   // Format stake values properly even if zero or very small
-  const formattedTotalStake = totalStake > 0 ? formatSol(totalStake) : "—";
-  const formattedPendingStake = pendingStakeChange > 0 ? formatSol(pendingStakeChange) : "—";
+  const formattedTotalStake = totalStake > 0.001 ? formatSol(totalStake) : (totalStake > 0 ? "< 0.001 SOL" : "—");
+  const formattedPendingStake = pendingStakeChange > 0.001 ? formatSol(pendingStakeChange) : 
+                              (pendingStakeChange > 0 ? "< 0.001 SOL" : "—");
   const formattedApy = estimatedApy ? `${(estimatedApy * 100).toFixed(2)}%` : "—";
 
   return (
