@@ -22,7 +22,7 @@ export const EXPLORER_API = "https://explorer-api.solana.com";
 export const FALLBACK_RPC_ENDPOINTS = [
   "https://api.mainnet-beta.solana.com",
   "https://solana-mainnet.g.alchemy.com/v2/demo",
-  "https://api.devnet.solana.com", 
+  "https://rpc.ankr.com/solana",
   "https://solana-api.projectserum.com"
 ];
 
@@ -31,6 +31,6 @@ export const ALL_RPC_ENDPOINTS = [RPC_ENDPOINT, ...FALLBACK_RPC_ENDPOINTS];
 
 // Additional public endpoints if needed for future use
 export const ADDITIONAL_RPC_ENDPOINTS = [
-  "https://rpc.ankr.com/solana",
-  "https://solana.public-rpc.com"
+  "https://solana.public-rpc.com",
+  "https://mainnet.rpcpool.com"
 ];

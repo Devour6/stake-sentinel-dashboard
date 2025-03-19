@@ -9,10 +9,11 @@ import { StakeChart } from "@/components/StakeChart";
 import { 
   fetchValidatorInfo, 
   fetchValidatorMetrics, 
-  fetchSolanaFMStake,
-  fetchSolanaFMStakeHistory,
   fetchOnchainTotalStake,
   fetchOnchainStakeChanges,
+  fetchOnchainStakeHistory,
+  fetchSolanaFMStake,
+  fetchSolanaFMStakeHistory,
   type ValidatorInfo,
   type ValidatorMetrics,
   type StakeHistoryItem,
@@ -60,86 +61,110 @@ const ValidatorDashboard = () => {
       console.log("Fetching data for validator:", votePubkey);
       
       // Fetch all data in parallel to speed up loading
-      const [
-        info, 
-        metrics, 
-        solanaFmStake, 
-        onchainStake, 
-        stakeChangesData, 
-        historyData, 
-        delegatorCountData
-      ] = await Promise.allSettled([
+      const results = await Promise.allSettled([
         // Basic validator info
         fetchValidatorInfo(votePubkey),
         fetchValidatorMetrics(votePubkey),
         
-        // Try multiple sources for total stake
-        fetchSolanaFMStake(votePubkey),
+        // Get stake information from multiple sources for redundancy
         fetchOnchainTotalStake(votePubkey),
+        fetchSolanaFMStake(votePubkey),
         
-        // Stake changes
+        // Get stake changes
         fetchOnchainStakeChanges(votePubkey),
         
-        // Stake history
+        // Get stake history from multiple sources
         fetchSolanaFMStakeHistory(votePubkey),
+        fetchOnchainStakeHistory(votePubkey),
         
-        // Delegator count
+        // Get delegator count
         fetchDelegatorCount(votePubkey)
       ]);
       
+      // Extract results from the promises
+      const [
+        infoResult, 
+        metricsResult, 
+        onchainStakeResult, 
+        solanaFMStakeResult, 
+        stakeChangesResult, 
+        solanaFMHistoryResult, 
+        onchainHistoryResult, 
+        delegatorCountResult
+      ] = results;
+      
       // Process validator info
-      if (info.status === 'fulfilled' && info.value) {
-        console.log("Validator info:", info.value);
-        setValidatorInfo(info.value);
+      if (infoResult.status === 'fulfilled' && infoResult.value) {
+        console.log("Validator info:", infoResult.value);
+        setValidatorInfo(infoResult.value);
       } else {
-        console.error("Failed to fetch validator info:", info);
+        console.error("Failed to fetch validator info:", infoResult);
         setError("Failed to retrieve validator information");
       }
       
       // Process validator metrics
-      if (metrics.status === 'fulfilled' && metrics.value) {
-        console.log("Validator metrics:", metrics.value);
-        setValidatorMetrics(metrics.value);
+      if (metricsResult.status === 'fulfilled' && metricsResult.value) {
+        console.log("Validator metrics:", metricsResult.value);
+        setValidatorMetrics(metricsResult.value);
       }
       
-      // Process total stake (try SolanaFM first, then on-chain)
+      // Process total stake using multiple sources
       let finalStake = 0;
       
-      if (solanaFmStake.status === 'fulfilled' && solanaFmStake.value > 0) {
-        console.log("Using SolanaFM stake:", solanaFmStake.value);
-        finalStake = solanaFmStake.value;
-      } else if (onchainStake.status === 'fulfilled' && onchainStake.value > 0) {
-        console.log("Using on-chain stake:", onchainStake.value);
-        finalStake = onchainStake.value;
-      } else if (metrics.status === 'fulfilled' && metrics.value?.totalStake) {
-        console.log("Using metrics stake:", metrics.value.totalStake);
-        finalStake = metrics.value.totalStake;
-      } else if (info.status === 'fulfilled' && info.value?.activatedStake) {
-        console.log("Using info stake:", info.value.activatedStake);
-        finalStake = info.value.activatedStake;
+      // Try on-chain stake first
+      if (onchainStakeResult.status === 'fulfilled' && onchainStakeResult.value > 0) {
+        console.log("Using on-chain stake:", onchainStakeResult.value);
+        finalStake = onchainStakeResult.value;
+      } 
+      // Try SolanaFM stake next
+      else if (solanaFMStakeResult.status === 'fulfilled' && solanaFMStakeResult.value > 0) {
+        console.log("Using SolanaFM stake:", solanaFMStakeResult.value);
+        finalStake = solanaFMStakeResult.value;
+      } 
+      // Fall back to metrics or info if available
+      else if (metricsResult.status === 'fulfilled' && metricsResult.value?.totalStake > 0) {
+        console.log("Using metrics stake:", metricsResult.value.totalStake);
+        finalStake = metricsResult.value.totalStake;
+      } else if (infoResult.status === 'fulfilled' && infoResult.value?.activatedStake > 0) {
+        console.log("Using info stake:", infoResult.value.activatedStake);
+        finalStake = infoResult.value.activatedStake;
       }
       
+      // Set total stake
       setTotalStake(finalStake);
       
       // Process stake changes
-      if (stakeChangesData.status === 'fulfilled') {
-        console.log("Stake changes:", stakeChangesData.value);
-        setStakeChanges(stakeChangesData.value);
+      if (stakeChangesResult.status === 'fulfilled') {
+        console.log("Stake changes:", stakeChangesResult.value);
+        setStakeChanges(stakeChangesResult.value);
       }
       
-      // Process stake history
-      if (historyData.status === 'fulfilled' && historyData.value) {
-        console.log("Stake history:", historyData.value);
-        setStakeHistory(historyData.value);
+      // Process stake history (use the source with most data points)
+      let bestHistory: StakeHistoryItem[] = [];
+      
+      if (solanaFMHistoryResult.status === 'fulfilled' && solanaFMHistoryResult.value && solanaFMHistoryResult.value.length > 0) {
+        console.log("SolanaFM history:", solanaFMHistoryResult.value);
+        bestHistory = solanaFMHistoryResult.value;
+      }
+      
+      if (onchainHistoryResult.status === 'fulfilled' && onchainHistoryResult.value && 
+          (bestHistory.length === 0 || onchainHistoryResult.value.length > bestHistory.length)) {
+        console.log("On-chain history:", onchainHistoryResult.value);
+        bestHistory = onchainHistoryResult.value;
+      }
+      
+      // Only update if we got valid history data
+      if (bestHistory.length > 0) {
+        setStakeHistory(bestHistory);
       }
       
       // Process delegator count
-      if (delegatorCountData.status === 'fulfilled' && delegatorCountData.value) {
-        console.log("Delegator count:", delegatorCountData.value);
-        setDelegatorCount(delegatorCountData.value);
+      if (delegatorCountResult.status === 'fulfilled' && delegatorCountResult.value) {
+        console.log("Delegator count:", delegatorCountResult.value);
+        setDelegatorCount(delegatorCountResult.value);
       }
       
-      if (showToast && info.status === 'fulfilled' && info.value) {
+      if (showToast && infoResult.status === 'fulfilled' && infoResult.value) {
         uiToast({
           title: "Data refreshed",
           description: "Validator information updated successfully",

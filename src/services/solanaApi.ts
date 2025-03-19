@@ -41,7 +41,7 @@ export {
   VALIDATOR_IDENTITY,
   RPC_ENDPOINT,
   
-  // Types - use 'export type' for TypeScript types
+  // Types
   type ValidatorInfo,
   type ValidatorMetrics,
   type StakeHistoryItem,
