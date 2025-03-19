@@ -1,9 +1,11 @@
+
 import { 
   RPC_ENDPOINT, 
   ALL_RPC_ENDPOINTS, 
   ADDITIONAL_RPC_ENDPOINTS, 
   HELIUS_RPC_ENDPOINT,
-  EXPLORER_API
+  EXPLORER_API,
+  STAKEWIZ_API_URL
 } from "./constants";
 import { EpochInfo, RpcVoteAccount } from "./types";
 import { toast } from "sonner";
