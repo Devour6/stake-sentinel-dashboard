@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useValidatorSearch } from "@/hooks/useValidatorSearch";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface HeaderSearchSectionProps {
   searchInput: string;
@@ -19,6 +20,7 @@ export const HeaderSearchSection = ({
 }: HeaderSearchSectionProps) => {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   
   const {
     filteredValidators,
@@ -40,7 +42,7 @@ export const HeaderSearchSection = ({
   };
 
   return (
-    <form onSubmit={handleSearchSubmit} className="w-full sm:w-56 md:w-72 relative">
+    <form onSubmit={handleSearchSubmit} className={`${isMobile ? 'w-full' : 'w-full sm:w-48 md:w-56'} relative`}>
       <div className="relative search-container">
         <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
         <Input
@@ -69,7 +71,7 @@ export const HeaderSearchSection = ({
           className="absolute right-0 top-0 h-9 rounded-l-none bg-gojira-red hover:bg-gojira-red-dark"
           disabled={isLoadingValidators || !searchInput.trim()}
         >
-          Search
+          {isMobile ? "" : "Search"}
         </Button>
         
         {showSuggestions && filteredValidators.length > 0 && (
@@ -84,19 +86,19 @@ export const HeaderSearchSection = ({
                   setSearchInput('');
                 }}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   {validator.icon && (
                     <img 
                       src={validator.icon} 
                       alt={`${validator.name || 'Validator'} logo`}
-                      className="w-6 h-6 rounded-full"
+                      className="w-6 h-6 rounded-full flex-shrink-0"
                       onError={(e) => {
                         (e.target as HTMLImageElement).style.display = 'none';
                       }}
                     />
                   )}
-                  <div className="flex flex-col">
-                    <span className="font-medium">{validator.name || "Unknown Validator"}</span>
+                  <div className="flex flex-col min-w-0">
+                    <span className="font-medium truncate">{validator.name || "Unknown Validator"}</span>
                     {validator.commission !== undefined && (
                       <span className="text-xs text-muted-foreground">
                         Commission: {validator.commission}%
@@ -104,14 +106,14 @@ export const HeaderSearchSection = ({
                     )}
                   </div>
                 </div>
-                <div className="flex flex-col items-end">
-                  <span className="text-xs text-muted-foreground truncate max-w-[100px] sm:max-w-[180px]">
-                    {validator.votePubkey.slice(0, 6)}...{validator.votePubkey.slice(-6)}
+                <div className="flex flex-col items-end flex-shrink-0">
+                  <span className="text-xs text-muted-foreground truncate max-w-[80px] sm:max-w-[120px]">
+                    {validator.votePubkey.slice(0, 4)}...{validator.votePubkey.slice(-4)}
                   </span>
                   {validator.activatedStake !== undefined && (
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
                       {validator.activatedStake > 0 
-                        ? `Stake: ${Math.floor(validator.activatedStake).toLocaleString()} SOL` 
+                        ? `${Math.floor(validator.activatedStake).toLocaleString()} SOL` 
                         : ''}
                     </span>
                   )}

@@ -4,6 +4,7 @@ import { Search, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useValidatorSearch } from "@/hooks/useValidatorSearch";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface SearchBarProps {
   showStakeAmount?: boolean;
@@ -23,6 +24,8 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(({
     handleSearch,
     handleSelectValidator
   } = useValidatorSearch();
+
+  const isMobile = useIsMobile();
 
   // Close the dropdown when clicking outside
   useEffect(() => {
@@ -51,15 +54,15 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(({
   };
 
   return (
-    <form onSubmit={handleSearch} className="flex gap-2 relative search-container">
+    <form onSubmit={handleSearch} className="flex gap-2 relative search-container w-full">
       <div className="relative flex-1">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
         
         <div className="relative">
           <Input
             type="text"
-            placeholder={isLoadingValidators ? "Loading validators..." : "Search by name, address..."}
-            className="pl-9 pr-3 py-2 bg-gojira-gray-dark border-gojira-gray-light h-9"
+            placeholder={isLoadingValidators ? "Loading..." : "Search validator..."}
+            className="pl-9 pr-3 py-2 bg-gojira-gray-dark border-gojira-gray-light h-9 w-full"
             value={searchInput}
             onChange={handleInputChange}
             ref={ref}
@@ -88,24 +91,24 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(({
                     handleSelectValidator(validator.votePubkey);
                   }}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     {validator.icon ? (
                       <img 
                         src={validator.icon} 
                         alt={`${validator.name || 'Validator'} logo`}
-                        className="w-6 h-6 rounded-full"
+                        className="w-6 h-6 rounded-full flex-shrink-0"
                         onError={(e) => {
                           // Hide broken images
                           (e.target as HTMLImageElement).style.display = 'none';
                         }}
                       />
                     ) : (
-                      <div className="w-6 h-6 rounded-full bg-gojira-gray-light flex items-center justify-center text-xs">
+                      <div className="w-6 h-6 rounded-full bg-gojira-gray-light flex items-center justify-center text-xs flex-shrink-0">
                         {validator.name?.[0] || 'V'}
                       </div>
                     )}
-                    <div className="flex flex-col">
-                      <span className="font-medium">{validator.name || "Unknown Validator"}</span>
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-medium truncate">{validator.name || "Unknown Validator"}</span>
                       {showStakeAmount && validator.commission !== undefined && (
                         <span className="text-xs text-muted-foreground">
                           Commission: {validator.commission}%
@@ -113,14 +116,14 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(({
                       )}
                     </div>
                   </div>
-                  <div className="flex flex-col items-end">
-                    <span className="text-xs text-muted-foreground truncate max-w-[180px]">
-                      {validator.votePubkey.slice(0, 6)}...{validator.votePubkey.slice(-6)}
+                  <div className="flex flex-col items-end flex-shrink-0">
+                    <span className="text-xs text-muted-foreground truncate max-w-[80px] sm:max-w-[180px]">
+                      {validator.votePubkey.slice(0, 4)}...{validator.votePubkey.slice(-4)}
                     </span>
                     {showStakeAmount && validator.activatedStake !== undefined && (
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">
                         {validator.activatedStake > 0 
-                          ? `Stake: ${Math.floor(validator.activatedStake).toLocaleString()} SOL` 
+                          ? `${Math.floor(validator.activatedStake).toLocaleString()} SOL` 
                           : ''}
                       </span>
                     )}
@@ -146,7 +149,7 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(({
         {isSearching ? (
           <div className="h-5 w-5 border-2 border-white/20 border-t-white rounded-full animate-spin mr-2" />
         ) : null}
-        Search
+        {isMobile ? "" : "Search"}
       </Button>
     </form>
   );
