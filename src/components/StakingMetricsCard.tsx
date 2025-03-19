@@ -47,7 +47,7 @@ export const StakingMetricsCard = ({
             <span className="text-sm">Error loading data</span>
           </div>
         ) : (
-          <div className="text-2xl font-bold">{value || "No data"}</div>
+          <div className="text-2xl font-bold">{value || "—"}</div>
         )}
         {description && (
           <CardDescription className={`mt-1 flex items-center gap-1 ${
@@ -103,18 +103,23 @@ export const ValidatorMetricsGrid = ({
     ? (isDeactivating ? "Deactivating" : "Activating") 
     : "No pending change";
 
+  // Format stake values properly even if zero or very small
+  const formattedTotalStake = totalStake > 0 ? formatSol(totalStake) : "—";
+  const formattedPendingStake = pendingStakeChange > 0 ? formatSol(pendingStakeChange) : "—";
+  const formattedApy = estimatedApy ? `${(estimatedApy * 100).toFixed(2)}%` : "—";
+
   return (
     <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4 mb-4 animate-slide-up">
       <StakingMetricsCard
         title="Total Stake"
-        value={isLoading ? null : hasError ? "Error" : formatSol(totalStake)}
+        value={isLoading ? null : hasError ? "Error" : formattedTotalStake}
         icon={<div className="w-4 h-4 bg-gojira-red rounded-full"></div>}
         isLoading={isLoading}
         isError={hasError}
       />
       <StakingMetricsCard
         title="Pending Change in Stake"
-        value={isLoading ? null : hasError ? "Error" : formatSol(pendingStakeChange || 0)}
+        value={isLoading ? null : hasError ? "Error" : formattedPendingStake}
         icon={<Clock className="h-4 w-4 text-gojira-red" />}
         trend={pendingStakeChange > 0 ? (isDeactivating ? "down" : "up") : "neutral"}
         description={hasError ? "" : pendingDescription}
@@ -131,7 +136,7 @@ export const ValidatorMetricsGrid = ({
       />
       <StakingMetricsCard
         title="Estimated APY"
-        value={isLoading ? null : hasError ? "Error" : estimatedApy ? `${(estimatedApy * 100).toFixed(2)}%` : "N/A"}
+        value={isLoading ? null : hasError ? "Error" : formattedApy}
         icon={<TrendingUp className="h-4 w-4 text-gojira-red" />}
         isEstimated={true}
         isLoading={isLoading}
