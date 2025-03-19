@@ -43,7 +43,7 @@ const Home = () => {
           </div>
           
           <div className="mt-12 text-center">
-            <Logo size="sm" className="mx-auto mb-2 animate-float" />
+            <Logo size="sm" className="mx-auto mb-2" animate={false} />
             <Footer />
           </div>
         </div>

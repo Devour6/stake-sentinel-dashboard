@@ -23,7 +23,7 @@ const PageLayout = ({ children, onStakeModalOpen }: PageLayoutProps) => {
 
       <div className="w-full max-w-3xl mx-auto text-center mb-6 animate-fade-in">
         <div className="flex items-center justify-center gap-3">
-          <Logo size="md" className="animate-float" />
+          <Logo size="md" className="animate-float" animate={true} />
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-2 text-white">
             NodeScan
           </h1>

@@ -4,9 +4,10 @@ import React from "react";
 interface LogoProps {
   size?: "sm" | "md" | "lg";
   className?: string;
+  animate?: boolean;
 }
 
-const Logo: React.FC<LogoProps> = ({ size = "md", className = "" }) => {
+const Logo: React.FC<LogoProps> = ({ size = "md", className = "", animate = false }) => {
   // Size classes
   const sizeClasses = {
     sm: "w-8 h-8",
@@ -14,10 +15,12 @@ const Logo: React.FC<LogoProps> = ({ size = "md", className = "" }) => {
     lg: "w-16 h-16"
   };
 
+  const animationClass = animate ? "hover:scale-105 transition-transform duration-300" : "";
+
   return (
     <div className={`relative ${sizeClasses[size]} ${className}`}>
       {/* Hexagon outer shape - red */}
-      <div className="absolute inset-0 text-gojira-red transform hover:scale-105 transition-transform duration-300">
+      <div className={`absolute inset-0 text-gojira-red transform ${animationClass}`}>
         <svg viewBox="0 0 100 100" fill="currentColor" className="w-full h-full">
           <polygon points="50,0 93.3,25 93.3,75 50,100 6.7,75 6.7,25" />
         </svg>
