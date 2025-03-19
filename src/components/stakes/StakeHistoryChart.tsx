@@ -14,7 +14,6 @@ import { Spinner } from "@/components/ui/spinner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { AlertTriangle } from "lucide-react";
-import { generateStakeHistory } from "@/services/api/onchainStakeApi";
 
 interface StakeHistoryChartProps {
   vote_identity: string;
@@ -35,23 +34,20 @@ export const StakeHistoryChart: FC<StakeHistoryChartProps> = ({ vote_identity, i
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [timeframe, setTimeframe] = useState<TimeframeType>("30E");
-  const [usedFallback, setUsedFallback] = useState(false);
   
-  // Use initial data if provided, otherwise generate fallback data
+  // Use initial data if provided
   useEffect(() => {
     if (initialData && initialData.length > 0) {
       console.log("Using provided stake history data:", initialData);
       setAllStakes(initialData);
       filterStakesByTimeframe(initialData, timeframe);
       setIsLoading(false);
-      setUsedFallback(false);
     } else {
-      console.log("No initial data provided, generating fallback data");
-      const fallbackData = generateStakeHistory(0, vote_identity, 90);
-      setAllStakes(fallbackData);
-      filterStakesByTimeframe(fallbackData, timeframe);
+      console.log("No initial data provided");
+      setAllStakes([]);
+      setDisplayedStakes([]);
       setIsLoading(false);
-      setUsedFallback(true);
+      setError("No stake history data available");
     }
   }, [vote_identity, initialData]);
   
@@ -103,7 +99,7 @@ export const StakeHistoryChart: FC<StakeHistoryChartProps> = ({ vote_identity, i
           <div>
             <CardTitle>Stake History</CardTitle>
             <CardDescription>
-              {usedFallback ? "Estimated validator stake over time" : "Validator stake over time"}
+              Validator stake over time
             </CardDescription>
           </div>
           

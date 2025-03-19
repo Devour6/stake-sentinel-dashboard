@@ -10,7 +10,7 @@ const SOLANAFM_API_URL = "https://api.solana.fm/v0";
 // Cache for SolanaFM responses to improve performance
 const stakeCache = new Map<string, { value: number, timestamp: number }>();
 const historyCache = new Map<string, { data: StakeHistoryItem[], timestamp: number }>();
-const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 /**
  * Fetches the current total stake for a validator from SolanaFM
@@ -27,27 +27,10 @@ export const fetchSolanaFMStake = async (votePubkey: string): Promise<number> =>
     
     console.log(`Fetching total stake from SolanaFM for vote account: ${votePubkey}`);
     
-    // Hard-coded values for specific validators for immediate response
-    if (votePubkey === "GoJiRA8MTRCuuXW7FoAyBs4VXR4iBFWHQJ2a71Lnbm5B") {
-      const stake = 15367422;
-      stakeCache.set(votePubkey, { value: stake, timestamp: now });
-      return stake;
-    } else if (votePubkey === "he1iusunGwqrNtafDtLdhsUQDFvo13z9sUa36PauBtk") {
-      // Helius validator
-      const stake = 13314368;
-      stakeCache.set(votePubkey, { value: stake, timestamp: now });
-      return stake;
-    } else if (votePubkey === "goJiRADNdmfnJ4iWEyft7KaYMPTVsRba2Ee1akDEBXb") {
-      // Gojira validator
-      const stake = 16485000;
-      stakeCache.set(votePubkey, { value: stake, timestamp: now });
-      return stake;
-    }
-    
     // First, try SolanaFM's validator endpoint (most reliable)
     try {
       const response = await axios.get(`${SOLANAFM_API_URL}/validators/${votePubkey}`, {
-        timeout: 5000 // Reduced timeout for faster response
+        timeout: 8000
       });
       
       if (response.data && response.data.result) {
@@ -88,7 +71,7 @@ export const fetchSolanaFMStake = async (votePubkey: string): Promise<number> =>
     // Try fetch from the latest stake history entry
     try {
       const historyResponse = await axios.get(`${SOLANAFM_API_URL}/validators/${votePubkey}/history`, {
-        timeout: 5000
+        timeout: 8000
       });
       
       if (historyResponse.data && historyResponse.data.result && 
@@ -115,7 +98,7 @@ export const fetchSolanaFMStake = async (votePubkey: string): Promise<number> =>
     // Next, try their validators list endpoint and filter for our validator
     try {
       const validatorsListResponse = await axios.get(`${SOLANAFM_API_URL}/validators`, {
-        timeout: 5000
+        timeout: 8000
       });
       
       if (validatorsListResponse.data && validatorsListResponse.data.result) {
@@ -138,7 +121,7 @@ export const fetchSolanaFMStake = async (votePubkey: string): Promise<number> =>
     // Try the Stakewiz API as fallback
     try {
       const stakewizResponse = await axios.get(`https://api.stakewiz.com/validator/${votePubkey}`, {
-        timeout: 5000
+        timeout: 8000
       });
       
       if (stakewizResponse.data && stakewizResponse.data.activated_stake) {
@@ -151,6 +134,41 @@ export const fetchSolanaFMStake = async (votePubkey: string): Promise<number> =>
       }
     } catch (err) {
       console.error("Error with Stakewiz fallback:", err);
+    }
+    
+    // Try direct RPC call to get vote accounts as a last resort
+    try {
+      const rpcResponse = await fetch("https://mainnet.helius-rpc.com/?api-key=dff978e2-fae5-4768-8ee2-8e01b2c7fe2f", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: "get-vote-accounts",
+          method: "getVoteAccounts"
+        }),
+        signal: AbortSignal.timeout(10000)
+      });
+      
+      if (rpcResponse.ok) {
+        const data = await rpcResponse.json();
+        
+        if (data && data.result) {
+          const { current, delinquent } = data.result;
+          const allAccounts = [...current, ...delinquent];
+          const validator = allAccounts.find(acc => acc.votePubkey === votePubkey);
+          
+          if (validator && validator.activatedStake) {
+            const stake = validator.activatedStake / 1_000_000_000;
+            console.log(`Found stake from RPC vote accounts: ${stake} SOL`);
+            if (stake > 0) {
+              stakeCache.set(votePubkey, { value: stake, timestamp: now });
+              return stake;
+            }
+          }
+        }
+      }
+    } catch (rpcError) {
+      console.error("Error fetching from RPC:", rpcError);
     }
     
     // If we get here, we couldn't get a valid stake value
@@ -177,66 +195,15 @@ export const fetchSolanaFMStakeHistory = async (votePubkey: string): Promise<Sta
     
     console.log(`Fetching stake history from SolanaFM for vote account: ${votePubkey}`);
     
-    // Hard-coded fallback data for specific validators
-    let sampleHistoryData: StakeHistoryItem[] = [];
-    
-    if (votePubkey === "GoJiRA8MTRCuuXW7FoAyBs4VXR4iBFWHQJ2a71Lnbm5B" || 
-        votePubkey === "goJiRADNdmfnJ4iWEyft7KaYMPTVsRba2Ee1akDEBXb") {
-      // Gojira validators - sample history with small fluctuations
-      const baseStake = votePubkey === "goJiRADNdmfnJ4iWEyft7KaYMPTVsRba2Ee1akDEBXb" ? 16485000 : 15367422;
-      const currentEpoch = 758;
-      sampleHistoryData = [];
-      
-      for (let i = 0; i < 30; i++) {
-        const epochDiff = 29 - i;
-        const fluctuation = Math.sin(i * 0.3) * 0.02; // +/- 2% fluctuation
-        const stake = Math.round(baseStake * (0.95 + (epochDiff * 0.002) + fluctuation));
-        
-        const date = new Date();
-        date.setDate(date.getDate() - epochDiff * 2.5);
-        
-        sampleHistoryData.push({
-          epoch: currentEpoch - epochDiff,
-          stake,
-          date: date.toISOString()
-        });
-      }
-      
-      historyCache.set(votePubkey, { data: sampleHistoryData, timestamp: now });
-      return sampleHistoryData;
-    } else if (votePubkey === "he1iusunGwqrNtafDtLdhsUQDFvo13z9sUa36PauBtk") {
-      // Helius validator - simulated growth pattern
-      const baseStake = 13314368;
-      const currentEpoch = 758;
-      sampleHistoryData = [];
-      
-      for (let i = 0; i < 30; i++) {
-        const epochDiff = 29 - i;
-        // Helius has been growing rapidly
-        const growthFactor = 1 - (epochDiff * 0.01);
-        const stake = Math.round(baseStake * growthFactor);
-        
-        const date = new Date();
-        date.setDate(date.getDate() - epochDiff * 2.5);
-        
-        sampleHistoryData.push({
-          epoch: currentEpoch - epochDiff,
-          stake,
-          date: date.toISOString()
-        });
-      }
-      
-      historyCache.set(votePubkey, { data: sampleHistoryData, timestamp: now });
-      return sampleHistoryData;
-    }
-    
     // Try first endpoint - validator history
     try {
       const response = await axios.get(`${SOLANAFM_API_URL}/validators/${votePubkey}/history`, {
-        timeout: 8000
+        timeout: 10000
       });
       
-      if (response.data && response.data.result && Array.isArray(response.data.result) && response.data.result.length > 0) {
+      if (response.data && response.data.result && 
+          Array.isArray(response.data.result) && 
+          response.data.result.length > 0) {
         const historyData = response.data.result;
         console.log(`Retrieved ${historyData.length} stake history records from SolanaFM`);
         
@@ -259,10 +226,12 @@ export const fetchSolanaFMStakeHistory = async (votePubkey: string): Promise<Sta
     // Try second endpoint - validator epochs
     try {
       const epochsResponse = await axios.get(`${SOLANAFM_API_URL}/validators/${votePubkey}/epochs`, {
-        timeout: 8000
+        timeout: 10000
       });
       
-      if (epochsResponse.data && epochsResponse.data.result && Array.isArray(epochsResponse.data.result) && epochsResponse.data.result.length > 0) {
+      if (epochsResponse.data && epochsResponse.data.result && 
+          Array.isArray(epochsResponse.data.result) && 
+          epochsResponse.data.result.length > 0) {
         const epochsData = epochsResponse.data.result;
         console.log(`Retrieved ${epochsData.length} epoch records from SolanaFM`);
         
@@ -285,10 +254,12 @@ export const fetchSolanaFMStakeHistory = async (votePubkey: string): Promise<Sta
     // Fallback to stake history from Stakewiz
     try {
       const stakewizHistoryResponse = await axios.get(`https://api.stakewiz.com/validator/${votePubkey}/stake_history`, {
-        timeout: 5000
+        timeout: 10000
       });
       
-      if (stakewizHistoryResponse.data && Array.isArray(stakewizHistoryResponse.data) && stakewizHistoryResponse.data.length > 0) {
+      if (stakewizHistoryResponse.data && 
+          Array.isArray(stakewizHistoryResponse.data) && 
+          stakewizHistoryResponse.data.length > 0) {
         console.log(`Retrieved ${stakewizHistoryResponse.data.length} stake history records from Stakewiz`);
         
         // Format the data for our chart component
@@ -307,26 +278,39 @@ export const fetchSolanaFMStakeHistory = async (votePubkey: string): Promise<Sta
       console.error("Stakewiz history endpoint failed:", err);
     }
     
-    // If all fails, try to get at least current stake and generate history from it
+    // Try to construct history from validator list endpoint
     try {
-      const totalStake = await fetchSolanaFMStake(votePubkey);
-      if (totalStake > 0) {
-        console.log(`Generating stake history based on current stake: ${totalStake}`);
-        const generatedHistory = generateStakeHistory(totalStake, votePubkey, 90);
-        historyCache.set(votePubkey, { data: generatedHistory, timestamp: now });
-        return generatedHistory;
+      const validatorsResponse = await axios.get(`${SOLANAFM_API_URL}/validators`, {
+        timeout: 10000
+      });
+      
+      if (validatorsResponse.data && validatorsResponse.data.result) {
+        const validators = validatorsResponse.data.result;
+        const validator = validators.find((v: any) => v.voteAccount === votePubkey);
+        
+        if (validator && validator.activatedStake) {
+          // Create at least one data point for the current epoch
+          const currentEpoch = validator.epoch || 758; // Use epoch from validator or default to recent epoch
+          
+          const formattedHistory: StakeHistoryItem[] = [{
+            epoch: currentEpoch,
+            stake: validator.activatedStake / 1_000_000_000,
+            date: new Date().toISOString()
+          }];
+          
+          historyCache.set(votePubkey, { data: formattedHistory, timestamp: now });
+          return formattedHistory;
+        }
       }
     } catch (err) {
-      console.error("Failed to generate history from current stake:", err);
+      console.error("Validator list endpoint failed:", err);
     }
     
-    // Last resort - generate completely synthetic data
-    console.log("All history endpoints failed, generating synthetic history");
-    const syntheticHistory = generateStakeHistory(0, votePubkey, 90);
-    historyCache.set(votePubkey, { data: syntheticHistory, timestamp: now });
-    return syntheticHistory;
+    // If all fails, just return an empty array
+    console.log("All stake history endpoints failed, returning empty array");
+    return [];
   } catch (error) {
     console.error("Error fetching stake history from SolanaFM:", error);
-    return generateStakeHistory(0, votePubkey, 90);
+    return [];
   }
 };

@@ -43,7 +43,7 @@ export const StakingMetricsCard = ({
             <span className="text-sm">Error loading data</span>
           </div>
         ) : (
-          <div className="text-2xl font-bold">{value}</div>
+          <div className="text-2xl font-bold">{value || "No data"}</div>
         )}
         {description && (
           <CardDescription className={`mt-1 flex items-center gap-1 ${
@@ -127,7 +127,7 @@ export const ValidatorMetricsGrid = ({
       />
       <StakingMetricsCard
         title="Estimated APY"
-        value={isLoading ? null : hasError ? "Error" : estimatedApy ? `${(estimatedApy * 100).toFixed(2)}%` : "7.2%"}
+        value={isLoading ? null : hasError ? "Error" : estimatedApy ? `${(estimatedApy * 100).toFixed(2)}%` : "N/A"}
         icon={<TrendingUp className="h-4 w-4 text-gojira-red" />}
         isEstimated={true}
         isLoading={isLoading}

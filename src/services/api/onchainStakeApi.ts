@@ -23,13 +23,6 @@ export const fetchOnchainStakeChanges = async (votePubkey: string): Promise<{
     
     console.log(`Fetching on-chain stake changes for vote account: ${votePubkey}`);
     
-    // Known values for specific validators to improve performance
-    if (votePubkey === "goJiRADNdmfnJ4iWEyft7KaYMPTVsRba2Ee1akDEBXb") {
-      const result = { activatingStake: 125500, deactivatingStake: 0 };
-      stakeChangesCache.set(votePubkey, { data: result, timestamp: now });
-      return result;
-    }
-    
     // Try direct RPC call method (most reliable)
     try {
       console.log("Using direct RPC call for stake changes");
@@ -55,7 +48,7 @@ export const fetchOnchainStakeChanges = async (votePubkey: string): Promise<{
             }
           ]
         }),
-        signal: AbortSignal.timeout(8000)
+        signal: AbortSignal.timeout(10000)
       });
 
       if (!response.ok) {
@@ -123,7 +116,32 @@ export const fetchOnchainStakeChanges = async (votePubkey: string): Promise<{
     } catch (rpcError) {
       console.error("Error with direct RPC method:", rpcError);
       
-      // Try another method or fallback
+      // Try Stakewiz as a backup
+      try {
+        const stakewizResponse = await fetch(`https://api.stakewiz.com/validator/${votePubkey}/stake`, {
+          method: 'GET',
+          signal: AbortSignal.timeout(8000)
+        });
+        
+        if (stakewizResponse.ok) {
+          const stakewizData = await stakewizResponse.json();
+          
+          if (stakewizData) {
+            const result = {
+              activatingStake: stakewizData.activating || 0,
+              deactivatingStake: stakewizData.deactivating || 0
+            };
+            
+            console.log(`Stakewiz stake changes:`, result);
+            stakeChangesCache.set(votePubkey, { data: result, timestamp: now });
+            return result;
+          }
+        }
+      } catch (stakewizError) {
+        console.error("Error with Stakewiz fallback:", stakewizError);
+      }
+      
+      // Return zeros if all methods fail
       const fallback = { activatingStake: 0, deactivatingStake: 0 };
       stakeChangesCache.set(votePubkey, { data: fallback, timestamp: now });
       return fallback;
@@ -145,47 +163,8 @@ export const generateStakeHistory = (
   votePubkey: string,
   days = 30
 ): StakeHistoryItem[] => {
-  console.log(`Generating stake history data for ${votePubkey} with current stake: ${totalStake}`);
-  
-  // Use a reasonable default if no stake data available
-  if (!totalStake || totalStake <= 0) {
-    totalStake = 10000; // Fallback if total stake is invalid
-  }
-  
-  // Use last 6 chars of pubkey to seed the random generation for consistency
-  const pubkeySeed = parseInt(votePubkey.substring(votePubkey.length - 6), 16) % 1000;
-  
-  // Base stake is current stake (should be accurate)
-  const baseStake = totalStake;
-  
-  const history: StakeHistoryItem[] = [];
-  const now = new Date();
-  const currentEpoch = 758; // Approximate current epoch
-  
-  // Generate history going backward from current stake
-  for (let i = 0; i < Math.ceil(days / 2.5); i++) {
-    const date = new Date(now);
-    date.setDate(date.getDate() - Math.round(i * 2.5));
-    
-    // Add variability based on pubkey seed for consistency
-    // Earlier epochs have progressively less stake (on average)
-    const daysFactor = Math.min(0.15, i * 0.005); // Max 15% difference for oldest data
-    const randomFactor = Math.sin((i + pubkeySeed) * 0.3) * 0.03; // Small fluctuations
-    
-    // Calculate stake for this point in history
-    // More recent history is closer to current stake
-    let historicalStake = baseStake;
-    if (i > 0) {
-      historicalStake = baseStake * (1 - daysFactor) * (1 + randomFactor);
-    }
-    
-    history.push({
-      epoch: currentEpoch - i,
-      stake: Math.max(100, Math.round(historicalStake)), // Ensure minimum stake
-      date: date.toISOString()
-    });
-  }
-  
-  // Return in ascending epoch order
-  return history.sort((a, b) => a.epoch - b.epoch);
+  // This function is only used as a last resort when all other methods fail
+  // but we still need to show something in the UI
+  console.warn(`All stake history endpoints failed for ${votePubkey}, no real data available`);
+  return [];
 };
