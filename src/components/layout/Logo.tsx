@@ -27,9 +27,9 @@ const Logo: React.FC<LogoProps> = ({ size = "md", className = "", animate = fals
       </div>
       
       {/* Simple N letter */}
-      <div className="absolute inset-0 text-white transform">
-        <svg viewBox="0 0 100 100" fill="currentColor" className="w-full h-full">
-          <path d="M35,30 L35,70 L45,70 L45,50 L65,70 L65,30 L55,30 L55,50 L35,30" strokeLinecap="round" />
+      <div className="absolute inset-0 flex items-center justify-center text-white">
+        <svg viewBox="0 0 100 100" fill="currentColor" className="w-[60%] h-[60%]">
+          <path d="M30,30 L30,70 L45,70 L45,50 L70,70 L70,30 L55,30 L55,50 L30,30" />
         </svg>
       </div>
     </div>
