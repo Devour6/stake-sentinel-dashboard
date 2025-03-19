@@ -104,18 +104,38 @@ const ValidatorDashboard = () => {
       }
       
       // Process total stake
+      let currentTotalStake = 0;
+      
+      // Try getting stake from direct total stake fetch first
       if (totalStakeResult.status === 'fulfilled' && totalStakeResult.value > 0) {
         console.log("Total stake result:", totalStakeResult.value);
-        setTotalStake(totalStakeResult.value);
-      } else if (metricsResult.status === 'fulfilled' && metricsResult.value?.totalStake > 0) {
-        // Fall back to metrics
+        currentTotalStake = totalStakeResult.value;
+      } 
+      // Then try metrics if direct fetch failed
+      else if (metricsResult.status === 'fulfilled' && metricsResult.value?.totalStake > 0) {
         console.log("Using metrics total stake:", metricsResult.value.totalStake);
-        setTotalStake(metricsResult.value.totalStake);
-      } else if (infoResult.status === 'fulfilled' && infoResult.value?.activatedStake > 0) {
-        // Last resort: use info stake
+        currentTotalStake = metricsResult.value.totalStake;
+      } 
+      // Last resort: use validator info stake
+      else if (infoResult.status === 'fulfilled' && infoResult.value?.activatedStake > 0) {
         console.log("Using info stake:", infoResult.value.activatedStake);
-        setTotalStake(infoResult.value.activatedStake);
+        currentTotalStake = infoResult.value.activatedStake;
       }
+      
+      // If stake history has data but total stake is still zero, try to use latest history point
+      if (currentTotalStake <= 0 && 
+          stakeHistoryResult.status === 'fulfilled' && 
+          stakeHistoryResult.value && 
+          stakeHistoryResult.value.length > 0) {
+        const latestPoint = [...stakeHistoryResult.value].sort((a, b) => b.epoch - a.epoch)[0];
+        if (latestPoint && latestPoint.stake > 0) {
+          console.log("Using latest stake history point as total stake:", latestPoint.stake);
+          currentTotalStake = latestPoint.stake;
+        }
+      }
+      
+      // Set total stake with the most reliable value we found
+      setTotalStake(currentTotalStake);
       
       // Process stake changes
       if (stakeChangesResult.status === 'fulfilled') {
