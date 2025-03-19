@@ -8,12 +8,10 @@ import StakeModal from "@/components/StakeModal";
 import { StakeChart } from "@/components/StakeChart";
 import { 
   fetchValidatorInfo, 
-  fetchValidatorMetrics, 
-  fetchOnchainTotalStake,
-  fetchOnchainStakeChanges,
-  fetchOnchainStakeHistory,
-  fetchSolanaFMStake,
-  fetchSolanaFMStakeHistory,
+  fetchValidatorMetrics,
+  fetchTotalStake,
+  fetchStakeChanges,
+  fetchStakeHistory,
   type ValidatorInfo,
   type ValidatorMetrics,
   type StakeHistoryItem,
@@ -21,8 +19,8 @@ import {
 } from "@/services/solanaApi";
 import { useToast } from "@/components/ui/use-toast";
 import { toast } from "sonner";
-import { fetchDelegatorCount } from "@/services/api/stakeApi";
 
+// Overlay component shown during refresh
 const RefreshOverlay = () => (
   <div className="refresh-overlay">
     <div className="refresh-spinner"></div>
@@ -66,31 +64,23 @@ const ValidatorDashboard = () => {
         fetchValidatorInfo(votePubkey),
         fetchValidatorMetrics(votePubkey),
         
-        // Get stake information from multiple sources for redundancy
-        fetchOnchainTotalStake(votePubkey),
-        fetchSolanaFMStake(votePubkey),
+        // Get stake information directly
+        fetchTotalStake(votePubkey),
         
         // Get stake changes
-        fetchOnchainStakeChanges(votePubkey),
+        fetchStakeChanges(votePubkey),
         
-        // Get stake history from multiple sources
-        fetchSolanaFMStakeHistory(votePubkey),
-        fetchOnchainStakeHistory(votePubkey),
-        
-        // Get delegator count
-        fetchDelegatorCount(votePubkey)
+        // Get stake history
+        fetchStakeHistory(votePubkey)
       ]);
       
       // Extract results from the promises
       const [
         infoResult, 
         metricsResult, 
-        onchainStakeResult, 
-        solanaFMStakeResult, 
-        stakeChangesResult, 
-        solanaFMHistoryResult, 
-        onchainHistoryResult, 
-        delegatorCountResult
+        totalStakeResult, 
+        stakeChangesResult,
+        stakeHistoryResult
       ] = results;
       
       // Process validator info
@@ -106,32 +96,26 @@ const ValidatorDashboard = () => {
       if (metricsResult.status === 'fulfilled' && metricsResult.value) {
         console.log("Validator metrics:", metricsResult.value);
         setValidatorMetrics(metricsResult.value);
+        
+        // Get delegator count from metrics if available
+        if (metricsResult.value.delegatorCount) {
+          setDelegatorCount(metricsResult.value.delegatorCount);
+        }
       }
       
-      // Process total stake using multiple sources
-      let finalStake = 0;
-      
-      // Try on-chain stake first
-      if (onchainStakeResult.status === 'fulfilled' && onchainStakeResult.value > 0) {
-        console.log("Using on-chain stake:", onchainStakeResult.value);
-        finalStake = onchainStakeResult.value;
-      } 
-      // Try SolanaFM stake next
-      else if (solanaFMStakeResult.status === 'fulfilled' && solanaFMStakeResult.value > 0) {
-        console.log("Using SolanaFM stake:", solanaFMStakeResult.value);
-        finalStake = solanaFMStakeResult.value;
-      } 
-      // Fall back to metrics or info if available
-      else if (metricsResult.status === 'fulfilled' && metricsResult.value?.totalStake > 0) {
-        console.log("Using metrics stake:", metricsResult.value.totalStake);
-        finalStake = metricsResult.value.totalStake;
+      // Process total stake
+      if (totalStakeResult.status === 'fulfilled' && totalStakeResult.value > 0) {
+        console.log("Total stake result:", totalStakeResult.value);
+        setTotalStake(totalStakeResult.value);
+      } else if (metricsResult.status === 'fulfilled' && metricsResult.value?.totalStake > 0) {
+        // Fall back to metrics
+        console.log("Using metrics total stake:", metricsResult.value.totalStake);
+        setTotalStake(metricsResult.value.totalStake);
       } else if (infoResult.status === 'fulfilled' && infoResult.value?.activatedStake > 0) {
+        // Last resort: use info stake
         console.log("Using info stake:", infoResult.value.activatedStake);
-        finalStake = infoResult.value.activatedStake;
+        setTotalStake(infoResult.value.activatedStake);
       }
-      
-      // Set total stake
-      setTotalStake(finalStake);
       
       // Process stake changes
       if (stakeChangesResult.status === 'fulfilled') {
@@ -139,29 +123,12 @@ const ValidatorDashboard = () => {
         setStakeChanges(stakeChangesResult.value);
       }
       
-      // Process stake history (use the source with most data points)
-      let bestHistory: StakeHistoryItem[] = [];
-      
-      if (solanaFMHistoryResult.status === 'fulfilled' && solanaFMHistoryResult.value && solanaFMHistoryResult.value.length > 0) {
-        console.log("SolanaFM history:", solanaFMHistoryResult.value);
-        bestHistory = solanaFMHistoryResult.value;
-      }
-      
-      if (onchainHistoryResult.status === 'fulfilled' && onchainHistoryResult.value && 
-          (bestHistory.length === 0 || onchainHistoryResult.value.length > bestHistory.length)) {
-        console.log("On-chain history:", onchainHistoryResult.value);
-        bestHistory = onchainHistoryResult.value;
-      }
-      
-      // Only update if we got valid history data
-      if (bestHistory.length > 0) {
-        setStakeHistory(bestHistory);
-      }
-      
-      // Process delegator count
-      if (delegatorCountResult.status === 'fulfilled' && delegatorCountResult.value) {
-        console.log("Delegator count:", delegatorCountResult.value);
-        setDelegatorCount(delegatorCountResult.value);
+      // Process stake history
+      if (stakeHistoryResult.status === 'fulfilled' && 
+          stakeHistoryResult.value && 
+          stakeHistoryResult.value.length > 0) {
+        console.log("Stake history:", stakeHistoryResult.value.length, "points");
+        setStakeHistory(stakeHistoryResult.value);
       }
       
       if (showToast && infoResult.status === 'fulfilled' && infoResult.value) {
@@ -192,7 +159,8 @@ const ValidatorDashboard = () => {
 
   useEffect(() => {
     fetchData();
-    const intervalId = setInterval(() => fetchData(), 5 * 60 * 1000);
+    // Set up auto-refresh every 2 minutes
+    const intervalId = setInterval(() => fetchData(), 2 * 60 * 1000);
     return () => clearInterval(intervalId);
   }, [votePubkey]);
 
@@ -266,7 +234,7 @@ const ValidatorDashboard = () => {
         </div>
         
         <div className="mt-5 text-center text-sm text-muted-foreground">
-          <p>Data refreshes automatically every 5 minutes. Last updated: {new Date().toLocaleTimeString()}</p>
+          <p>Data refreshes automatically every 2 minutes. Last updated: {new Date().toLocaleTimeString()}</p>
           <div className="mt-2 flex justify-center gap-1 items-center">
             <span>Powered by</span>
             <span className="text-gojira-red font-semibold">Gojira</span>

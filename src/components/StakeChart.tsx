@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
@@ -38,6 +37,7 @@ export const StakeChart = ({ data, isLoading = false }: StakeChartProps) => {
   const [timeframe, setTimeframe] = useState<TimeframeType>("30E");
   const [currentEpoch, setCurrentEpoch] = useState<number | null>(null);
   const [retryCount, setRetryCount] = useState<number>(0);
+  const [dataLength, setDataLength] = useState<number>(0);
   
   useEffect(() => {
     const getEpoch = async () => {
@@ -53,9 +53,11 @@ export const StakeChart = ({ data, isLoading = false }: StakeChartProps) => {
   }, []);
   
   useEffect(() => {
-    console.log("Raw stake history data:", data);
+    console.log("Raw stake history data:", data?.length, "items");
     
     if (data && data.length > 0) {
+      setDataLength(data.length);
+      
       const validData = data.filter(item => 
         item && 
         item.stake !== undefined && 
@@ -65,15 +67,24 @@ export const StakeChart = ({ data, isLoading = false }: StakeChartProps) => {
       
       if (validData.length > 0) {
         const sortedData = [...validData].sort((a, b) => a.epoch - b.epoch);
-        console.log("Processed stake history data:", sortedData);
+        console.log("Processed stake history data:", sortedData.length, "valid items");
         
         const filteredData = filterDataByTimeframe(sortedData, timeframe);
         setChartData(filteredData);
       } else {
         console.log("No valid stake history items found");
         setChartData([]);
+        
+        if (dataLength === 0 && retryCount < 2 && !isLoading) {
+          console.log(`No stake history data, retry attempt ${retryCount + 1}`);
+          const timer = setTimeout(() => {
+            setRetryCount(prev => prev + 1);
+          }, 2000);
+          
+          return () => clearTimeout(timer);
+        }
       }
-    } else if (retryCount < 2 && !isLoading) {
+    } else if (dataLength === 0 && retryCount < 2 && !isLoading) {
       console.log(`No stake history data, retry attempt ${retryCount + 1}`);
       const timer = setTimeout(() => {
         setRetryCount(prev => prev + 1);
@@ -84,7 +95,7 @@ export const StakeChart = ({ data, isLoading = false }: StakeChartProps) => {
       console.log("No stake history data available after retries");
       setChartData([]);
     }
-  }, [data, timeframe, retryCount, isLoading]);
+  }, [data, timeframe, retryCount, isLoading, dataLength]);
   
   const filterDataByTimeframe = (inputData: StakeHistoryItem[], frame: TimeframeType): StakeHistoryItem[] => {
     if (!inputData || inputData.length === 0) {
@@ -138,7 +149,7 @@ export const StakeChart = ({ data, isLoading = false }: StakeChartProps) => {
         {isDataLoading ? (
           <div className="h-[320px] w-full flex items-center justify-center">
             <Spinner size="md" />
-            <span>Loading stake history...</span>
+            <span className="ml-2">Loading stake history...</span>
           </div>
         ) : hasNoData ? (
           <div className="h-[320px] w-full flex flex-col items-center justify-center text-center gap-4">
