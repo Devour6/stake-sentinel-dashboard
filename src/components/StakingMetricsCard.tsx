@@ -2,6 +2,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatSol, formatCommission } from "@/services/solanaApi";
 import { ArrowUpRight, ArrowDownRight, Percent, Clock, TrendingUp, Users } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 
 interface StakingMetricsCardProps {
   title: string;
@@ -37,7 +38,10 @@ export const StakingMetricsCard = ({
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="h-7 w-24 bg-muted/30 rounded animate-pulse"></div>
+          <div className="flex items-center">
+            <Spinner size="sm" />
+            <span className="ml-2">Loading...</span>
+          </div>
         ) : isError ? (
           <div className="text-red-500 flex items-center gap-1">
             <span className="text-sm">Error loading data</span>

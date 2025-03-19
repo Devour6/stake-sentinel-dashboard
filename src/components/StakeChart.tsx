@@ -1,10 +1,12 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { StakeHistoryItem } from "@/services/solanaApi";
 import { Spinner } from "@/components/ui/spinner";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { fetchCurrentEpoch } from "@/services/api/epochApi";
+import { AlertCircle } from "lucide-react";
 
 interface StakeChartProps {
   data: StakeHistoryItem[];
@@ -34,6 +36,22 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export const StakeChart = ({ data, isLoading = false }: StakeChartProps) => {
   const [chartData, setChartData] = useState<StakeHistoryItem[]>([]);
   const [timeframe, setTimeframe] = useState<TimeframeType>("30E");
+  const [currentEpoch, setCurrentEpoch] = useState<number | null>(null);
+  const [retryCount, setRetryCount] = useState<number>(0);
+  
+  // Get current epoch for reference line
+  useEffect(() => {
+    const getEpoch = async () => {
+      try {
+        const epoch = await fetchCurrentEpoch();
+        setCurrentEpoch(epoch);
+      } catch (error) {
+        console.error("Error fetching current epoch:", error);
+      }
+    };
+    
+    getEpoch();
+  }, []);
   
   // Validate and prepare data for the chart
   useEffect(() => {
@@ -60,11 +78,19 @@ export const StakeChart = ({ data, isLoading = false }: StakeChartProps) => {
         console.log("No valid stake history items found");
         setChartData([]);
       }
+    } else if (retryCount < 2 && !isLoading) {
+      // If no data and not already loading, retry fetch after a delay
+      console.log(`No stake history data, retry attempt ${retryCount + 1}`);
+      const timer = setTimeout(() => {
+        setRetryCount(prev => prev + 1);
+      }, 2000);
+      
+      return () => clearTimeout(timer);
     } else {
-      console.log("No stake history data available");
+      console.log("No stake history data available after retries");
       setChartData([]);
     }
-  }, [data, timeframe]);
+  }, [data, timeframe, retryCount, isLoading]);
   
   // Filter data by selected timeframe
   const filterDataByTimeframe = (inputData: StakeHistoryItem[], frame: TimeframeType): StakeHistoryItem[] => {
@@ -91,6 +117,17 @@ export const StakeChart = ({ data, isLoading = false }: StakeChartProps) => {
     }
   };
 
+  // Determine if we have a loading or error state to show
+  const isDataLoading = isLoading;
+  const hasNoData = !isLoading && (!chartData || chartData.length === 0);
+  
+  // Handle retry logic for when data isn't present
+  const handleRetry = () => {
+    if (hasNoData) {
+      setRetryCount(0); // Reset retry counter to trigger a new fetch attempt
+    }
+  };
+
   return (
     <Card className="glass-card animate-fade-in border-gojira-gray-light">
       <CardHeader className="pb-2">
@@ -110,14 +147,24 @@ export const StakeChart = ({ data, isLoading = false }: StakeChartProps) => {
         </div>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
+        {isDataLoading ? (
           <div className="h-[320px] w-full flex items-center justify-center">
-            <Spinner />
+            <Spinner className="mr-2" />
+            <span>Loading stake history...</span>
           </div>
-        ) : chartData.length === 0 ? (
+        ) : hasNoData ? (
           <div className="h-[320px] w-full flex flex-col items-center justify-center text-center gap-4">
-            <p className="text-muted-foreground">No stake history data available for this validator</p>
-            <p className="text-xs text-muted-foreground">This may be due to API limitations or the validator being new</p>
+            <AlertCircle className="h-12 w-12 text-amber-500" />
+            <div>
+              <p className="text-muted-foreground">No stake history data available for this validator</p>
+              <p className="text-xs text-muted-foreground mt-1">We're having trouble retrieving historical data for this validator</p>
+              <button 
+                onClick={handleRetry}
+                className="mt-4 px-4 py-2 bg-gojira-red text-white rounded-md hover:bg-red-600 transition-colors"
+              >
+                Retry
+              </button>
+            </div>
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={320}>
@@ -148,6 +195,14 @@ export const StakeChart = ({ data, isLoading = false }: StakeChartProps) => {
                 }}
               />
               <Tooltip content={<CustomTooltip />} />
+              {currentEpoch && (
+                <ReferenceLine 
+                  x={currentEpoch} 
+                  stroke="#ff4a22" 
+                  strokeDasharray="3 3" 
+                  label={{ value: 'Current', position: 'top', fill: '#ff4a22' }} 
+                />
+              )}
               <Area 
                 type="monotone" 
                 dataKey="stake" 

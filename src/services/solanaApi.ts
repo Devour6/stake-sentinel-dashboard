@@ -20,6 +20,15 @@ import {
   fetchCurrentEpoch,
   fetchVoteAccounts
 } from "./api/epochApi";
+import {
+  fetchOnchainTotalStake,
+  fetchOnchainStakeChanges,
+  fetchOnchainStakeHistory
+} from "./api/onchainStakeApi";
+import {
+  fetchSolanaFMStake,
+  fetchSolanaFMStakeHistory
+} from "./api/solanaFMApi";
 
 // Type imports
 import type { ValidatorInfo, ValidatorMetrics, StakeHistoryItem, ValidatorSearchResult, EpochInfo, RpcVoteAccount } from "./api/types";
@@ -51,6 +60,15 @@ export {
   fetchEpochInfo,
   fetchCurrentEpoch,
   fetchVoteAccounts,
+  
+  // On-chain data fetching
+  fetchOnchainTotalStake,
+  fetchOnchainStakeChanges,
+  fetchOnchainStakeHistory,
+  
+  // SolanaFM methods
+  fetchSolanaFMStake,
+  fetchSolanaFMStakeHistory,
   
   // Utils
   validateVotePubkey,
