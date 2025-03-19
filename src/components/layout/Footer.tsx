@@ -3,7 +3,7 @@ import React from "react";
 
 const Footer = () => {
   return (
-    <div className="mt-16 text-center text-sm text-muted-foreground">
+    <div className="text-center text-sm text-muted-foreground">
       <div className="flex justify-center gap-1 items-center">
         <span>Powered by</span>
         <span className="text-gojira-red font-semibold">Gojira</span>

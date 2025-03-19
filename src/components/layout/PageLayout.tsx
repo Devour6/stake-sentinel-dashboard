@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import Footer from "@/components/layout/Footer";
+import Logo from "@/components/layout/Logo";
 
 interface PageLayoutProps {
   children: React.ReactNode;
@@ -22,9 +22,12 @@ const PageLayout = ({ children, onStakeModalOpen }: PageLayoutProps) => {
       </div>
 
       <div className="w-full max-w-3xl mx-auto text-center mb-6 animate-fade-in">
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-2 text-white">
-          NodeScan
-        </h1>
+        <div className="flex items-center justify-center gap-3">
+          <Logo size="md" className="animate-float" />
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-2 text-white">
+            NodeScan
+          </h1>
+        </div>
       </div>
 
       {children}

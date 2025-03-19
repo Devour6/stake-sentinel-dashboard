@@ -6,6 +6,7 @@ import Footer from "@/components/layout/Footer";
 import StakeModal from "@/components/StakeModal";
 import { EpochStatusCard } from "@/components/EpochStatusCard";
 import { VALIDATOR_PUBKEY } from "@/services/api/constants";
+import Logo from "@/components/layout/Logo";
 
 const Home = () => {
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -41,7 +42,10 @@ const Home = () => {
             </div>
           </div>
           
-          <Footer />
+          <div className="mt-12 text-center">
+            <Logo size="sm" className="mx-auto mb-2 animate-float" />
+            <Footer />
+          </div>
         </div>
       </div>
       
