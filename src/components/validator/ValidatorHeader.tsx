@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { HeaderIdentitySection } from "./HeaderIdentitySection";
 import { HeaderInfoSection } from "./HeaderInfoSection";
@@ -39,15 +39,18 @@ export const ValidatorHeader = ({
 }: ValidatorHeaderProps) => {
   const navigate = useNavigate();
   const [localSearchInput, setLocalSearchInput] = useState('');
-  const { handleSearch, isSearching } = useValidatorSearch();
+  const { handleSearch, isSearching, filteredValidators, setShowSuggestions } = useValidatorSearch();
   const isMobile = useIsMobile();
   
+  // Reset suggestions when component mounts
+  useEffect(() => {
+    setShowSuggestions(false);
+  }, [setShowSuggestions]);
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (localSearchInput && localSearchInput.trim()) {
-      // We use the hook's handleSearch directly but with our local state
-      const tempEvent = { ...e, preventDefault: () => {} };
-      handleSearch(tempEvent, localSearchInput);
+      handleSearch(e, localSearchInput);
     }
   };
 

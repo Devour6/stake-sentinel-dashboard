@@ -16,21 +16,31 @@ export function useValidatorSearch() {
 
   // Fetch all validators on component mount
   useEffect(() => {
+    let isMounted = true;
+    
     async function loadValidators() {
       setIsLoadingValidators(true);
       try {
         const validators = await fetchAllValidators();
         console.log(`Loaded ${validators.length} validators for search`);
-        setAllValidators(validators);
-        // Allow the search bar to be used as soon as we have any validators
-        setIsLoadingValidators(false);
+        if (isMounted) {
+          setAllValidators(validators);
+          // Allow the search bar to be used as soon as we have any validators
+          setIsLoadingValidators(false);
+        }
       } catch (error) {
         console.error("Error fetching validators:", error);
-        setIsLoadingValidators(false);
+        if (isMounted) {
+          setIsLoadingValidators(false);
+        }
       }
     }
 
     loadValidators();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Filter validators based on search input - optimized with useMemo
@@ -98,6 +108,7 @@ export function useValidatorSearch() {
     if (!searchTerm.trim() || isSearching) return;
     
     setIsSearching(true);
+    console.log("Searching for validator:", searchTerm);
     
     // Try to find an exact match first
     const exactMatch = allValidators.find(
@@ -110,10 +121,12 @@ export function useValidatorSearch() {
     if (exactMatch) {
       console.log("Found exact validator match:", exactMatch);
       navigate(`/validator/${exactMatch.votePubkey}`);
+      setSearchInput('');
     } else if (filteredValidators.length > 0) {
       // If no exact match but we have filtered results, navigate to the first one
       console.log("Using first filtered result:", filteredValidators[0]);
       navigate(`/validator/${filteredValidators[0].votePubkey}`);
+      setSearchInput('');
     } else {
       // If no matches, try a more flexible search
       const fuzzyMatch = allValidators.find(v => 
@@ -125,6 +138,7 @@ export function useValidatorSearch() {
       if (fuzzyMatch) {
         console.log("Found fuzzy validator match:", fuzzyMatch);
         navigate(`/validator/${fuzzyMatch.votePubkey}`);
+        setSearchInput('');
       } else {
         console.log("No validator matches found for:", searchTerm);
         toast.error("No validator matches found");
@@ -132,7 +146,7 @@ export function useValidatorSearch() {
     }
     
     setIsSearching(false);
-    setSearchInput('');
+    setShowSuggestions(false);
   };
 
   // Handle selection of validator from dropdown

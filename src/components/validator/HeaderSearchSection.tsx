@@ -1,5 +1,5 @@
 
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,21 @@ export const HeaderSearchSection = ({
     handleSelectValidator
   } = useValidatorSearch();
 
+  // Close the dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.search-container')) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [setShowSuggestions]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchInput(value);
@@ -41,12 +56,12 @@ export const HeaderSearchSection = ({
   };
 
   return (
-    <form onSubmit={handleSearchSubmit} className={`${isMobile ? 'w-full' : 'w-full sm:w-48 md:w-56'} relative`}>
-      <div className="relative search-container">
+    <form onSubmit={handleSearchSubmit} className={`${isMobile ? 'w-full' : 'w-full sm:w-48 md:w-56'} relative search-container`}>
+      <div className="relative">
         <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
         <Input
           type="text"
-          placeholder="Search validator..."
+          placeholder={isLoadingValidators ? "Loading..." : "Search validator..."}
           value={searchInput}
           onChange={handleInputChange}
           className="pl-9 h-9 w-full bg-gojira-gray-dark border-gojira-gray-light text-sm pr-12"
@@ -56,7 +71,6 @@ export const HeaderSearchSection = ({
               setShowSuggestions(true);
             }
           }}
-          disabled={isLoadingValidators}
         />
         
         <Button 
@@ -83,10 +97,11 @@ export const HeaderSearchSection = ({
                   e.preventDefault();
                   handleSelectValidator(validator.votePubkey);
                   setSearchInput('');
+                  setShowSuggestions(false);
                 }}
               >
                 <div className="flex items-center gap-2">
-                  {validator.icon && (
+                  {validator.icon ? (
                     <img 
                       src={validator.icon} 
                       alt={`${validator.name || 'Validator'} logo`}
@@ -95,6 +110,10 @@ export const HeaderSearchSection = ({
                         (e.target as HTMLImageElement).style.display = 'none';
                       }}
                     />
+                  ) : (
+                    <div className="w-6 h-6 rounded-full bg-gojira-gray-light flex items-center justify-center text-xs flex-shrink-0">
+                      {validator.name?.[0] || 'V'}
+                    </div>
                   )}
                   <div className="flex flex-col min-w-0">
                     <span className="font-medium truncate">{validator.name || "Unknown Validator"}</span>
