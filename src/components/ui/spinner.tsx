@@ -4,11 +4,13 @@ import React from "react";
 interface SpinnerProps {
   size?: "sm" | "md" | "lg";
   color?: string;
+  className?: string;
 }
 
 export const Spinner = ({ 
   size = "md", 
-  color = "currentColor" 
+  color = "currentColor",
+  className = ""
 }: SpinnerProps) => {
   // Size mapping
   const sizeMap = {
@@ -20,7 +22,7 @@ export const Spinner = ({
   const sizeClass = sizeMap[size] || sizeMap.md;
 
   return (
-    <div className="flex justify-center items-center p-4">
+    <div className={`flex justify-center items-center p-4 ${className}`}>
       <svg
         className={`animate-spin ${sizeClass}`}
         xmlns="http://www.w3.org/2000/svg"

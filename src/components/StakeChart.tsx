@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
@@ -39,7 +38,6 @@ export const StakeChart = ({ data, isLoading = false }: StakeChartProps) => {
   const [currentEpoch, setCurrentEpoch] = useState<number | null>(null);
   const [retryCount, setRetryCount] = useState<number>(0);
   
-  // Get current epoch for reference line
   useEffect(() => {
     const getEpoch = async () => {
       try {
@@ -53,12 +51,10 @@ export const StakeChart = ({ data, isLoading = false }: StakeChartProps) => {
     getEpoch();
   }, []);
   
-  // Validate and prepare data for the chart
   useEffect(() => {
     console.log("Raw stake history data:", data);
     
     if (data && data.length > 0) {
-      // Filter out invalid data points and ensure all required fields exist
       const validData = data.filter(item => 
         item && 
         item.stake !== undefined && 
@@ -67,11 +63,9 @@ export const StakeChart = ({ data, isLoading = false }: StakeChartProps) => {
       );
       
       if (validData.length > 0) {
-        // Sort by epoch (ascending)
         const sortedData = [...validData].sort((a, b) => a.epoch - b.epoch);
         console.log("Processed stake history data:", sortedData);
         
-        // Filter by timeframe
         const filteredData = filterDataByTimeframe(sortedData, timeframe);
         setChartData(filteredData);
       } else {
@@ -79,7 +73,6 @@ export const StakeChart = ({ data, isLoading = false }: StakeChartProps) => {
         setChartData([]);
       }
     } else if (retryCount < 2 && !isLoading) {
-      // If no data and not already loading, retry fetch after a delay
       console.log(`No stake history data, retry attempt ${retryCount + 1}`);
       const timer = setTimeout(() => {
         setRetryCount(prev => prev + 1);
@@ -92,39 +85,33 @@ export const StakeChart = ({ data, isLoading = false }: StakeChartProps) => {
     }
   }, [data, timeframe, retryCount, isLoading]);
   
-  // Filter data by selected timeframe
   const filterDataByTimeframe = (inputData: StakeHistoryItem[], frame: TimeframeType): StakeHistoryItem[] => {
     if (!inputData || inputData.length === 0) {
       return [];
     }
     
-    // Sort by epoch (ascending)
     const sortedData = [...inputData].sort((a, b) => a.epoch - b.epoch);
     
-    // If we have limited data, just show what we have
     if (sortedData.length <= 10 || frame === "All") {
       return sortedData;
     }
     
-    // Filter by epoch range
     switch (frame) {
-      case "10E": // Last 10 epochs
+      case "10E":
         return sortedData.slice(-10);
-      case "30E": // Last 30 epochs
+      case "30E":
         return sortedData.slice(-30);
       default:
         return sortedData;
     }
   };
 
-  // Determine if we have a loading or error state to show
   const isDataLoading = isLoading;
   const hasNoData = !isLoading && (!chartData || chartData.length === 0);
   
-  // Handle retry logic for when data isn't present
   const handleRetry = () => {
     if (hasNoData) {
-      setRetryCount(0); // Reset retry counter to trigger a new fetch attempt
+      setRetryCount(0);
     }
   };
 
@@ -149,7 +136,7 @@ export const StakeChart = ({ data, isLoading = false }: StakeChartProps) => {
       <CardContent>
         {isDataLoading ? (
           <div className="h-[320px] w-full flex items-center justify-center">
-            <Spinner className="mr-2" />
+            <Spinner size="md" />
             <span>Loading stake history...</span>
           </div>
         ) : hasNoData ? (
