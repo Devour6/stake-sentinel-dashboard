@@ -94,29 +94,32 @@ export const ValidatorMetricsGrid = ({
     ? "Standard / MEV Commission"
     : "";
 
+  // Format the pending stake description
+  const pendingDescription = pendingStakeChange > 0 
+    ? (isDeactivating ? "Deactivating" : "Activating") 
+    : "No pending change";
+
   return (
     <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4 mb-4 animate-slide-up">
       <StakingMetricsCard
         title="Total Stake"
-        value={isLoading ? "" : hasError ? "Error" : formatSol(totalStake)}
+        value={isLoading ? null : hasError ? "Error" : formatSol(totalStake)}
         icon={<div className="w-4 h-4 bg-gojira-red rounded-full"></div>}
         isLoading={isLoading}
-        isError={hasError || totalStake === 0}
+        isError={hasError}
       />
       <StakingMetricsCard
         title="Pending Change in Stake"
-        value={isLoading ? "" : hasError ? "Error" : formatSol(pendingStakeChange)}
+        value={isLoading ? null : hasError ? "Error" : formatSol(pendingStakeChange || 0)}
         icon={<Clock className="h-4 w-4 text-gojira-red" />}
         trend={pendingStakeChange > 0 ? (isDeactivating ? "down" : "up") : "neutral"}
-        description={hasError ? "" : pendingStakeChange > 0 
-          ? (isDeactivating ? "Deactivating" : "Activating") 
-          : "No pending change"}
+        description={hasError ? "" : pendingDescription}
         isLoading={isLoading}
         isError={hasError}
       />
       <StakingMetricsCard
         title="Commission"
-        value={isLoading ? "" : hasError ? "Error" : commissionDisplay}
+        value={isLoading ? null : hasError ? "Error" : commissionDisplay}
         description={commissionDescription}
         icon={<Percent className="h-4 w-4 text-gojira-red" />}
         isLoading={isLoading}
@@ -124,7 +127,7 @@ export const ValidatorMetricsGrid = ({
       />
       <StakingMetricsCard
         title="Estimated APY"
-        value={isLoading ? "" : hasError ? "Error" : estimatedApy ? `${(estimatedApy * 100).toFixed(2)}%` : "7.2%"}
+        value={isLoading ? null : hasError ? "Error" : estimatedApy ? `${(estimatedApy * 100).toFixed(2)}%` : "7.2%"}
         icon={<TrendingUp className="h-4 w-4 text-gojira-red" />}
         isEstimated={true}
         isLoading={isLoading}

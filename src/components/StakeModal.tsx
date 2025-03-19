@@ -55,12 +55,20 @@ const StakeModal = ({ isOpen, onClose, validatorPubkey, validatorName }: StakeMo
         throw new Error(`Could not find wallet provider for ${selectedWallet}`);
       }
 
-      // Create stake transaction - always use VALIDATOR_PUBKEY
-      await createStakeTransaction(walletProvider, parseFloat(amount), VALIDATOR_PUBKEY);
+      // Use the validator pubkey passed as prop, falling back to VALIDATOR_PUBKEY
+      const targetValidator = validatorPubkey || VALIDATOR_PUBKEY;
       
-      toast.success(`Successfully initiated staking of ${amount} SOL to Gojira Validator`);
-      setAmount("");
-      onClose();
+      // Create and send stake transaction
+      const result = await createStakeTransaction(walletProvider, parseFloat(amount), targetValidator);
+      
+      if (result) {
+        toast.success(`Successfully initiated staking of ${amount} SOL to ${validatorName || "Gojira Validator"}`);
+        setAmount("");
+        onClose();
+      } else {
+        // Transaction was not confirmed or was cancelled
+        toast.error("Staking transaction was not completed");
+      }
     } catch (error: any) {
       console.error("Failed to stake:", error);
       toast.error(error.message || "Failed to stake");
@@ -104,7 +112,7 @@ const StakeModal = ({ isOpen, onClose, validatorPubkey, validatorName }: StakeMo
   };
 
   // Create and send stake transaction
-  const createStakeTransaction = async (provider: any, amountSol: number, votePubkey: string) => {
+  const createStakeTransaction = async (provider: any, amountSol: number, votePubkey: string): Promise<boolean> => {
     if (!provider) {
       throw new Error("Wallet provider not found");
     }
@@ -120,26 +128,69 @@ const StakeModal = ({ isOpen, onClose, validatorPubkey, validatorName }: StakeMo
       
       // For Phantom and compatible wallets
       if (provider.createStakeAccount) {
-        const result = await provider.createStakeAccount({
-          fromPubkey: publicKey,
-          lamports: amountLamports,
-          stakePubkey: null, // Let wallet generate new stake account
-          votePubkey: votePubkey,
-          withdrawAuthority: publicKey,
-          stakeAuthority: publicKey,
-        });
-        
-        console.log("Stake transaction result:", result);
-        return result;
+        try {
+          const result = await provider.createStakeAccount({
+            fromPubkey: publicKey,
+            lamports: amountLamports,
+            stakePubkey: null, // Let wallet generate new stake account
+            votePubkey: votePubkey,
+            withdrawAuthority: publicKey,
+            stakeAuthority: publicKey,
+          });
+          
+          console.log("Stake transaction result:", result);
+          return !!result; // Return true if we have a result
+        } catch (error: any) {
+          // User might have cancelled the transaction
+          if (error.message && (
+              error.message.includes("cancelled") || 
+              error.message.includes("rejected") ||
+              error.message.includes("User denied"))) {
+            toast.error("Transaction was cancelled");
+            return false;
+          }
+          throw error;
+        }
       }
       
-      // For other wallets, use standard signing approach
-      // This will vary by wallet, so we'll use the most universal approach
-      // by redirecting to the stakeview.app URL
-      const stakeLinkUrl = `https://stakeview.app/stake-to/${votePubkey}?amount=${amountSol}`;
+      // For Solflare and other wallets that support direct staking
+      if (provider.createStakeTransaction || provider.stake) {
+        try {
+          // Different methods based on wallet
+          if (provider.stake) {
+            const result = await provider.stake(amountLamports, votePubkey);
+            console.log("Solflare stake result:", result);
+            return !!result;
+          } else if (provider.createStakeTransaction) {
+            const result = await provider.createStakeTransaction(amountLamports, votePubkey);
+            console.log("Stake transaction result:", result);
+            return !!result;
+          }
+        } catch (error: any) {
+          if (error.message && (
+              error.message.includes("cancelled") || 
+              error.message.includes("rejected") ||
+              error.message.includes("User denied"))) {
+            toast.error("Transaction was cancelled");
+            return false;
+          }
+          throw error;
+        }
+      }
       
-      if (confirm("Redirecting to StakeView to complete staking. Continue?")) {
+      // For other wallets, redirect to StakeView as a last resort
+      const confirmed = window.confirm(
+        "Your wallet doesn't natively support staking transactions. Would you like to be redirected to StakeView.app to complete this transaction?"
+      );
+      
+      if (confirmed) {
+        const stakeLinkUrl = `https://stakeview.app/stake-to/${votePubkey}?amount=${amountSol}`;
         window.open(stakeLinkUrl, "_blank");
+        toast.info("You've been redirected to StakeView to complete your staking");
+        return true; // User initiated the process
+      } else {
+        toast.info("Staking cancelled");
+        return false;
       }
     } catch (error) {
       console.error("Error creating stake transaction:", error);
@@ -151,9 +202,9 @@ const StakeModal = ({ isOpen, onClose, validatorPubkey, validatorName }: StakeMo
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md bg-gojira-gray-dark">
         <DialogHeader>
-          <DialogTitle className="text-white">Stake to Gojira Validator</DialogTitle>
+          <DialogTitle className="text-white">Stake to {validatorName || "Gojira Validator"}</DialogTitle>
           <DialogDescription>
-            Support the Solana network by staking your SOL tokens to Gojira validator.
+            Support the Solana network by staking your SOL tokens to {validatorName || "Gojira"} validator.
           </DialogDescription>
         </DialogHeader>
         
