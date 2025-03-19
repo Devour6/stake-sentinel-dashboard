@@ -38,15 +38,16 @@ export const ValidatorHeader = ({
   onStakeModalOpen
 }: ValidatorHeaderProps) => {
   const navigate = useNavigate();
-  const [searchInput, setSearchInput] = useState('');
-  const { handleSearch } = useValidatorSearch();
+  const [localSearchInput, setLocalSearchInput] = useState('');
+  const { handleSearch, isSearching } = useValidatorSearch();
   const isMobile = useIsMobile();
   
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchInput && searchInput.trim()) {
-      handleSearch(e);
-      setSearchInput('');
+    if (localSearchInput && localSearchInput.trim()) {
+      // We use the hook's handleSearch directly but with our local state
+      const tempEvent = { ...e, preventDefault: () => {} };
+      handleSearch(tempEvent, localSearchInput);
     }
   };
 
@@ -65,8 +66,8 @@ export const ValidatorHeader = ({
         
         <div className={`flex ${isMobile ? 'flex-col w-full' : 'flex-row'} gap-2 items-center ${isMobile ? '' : 'ml-auto'}`}>
           <HeaderSearchSection 
-            searchInput={searchInput}
-            setSearchInput={setSearchInput}
+            searchInput={localSearchInput}
+            setSearchInput={setLocalSearchInput}
             handleSearchSubmit={handleSearchSubmit}
           />
           

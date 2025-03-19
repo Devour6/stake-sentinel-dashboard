@@ -90,19 +90,21 @@ export function useValidatorSearch() {
   }, [searchInput, allValidators]);
 
   // Handle search submission
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = (e: React.FormEvent, inputOverride?: string) => {
     e.preventDefault();
     
-    if (!searchInput.trim() || isSearching) return;
+    const searchTerm = inputOverride || searchInput;
+    
+    if (!searchTerm.trim() || isSearching) return;
     
     setIsSearching(true);
     
     // Try to find an exact match first
     const exactMatch = allValidators.find(
       v => 
-        (v.name && v.name.toLowerCase() === searchInput.toLowerCase()) ||
-        v.votePubkey.toLowerCase() === searchInput.toLowerCase() ||
-        (v.identity && v.identity.toLowerCase() === searchInput.toLowerCase())
+        (v.name && v.name.toLowerCase() === searchTerm.toLowerCase()) ||
+        v.votePubkey.toLowerCase() === searchTerm.toLowerCase() ||
+        (v.identity && v.identity.toLowerCase() === searchTerm.toLowerCase())
     );
     
     if (exactMatch) {
@@ -115,21 +117,22 @@ export function useValidatorSearch() {
     } else {
       // If no matches, try a more flexible search
       const fuzzyMatch = allValidators.find(v => 
-        (v.name && v.name.toLowerCase().includes(searchInput.toLowerCase())) ||
-        v.votePubkey.toLowerCase().includes(searchInput.toLowerCase()) ||
-        (v.identity && v.identity.toLowerCase().includes(searchInput.toLowerCase()))
+        (v.name && v.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        v.votePubkey.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (v.identity && v.identity.toLowerCase().includes(searchTerm.toLowerCase()))
       );
       
       if (fuzzyMatch) {
         console.log("Found fuzzy validator match:", fuzzyMatch);
         navigate(`/validator/${fuzzyMatch.votePubkey}`);
       } else {
-        console.log("No validator matches found for:", searchInput);
+        console.log("No validator matches found for:", searchTerm);
         toast.error("No validator matches found");
       }
     }
     
     setIsSearching(false);
+    setSearchInput('');
   };
 
   // Handle selection of validator from dropdown

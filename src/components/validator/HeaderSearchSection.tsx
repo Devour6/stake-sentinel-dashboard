@@ -3,7 +3,6 @@ import { useRef } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
 import { useValidatorSearch } from "@/hooks/useValidatorSearch";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -19,7 +18,6 @@ export const HeaderSearchSection = ({
   handleSearchSubmit
 }: HeaderSearchSectionProps) => {
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const navigate = useNavigate();
   const isMobile = useIsMobile();
   
   const {
@@ -27,6 +25,7 @@ export const HeaderSearchSection = ({
     showSuggestions,
     setShowSuggestions,
     isLoadingValidators,
+    isSearching,
     handleSelectValidator
   } = useValidatorSearch();
 
@@ -57,10 +56,6 @@ export const HeaderSearchSection = ({
               setShowSuggestions(true);
             }
           }}
-          onBlur={() => {
-            // Use setTimeout to allow click events on suggestions to fire before hiding
-            setTimeout(() => setShowSuggestions(false), 200);
-          }}
           disabled={isLoadingValidators}
         />
         
@@ -69,9 +64,13 @@ export const HeaderSearchSection = ({
           variant="destructive"
           size="sm"
           className="absolute right-0 top-0 h-9 rounded-l-none bg-gojira-red hover:bg-gojira-red-dark"
-          disabled={isLoadingValidators || !searchInput.trim()}
+          disabled={isLoadingValidators || !searchInput.trim() || isSearching}
         >
-          {isMobile ? "" : "Search"}
+          {isSearching ? (
+            <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+          ) : (
+            isMobile ? "" : "Search"
+          )}
         </Button>
         
         {showSuggestions && filteredValidators.length > 0 && (
