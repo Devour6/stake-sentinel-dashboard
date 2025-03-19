@@ -1,4 +1,3 @@
-
 import axios from "axios";
 import { RPC_ENDPOINT, ALL_RPC_ENDPOINTS, VALIDATOR_PUBKEY, STAKEWIZ_API_URL } from "./constants";
 import { StakeHistoryItem } from "./types";

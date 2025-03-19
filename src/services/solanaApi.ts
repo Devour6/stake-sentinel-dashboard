@@ -20,10 +20,10 @@ import {
   fetchVoteAccounts
 } from "./api/epochApi";
 import {
-  fetchTotalStake,
-  fetchStakeChanges,
-  fetchStakeHistory
-} from "./api/stakeService";
+  fetchReliableTotalStake as fetchTotalStake,
+  fetchReliableStakeChanges as fetchStakeChanges,
+  fetchReliableStakeHistory as fetchStakeHistory
+} from "./api/betterStakeService";
 
 // Type imports
 import type { ValidatorInfo, ValidatorMetrics, StakeHistoryItem, ValidatorSearchResult, EpochInfo, RpcVoteAccount } from "./api/types";

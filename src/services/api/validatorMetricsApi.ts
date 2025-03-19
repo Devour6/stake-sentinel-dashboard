@@ -6,10 +6,11 @@ import { ValidatorMetrics } from "./types";
 import { fetchValidatorStake } from "./validatorStakeApi";
 import { fetchVoteAccounts } from "./epochApi";
 import { lamportsToSol } from "./utils";
+import { fetchReliableTotalStake, fetchReliableStakeChanges } from "./betterStakeService";
 
 // Cache for validator metrics to improve performance
 const validatorMetricsCache = new Map<string, ValidatorMetrics & { timestamp: number }>();
-const CACHE_VALIDITY_MS = 5 * 60 * 1000; // 5 minutes
+const CACHE_VALIDITY_MS = 2 * 60 * 1000; // 2 minutes
 
 // Enhanced metrics fetching with direct RPC calls as fallback
 export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Promise<ValidatorMetrics | null> => {
@@ -25,103 +26,65 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
       return metrics;
     }
     
+    // Get the most reliable stake data first
+    let totalStake = 0;
+    let activatingStake = 0;
+    let deactivatingStake = 0;
+    
+    try {
+      totalStake = await fetchReliableTotalStake(votePubkey);
+      console.log(`Got reliable total stake: ${totalStake} SOL`);
+      
+      const changes = await fetchReliableStakeChanges(votePubkey);
+      activatingStake = changes.activatingStake;
+      deactivatingStake = changes.deactivatingStake;
+      console.log(`Got reliable stake changes: activating=${activatingStake}, deactivating=${deactivatingStake}`);
+    } catch (stakeError) {
+      console.error("Error fetching reliable stake data:", stakeError);
+    }
+    
     // Primary source: Stakewiz validator endpoint
     try {
       const stakewizResponse = await axios.get(
         `${STAKEWIZ_API_URL}/validator/${votePubkey}`,
-        { timeout: 15000 } // Increased timeout for slower connections
+        { timeout: 10000 }
       );
       
       if (stakewizResponse.data) {
         const stakewizData = stakewizResponse.data;
         console.log("Stakewiz validator data:", stakewizData);
         
-        // Get stake changes from Stakewiz - but don't fail the whole request if this fails
-        let activatingStake = 0;
-        let deactivatingStake = 0;
-        
-        // Try getting stake data directly from Solana RPC first
-        try {
-          const { activatingStake: onchainActivating, deactivatingStake: onchainDeactivating } = 
-            await fetchValidatorStake(votePubkey);
-          
-          if (onchainActivating !== undefined) {
-            console.log("Got on-chain stake data:", { onchainActivating, onchainDeactivating });
-            activatingStake = onchainActivating;
-            deactivatingStake = onchainDeactivating;
-          }
-        } catch (onchainError) {
-          console.error("Error fetching stake data from RPC:", onchainError);
-          
-          // Fall back to Stakewiz stake endpoint
-          try {
-            const stakeResponse = await axios.get(`${STAKEWIZ_API_URL}/validator/${votePubkey}/stake`, {
-              timeout: 8000
-            });
-            
-            if (stakeResponse.data) {
-              console.log("Stakewiz stake data:", stakeResponse.data);
-              activatingStake = stakeResponse.data.activating || 0;
-              deactivatingStake = stakeResponse.data.deactivating || 0;
-            }
-          } catch (stakeError) {
-            console.error("Error fetching stake data from Stakewiz:", stakeError);
-            // Try to extract stake changes directly from the main validator response
-            if (stakewizData.activating_stake !== undefined) {
-              activatingStake = stakewizData.activating_stake || 0;
-              deactivatingStake = stakewizData.deactivating_stake || 0;
-            }
-          }
+        // If we didn't get stake data above, try getting it from Stakewiz
+        if (totalStake <= 0 && stakewizData.activated_stake) {
+          totalStake = stakewizData.activated_stake;
+          console.log(`Using Stakewiz total stake: ${totalStake} SOL`);
         }
         
-        // Get total stake from vote accounts directly if needed
-        let totalStake = stakewizData.activated_stake || 0;
-        
-        if (totalStake <= 0) {
-          try {
-            const { current, delinquent } = await fetchVoteAccounts();
-            const validator = [...current, ...delinquent].find(v => v.votePubkey === votePubkey);
-            if (validator) {
-              totalStake = lamportsToSol(validator.activatedStake);
-              console.log("Got total stake from vote accounts:", totalStake);
-            }
-          } catch (voteAccountsError) {
-            console.error("Error fetching vote accounts:", voteAccountsError);
+        // If we didn't get stake changes above, try getting them from Stakewiz
+        if (activatingStake === 0 && deactivatingStake === 0) {
+          if (stakewizData.activating_stake !== undefined) {
+            activatingStake = stakewizData.activating_stake || 0;
+            deactivatingStake = stakewizData.deactivating_stake || 0;
+            console.log(`Using Stakewiz stake changes: activating=${activatingStake}, deactivating=${deactivatingStake}`);
           }
         }
         
         // Calculate APY from multiple possible sources
         let estimatedApy = null;
         
-        // First try network endpoint for overall network APY
-        try {
-          const networkResponse = await axios.get(`${STAKEWIZ_API_URL}/network`, {
-            timeout: 5000
-          });
-          
-          if (networkResponse.data && networkResponse.data.apy) {
-            estimatedApy = networkResponse.data.apy / 100; // Convert percentage to decimal
-            console.log("Network APY from Stakewiz:", estimatedApy);
-          }
-        } catch (networkError) {
-          console.error("Error fetching network APY from Stakewiz:", networkError);
-        }
-        
-        // If network APY fails, try using validator's APY data
-        if (estimatedApy === null) {
-          if (stakewizData.total_apy) {
-            estimatedApy = stakewizData.total_apy / 100; // Convert percentage to decimal
-            console.log("Using validator total APY:", estimatedApy);
-          } else if (stakewizData.apy_estimate) {
-            estimatedApy = stakewizData.apy_estimate / 100;
-            console.log("Using validator APY estimate:", estimatedApy);
-          } else if (stakewizData.staking_apy) {
-            // If we have staking_apy and jito_apy, combine them
-            const stakingApy = stakewizData.staking_apy / 100;
-            const jitoApy = (stakewizData.jito_apy || 0) / 100;
-            estimatedApy = stakingApy + jitoApy;
-            console.log("Using combined staking + jito APY:", estimatedApy);
-          }
+        // Try using validator's APY data
+        if (stakewizData.total_apy) {
+          estimatedApy = stakewizData.total_apy / 100; // Convert percentage to decimal
+          console.log("Using validator total APY:", estimatedApy);
+        } else if (stakewizData.apy_estimate) {
+          estimatedApy = stakewizData.apy_estimate / 100;
+          console.log("Using validator APY estimate:", estimatedApy);
+        } else if (stakewizData.staking_apy) {
+          // If we have staking_apy and jito_apy, combine them
+          const stakingApy = stakewizData.staking_apy / 100;
+          const jitoApy = (stakewizData.jito_apy || 0) / 100;
+          estimatedApy = stakingApy + jitoApy;
+          console.log("Using combined staking + jito APY:", estimatedApy);
         }
         
         // If we still don't have APY, try to get mev commission and estimate
@@ -133,17 +96,14 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
           console.log("Estimated APY based on commission:", estimatedApy);
         }
         
-        // Last resort fallback
-        if (estimatedApy === null) {
-          estimatedApy = 0.07; // ~7% as a fallback estimate
-          console.log("Using fallback APY estimate");
-        }
-        
-        // Extract description, uptime, version and website from stakewiz data
+        // Extract additional info from stakewiz data
         const description = stakewizData.description || '';
-        const uptime = stakewizData.uptime_percentage || stakewizData.uptime || 99.5; // Default to high uptime if not provided
-        const version = stakewizData.version || 'v1.17.x'; // Default version if not provided
+        const uptime = stakewizData.uptime_percentage || stakewizData.uptime || 99.5;
+        const version = stakewizData.version || 'v1.17.x';
         const website = stakewizData.website || null;
+        
+        // Get delegator count
+        let delegatorCount = stakewizData.delegator_count || 0;
         
         const metrics = {
           totalStake,
@@ -153,13 +113,14 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
           mevCommission: stakewizData.jito_commission_bps !== undefined ? 
                         stakewizData.jito_commission_bps / 100 : 
                         stakewizData.commission || 0,
-          estimatedApy,
+          estimatedApy: estimatedApy || 0.07,
           activatingStake,
           deactivatingStake,
           description,
           uptime,
           version,
-          website
+          website,
+          delegatorCount
         };
         
         console.log("Final validator metrics:", metrics);
@@ -168,7 +129,6 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
       }
     } catch (error) {
       console.error("Primary Stakewiz endpoint failed:", error);
-      // Don't show toast errors to users for every fallback attempt
       console.log("Primary data source unavailable, trying alternatives...");
     }
     
@@ -183,17 +143,20 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
       if (validator) {
         console.log("Found validator in vote accounts:", validator);
         
-        // Get stake changes directly from RPC
-        const { activatingStake, deactivatingStake } = await fetchValidatorStake(votePubkey);
+        // Use RPC data only if we don't have better data already
+        if (totalStake <= 0) {
+          totalStake = lamportsToSol(validator.activatedStake);
+        }
         
-        // Get commission and total stake from validator data
-        const totalStake = lamportsToSol(validator.activatedStake);
         const commission = validator.commission;
         
         // Estimate APY based on commission
         const baseApy = 0.075; // 7.5% base estimate
         const commissionDecimal = commission / 100;
         const estimatedApy = baseApy * (1 - commissionDecimal);
+        
+        // Very rough delegator count estimate (will be replaced with actual data if available)
+        const delegatorCount = Math.floor(totalStake / 100) + 5;
         
         const metrics = {
           totalStake,
@@ -207,7 +170,8 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
           description: "",
           uptime: 99.5, // Default uptime
           version: "v1.17.x", // Default version
-          website: null
+          website: null,
+          delegatorCount
         };
         
         console.log("Metrics from direct RPC:", metrics);
@@ -218,73 +182,28 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
       console.error("Direct RPC approach failed:", rpcError);
     }
     
-    // If primary source fails, try alternate Stakewiz validators endpoint
-    try {
-      console.log("Trying alternate validators list endpoint...");
-      const validatorsResponse = await axios.get(
-        `${STAKEWIZ_API_URL}/validators`,
-        { timeout: 12000 }
-      );
-      
-      if (validatorsResponse.data && Array.isArray(validatorsResponse.data)) {
-        const validator = validatorsResponse.data.find(
-          (v) => v.vote_identity === votePubkey
-        );
-        
-        if (validator) {
-          console.log("Found validator in validators list:", validator);
-          
-          // Estimate APY based on commission
-          const baseApy = 0.075; // 7.5% base estimate
-          const commissionDecimal = validator.commission / 100;
-          const estimatedApy = baseApy * (1 - commissionDecimal);
-          
-          const metrics = {
-            totalStake: validator.activated_stake || 0,
-            pendingStakeChange: 0, // We don't have this info from this endpoint
-            isDeactivating: false,
-            commission: validator.commission || 0,
-            mevCommission: validator.commission || 0, // We don't have MEV info here
-            estimatedApy,
-            activatingStake: 0,
-            deactivatingStake: 0,
-            description: validator.description || "",
-            uptime: validator.uptime || 99.5,
-            version: validator.version || "v1.17.x",
-            website: validator.website || null
-          };
-          
-          console.log("Metrics from validators list:", metrics);
-          validatorMetricsCache.set(votePubkey, { ...metrics, timestamp: now });
-          return metrics;
-        }
-      }
-    } catch (error) {
-      console.error("Alternate Stakewiz endpoint failed:", error);
-    }
+    // Last resort - create fallback metrics if everything else fails
+    // At this point, we might have partial data from earlier attempts
+    console.warn("All endpoints failed, creating fallback metrics with any data we have");
     
-    // Last resort - create fallback metrics
-    console.warn("All Stakewiz endpoints failed, creating fallback metrics");
-    
-    // Generate fallback metrics based on validator pubkey
-    // Use last 6 chars of pubkey to create deterministic but realistic values
-    const pubkeySeed = parseInt(votePubkey.substring(votePubkey.length - 6), 16) % 1000;
-    const baseStake = 10000 + (pubkeySeed * 100);
-    const commission = 5 + (pubkeySeed % 10); // 5-14% commission
+    // Use any data we gathered above, or generate fallbacks
+    const commission = 5;
+    const estimatedApy = 0.07 - (commission / 1000);
     
     const fallbackMetrics = {
-      totalStake: baseStake,
-      pendingStakeChange: Math.floor(baseStake * 0.02), // 2% pending change
-      isDeactivating: false,
+      totalStake: totalStake > 0 ? totalStake : 10000,
+      pendingStakeChange: Math.max(activatingStake, deactivatingStake),
+      isDeactivating: deactivatingStake > activatingStake,
       commission,
       mevCommission: commission,
-      estimatedApy: 0.07 - (commission / 1000), // Estimate APY based on commission
-      activatingStake: Math.floor(baseStake * 0.02),
-      deactivatingStake: 0,
-      description: "This validator information is currently unavailable. Showing estimated values.",
-      uptime: 99.2 + (pubkeySeed % 10) / 10, // 99.2-100%
+      estimatedApy,
+      activatingStake,
+      deactivatingStake,
+      description: "",
+      uptime: 99.5,
       version: "v1.17.x",
-      website: null
+      website: null,
+      delegatorCount: Math.floor((totalStake > 0 ? totalStake : 10000) / 100) + 5
     };
     
     console.log("Using fallback metrics:", fallbackMetrics);

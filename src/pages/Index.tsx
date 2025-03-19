@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { ValidatorHeader } from "@/components/ValidatorHeader";
 import { ValidatorMetricsGrid } from "@/components/StakingMetricsCard";
@@ -8,6 +7,7 @@ import {
   fetchValidatorInfo, 
   fetchValidatorMetrics, 
   fetchStakeHistory,
+  VALIDATOR_PUBKEY,
   type ValidatorInfo,
   type ValidatorMetrics,
   type StakeHistoryItem
@@ -27,17 +27,15 @@ const Index = () => {
   const [validatorInfo, setValidatorInfo] = useState<ValidatorInfo | null>(null);
   const [validatorMetrics, setValidatorMetrics] = useState<ValidatorMetrics | null>(null);
   const [stakeHistory, setStakeHistory] = useState<StakeHistoryItem[]>([]);
-  
-  const VALIDATOR_PUBKEY = "goJiRADNdmfnJ4iWEyft7KaYMPTVsRba2Ee1akDEBXb";
 
   const fetchData = async (showToast = false) => {
     setIsLoading(true);
     try {
-      // Fetch data in parallel
+      // Fetch data in parallel - fix by providing VALIDATOR_PUBKEY to each function
       const [info, metrics, history] = await Promise.all([
-        fetchValidatorInfo(),
-        fetchValidatorMetrics(),
-        fetchStakeHistory()
+        fetchValidatorInfo(VALIDATOR_PUBKEY),
+        fetchValidatorMetrics(VALIDATOR_PUBKEY),
+        fetchStakeHistory(VALIDATOR_PUBKEY)
       ]);
       
       setValidatorInfo(info);
