@@ -1,11 +1,10 @@
-
 import { useState } from "react";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
-  DialogTitle, 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -13,7 +12,19 @@ import { toast } from "sonner";
 import WalletSelector from "./wallet/WalletSelector";
 import StakeForm from "./stake/StakeForm";
 import { useWallet } from "@/hooks/use-wallet";
-import { VALIDATOR_PUBKEY } from "@/services/api/constants";
+import {
+  HELIUS_RPC_ENDPOINT,
+  RPC_ENDPOINT,
+  VALIDATOR_PUBKEY,
+} from "@/services/api/constants";
+import {
+  Connection,
+  Keypair,
+  LAMPORTS_PER_SOL,
+  PublicKey,
+  StakeProgram,
+} from "@solana/web3.js";
+import { executeTransaction } from "@/lib/tx";
 
 interface StakeModalProps {
   isOpen: boolean;
@@ -22,11 +33,23 @@ interface StakeModalProps {
   validatorName?: string;
 }
 
-const StakeModal = ({ isOpen, onClose, validatorPubkey, validatorName }: StakeModalProps) => {
+const StakeModal = ({
+  isOpen,
+  onClose,
+  validatorPubkey,
+  validatorName,
+}: StakeModalProps) => {
   const [amount, setAmount] = useState("");
   const [isStaking, setIsStaking] = useState(false);
   const [showWalletOptions, setShowWalletOptions] = useState(false);
-  const { isConnected, isConnecting, selectedWallet, connectWallet, disconnectWallet, publicKey } = useWallet();
+  const {
+    isConnected,
+    isConnecting,
+    selectedWallet,
+    connectWallet,
+    disconnectWallet,
+    publicKey,
+  } = useWallet();
 
   const handleConnectOption = () => {
     setShowWalletOptions(true);
@@ -44,25 +67,33 @@ const StakeModal = ({ isOpen, onClose, validatorPubkey, validatorName }: StakeMo
       toast.error("Please enter a valid amount");
       return;
     }
-    
+
     setIsStaking(true);
-    
+
     try {
       // Find the wallet provider
       const walletProvider = findWalletProvider(selectedWallet || "");
-      
+
       if (!walletProvider) {
         throw new Error(`Could not find wallet provider for ${selectedWallet}`);
       }
 
       // Use the validator pubkey passed as prop, falling back to VALIDATOR_PUBKEY
       const targetValidator = validatorPubkey || VALIDATOR_PUBKEY;
-      
+
       // Create and send stake transaction
-      const result = await createStakeTransaction(walletProvider, parseFloat(amount), targetValidator);
-      
+      const result = await createStakeTransaction(
+        walletProvider,
+        parseFloat(amount),
+        targetValidator
+      );
+
       if (result) {
-        toast.success(`Successfully initiated staking of ${amount} SOL to ${validatorName || "Gojira Validator"}`);
+        toast.success(
+          `Successfully initiated staking of ${amount} SOL to ${
+            validatorName || "Gojira Validator"
+          }`
+        );
         setAmount("");
         onClose();
       } else {
@@ -81,116 +112,107 @@ const StakeModal = ({ isOpen, onClose, validatorPubkey, validatorName }: StakeMo
   const findWalletProvider = (walletName: string): any => {
     // Standardized wallet names
     const nameLower = walletName.toLowerCase().trim();
-    
+
     // Common wallet provider names
     const providerNames: Record<string, string[]> = {
-      "phantom": ["solana", "phantom"],
-      "solflare": ["solflare"],
-      "backpack": ["backpack", "xnft"],
+      phantom: ["solana", "phantom"],
+      solflare: ["solflare"],
+      backpack: ["backpack", "xnft"],
       "magic eden": ["magicEden", "magiceden"],
-      "coinbase": ["coinbaseWallet", "coinbaseWalletExtension"],
-      "slope": ["slope", "slopeWallet"],
-      "brave": ["braveSolanaAdapter", "braveWallet"],
-      "exodus": ["exodus"],
-      "glow": ["glow"],
+      coinbase: ["coinbaseWallet", "coinbaseWalletExtension"],
+      slope: ["slope", "slopeWallet"],
+      brave: ["braveSolanaAdapter", "braveWallet"],
+      exodus: ["exodus"],
+      glow: ["glow"],
     };
-    
+
     // Try to find provider based on wallet name
     for (const [key, names] of Object.entries(providerNames)) {
-      if (nameLower === key || nameLower.includes(key) || key.includes(nameLower)) {
+      if (
+        nameLower === key ||
+        nameLower.includes(key) ||
+        key.includes(nameLower)
+      ) {
         for (const name of names) {
           const provider = (window as any)[name];
-          if (provider && typeof provider === 'object') {
+          if (provider && typeof provider === "object") {
             return provider;
           }
         }
       }
     }
-    
+
     // Fallback to using any available provider
     return (window as any).solana || (window as any).solflare;
   };
 
   // Create and send stake transaction
-  const createStakeTransaction = async (provider: any, amountSol: number, votePubkey: string): Promise<boolean> => {
+  const createStakeTransaction = async (
+    provider: any,
+    amountSol: number,
+    votePubkey: string
+  ): Promise<boolean> => {
     if (!provider) {
       throw new Error("Wallet provider not found");
     }
 
     try {
       // Check if wallet has necessary methods
-      if (!provider.signAndSendTransaction && !provider.signTransaction) {
+      if (!provider.publicKey && !provider.signTransaction) {
         throw new Error("Wallet doesn't support transaction signing");
       }
 
       // Construct transaction request
-      const amountLamports = amountSol * 1_000_000_000; // Convert SOL to lamports
-      
-      // For Phantom and compatible wallets
-      if (provider.createStakeAccount) {
-        try {
-          const result = await provider.createStakeAccount({
-            fromPubkey: publicKey,
-            lamports: amountLamports,
-            stakePubkey: null, // Let wallet generate new stake account
-            votePubkey: votePubkey,
-            withdrawAuthority: publicKey,
-            stakeAuthority: publicKey,
-          });
-          
-          console.log("Stake transaction result:", result);
-          return !!result; // Return true if we have a result
-        } catch (error: any) {
-          // User might have cancelled the transaction
-          if (error.message && (
-              error.message.includes("cancelled") || 
-              error.message.includes("rejected") ||
-              error.message.includes("User denied"))) {
-            toast.error("Transaction was cancelled");
-            return false;
-          }
-          throw error;
+      const lamports = amountSol * 1_000_000_000; // Convert SOL to lamports
+      const connection = new Connection(HELIUS_RPC_ENDPOINT);
+
+      try {
+        const publicKey = (await provider.connect()).publicKey;
+        console.log(publicKey);
+        const stakeAccount = Keypair.generate();
+
+        const stakeTx = StakeProgram.createAccount({
+          fromPubkey: publicKey,
+          stakePubkey: stakeAccount.publicKey,
+          authorized: {
+            staker: publicKey,
+            withdrawer: publicKey,
+          },
+          lamports,
+        });
+        const delegateTx = StakeProgram.delegate({
+          stakePubkey: stakeAccount.publicKey,
+          authorizedPubkey: publicKey,
+          votePubkey: new PublicKey(votePubkey),
+        });
+        const delegateIx = delegateTx.instructions.filter((t) =>
+          t.programId.equals(StakeProgram.programId)
+        )[0];
+        stakeTx.add(delegateIx);
+
+        stakeTx.feePayer = publicKey;
+        stakeTx.recentBlockhash = (
+          await connection.getLatestBlockhash("confirmed")
+        ).blockhash;
+        stakeTx.sign(stakeAccount);
+        const serializeData = await provider.signTransaction(stakeTx);
+
+        const signature = await executeTransaction(
+          connection,
+          serializeData.serialize()
+        );
+        return !!signature;
+      } catch (error: any) {
+        if (
+          error.message &&
+          (error.message.includes("cancelled") ||
+            error.message.includes("rejected") ||
+            error.message.includes("User denied"))
+        ) {
+          toast.error("Transaction was cancelled");
+          return false;
         }
-      }
-      
-      // For Solflare and other wallets that support direct staking
-      if (provider.createStakeTransaction || provider.stake) {
-        try {
-          // Different methods based on wallet
-          if (provider.stake) {
-            const result = await provider.stake(amountLamports, votePubkey);
-            console.log("Solflare stake result:", result);
-            return !!result;
-          } else if (provider.createStakeTransaction) {
-            const result = await provider.createStakeTransaction(amountLamports, votePubkey);
-            console.log("Stake transaction result:", result);
-            return !!result;
-          }
-        } catch (error: any) {
-          if (error.message && (
-              error.message.includes("cancelled") || 
-              error.message.includes("rejected") ||
-              error.message.includes("User denied"))) {
-            toast.error("Transaction was cancelled");
-            return false;
-          }
-          throw error;
-        }
-      }
-      
-      // For other wallets, redirect to StakeView as a last resort
-      const confirmed = window.confirm(
-        "Your wallet doesn't natively support staking transactions. Would you like to be redirected to StakeView.app to complete this transaction?"
-      );
-      
-      if (confirmed) {
-        const stakeLinkUrl = `https://stakeview.app/stake-to/${votePubkey}?amount=${amountSol}`;
-        window.open(stakeLinkUrl, "_blank");
-        toast.info("You've been redirected to StakeView to complete your staking");
-        return true; // User initiated the process
-      } else {
-        toast.info("Staking cancelled");
-        return false;
+        throw error;
       }
     } catch (error) {
       console.error("Error creating stake transaction:", error);
@@ -202,12 +224,15 @@ const StakeModal = ({ isOpen, onClose, validatorPubkey, validatorName }: StakeMo
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md bg-gojira-gray-dark">
         <DialogHeader>
-          <DialogTitle className="text-white">Stake to {validatorName || "Gojira Validator"}</DialogTitle>
+          <DialogTitle className="text-white">
+            Stake to {validatorName || "Gojira Validator"}
+          </DialogTitle>
           <DialogDescription>
-            Support the Solana network by staking your SOL tokens to {validatorName || "Gojira"} validator.
+            Support the Solana network by staking your SOL tokens to{" "}
+            {validatorName || "Gojira"} validator.
           </DialogDescription>
         </DialogHeader>
-        
+
         {!isConnected ? (
           <>
             {!showWalletOptions ? (
@@ -237,16 +262,16 @@ const StakeModal = ({ isOpen, onClose, validatorPubkey, validatorName }: StakeMo
             onDisconnect={disconnectWallet}
           />
         )}
-        
+
         <DialogFooter>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={onClose}
             className="border-gojira-gray-light text-white"
           >
             Cancel
           </Button>
-          
+
           {isConnected && (
             <Button
               onClick={handleStake}
