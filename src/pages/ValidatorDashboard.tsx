@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ValidatorHeader } from "@/components/validator/ValidatorHeader";
@@ -16,7 +15,7 @@ const ValidatorDashboard = () => {
   const { votePubkey } = useParams<{ votePubkey: string }>();
   const navigate = useNavigate();
   const [isStakeModalOpen, setIsStakeModalOpen] = useState(false);
-  
+
   const {
     isLoading,
     isRefreshing,
@@ -27,7 +26,7 @@ const ValidatorDashboard = () => {
     totalStake,
     stakeHistory,
     stakeChanges,
-    handleRefresh
+    handleRefresh,
   } = useValidatorData(votePubkey);
 
   const handleStakeModalOpen = () => {
@@ -40,9 +39,9 @@ const ValidatorDashboard = () => {
 
   const activatingStake = stakeChanges?.activatingStake || 0;
   const deactivatingStake = stakeChanges?.deactivatingStake || 0;
-  
+
   // Use the largest pending change and indicate whether it's activating or deactivating
-  const pendingStakeChange = Math.max(activatingStake, deactivatingStake);
+  const pendingStakeChange = Math.abs(activatingStake - deactivatingStake);
   const isDeactivating = deactivatingStake > activatingStake;
 
   // If no votePubkey, redirect to home
@@ -54,9 +53,9 @@ const ValidatorDashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gojira-gray to-gojira-gray-dark">
       {isRefreshing && <RefreshOverlay />}
-      
+
       <div className="container max-w-7xl mx-auto py-4 px-3 sm:px-5 lg:px-6">
-        <ValidatorHeader 
+        <ValidatorHeader
           validatorPubkey={votePubkey}
           validatorName={validatorInfo?.name}
           validatorIcon={validatorInfo?.icon}
@@ -70,42 +69,41 @@ const ValidatorDashboard = () => {
           onBack={() => navigate("/")}
           onStakeModalOpen={handleStakeModalOpen}
         />
-        
+
         <div className="mt-6"></div>
-        
+
         {error && !isLoading && <ErrorNotice error={error} />}
-        
+
         <ValidatorMetricsGrid
           totalStake={totalStake}
           pendingStakeChange={pendingStakeChange}
           isDeactivating={isDeactivating}
-          commission={validatorMetrics?.commission || validatorInfo?.commission || 0}
+          commission={
+            validatorMetrics?.commission || validatorInfo?.commission || 0
+          }
           mevCommission={validatorMetrics?.mevCommission}
           estimatedApy={validatorMetrics?.estimatedApy}
           delegatorCount={delegatorCount}
           isLoading={isLoading}
           hasError={!!error && totalStake <= 0}
         />
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mt-6">
           <div className="lg:col-span-4 space-y-5">
             <EpochStatusCard />
           </div>
-          
+
           <div className="lg:col-span-8">
-            <StakeChart 
-              data={stakeHistory} 
-              isLoading={isLoading} 
-            />
+            <StakeChart data={stakeHistory} isLoading={isLoading} />
           </div>
         </div>
-        
+
         <DashboardFooter />
       </div>
 
-      <StakeModal 
-        isOpen={isStakeModalOpen} 
-        onClose={handleStakeModalClose} 
+      <StakeModal
+        isOpen={isStakeModalOpen}
+        onClose={handleStakeModalClose}
         validatorPubkey={votePubkey || VALIDATOR_PUBKEY}
         validatorName={validatorInfo?.name || "Validator"}
       />
