@@ -28,7 +28,6 @@ interface StakingMetricsCardProps {
   isLoading?: boolean;
   isEstimated?: boolean;
   isError?: boolean;
-  isSecondary?: boolean;
 }
 
 export const StakingMetricsCard = ({
@@ -40,15 +39,14 @@ export const StakingMetricsCard = ({
   isLoading = false,
   isEstimated = false,
   isError = false,
-  isSecondary = false,
 }: StakingMetricsCardProps) => {
   return (
-    <Card className={`overflow-hidden glass-card animate-fade-in border-gojira-gray-light ${isSecondary ? 'opacity-70 hover:opacity-90 transition-opacity' : ''}`}>
+    <Card className="overflow-hidden glass-card animate-fade-in border-gojira-gray-light">
       <CardHeader className="pb-2">
-        <CardTitle className={`text-sm font-medium flex items-center gap-2 ${isSecondary ? 'text-muted-foreground/70' : 'text-muted-foreground'}`}>
+        <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
           {icon}
           {title}
-          {isEstimated && !title.toLowerCase().includes('estimated') && (
+          {isEstimated && (
             <span className="text-xs bg-gojira-gray-dark/50 px-1 py-0.5 rounded">
               est.
             </span>
@@ -67,7 +65,7 @@ export const StakingMetricsCard = ({
           </div>
         ) : (
           <>
-            <div className={`text-2xl font-bold ${isSecondary ? 'text-white/80' : ''}`}>{value || "—"}</div>
+            <div className="text-2xl font-bold">{value || "—"}</div>
             {description && (
               <CardDescription
                 className={`mt-1 flex items-center gap-1 ${
@@ -192,6 +190,7 @@ export const ValidatorMetricsGrid = ({
         title="Estimated APY"
         value={isLoading ? null : hasError ? "Error" : formattedApy}
         icon={<TrendingUp className="h-4 w-4 text-gojira-red" />}
+        isEstimated={true}
         isLoading={isLoading}
         isError={hasError || !estimatedApy}
       />
@@ -201,7 +200,6 @@ export const ValidatorMetricsGrid = ({
         icon={<ArrowUpRight className="h-4 w-4 text-gojira-red" />}
         isLoading={isLoading}
         isError={hasError || voteRate === undefined}
-        isSecondary={true}
       />
       <StakingMetricsCard
         title="Skip Rate"
@@ -209,7 +207,6 @@ export const ValidatorMetricsGrid = ({
         icon={<ArrowDownRight className="h-4 w-4 text-gojira-red" />}
         isLoading={isLoading}
         isError={hasError || skipRate === undefined}
-        isSecondary={true}
       />
     </div>
   );
