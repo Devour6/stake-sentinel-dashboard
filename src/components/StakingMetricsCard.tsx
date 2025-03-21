@@ -28,6 +28,7 @@ interface StakingMetricsCardProps {
   isLoading?: boolean;
   isEstimated?: boolean;
   isError?: boolean;
+  isSecondary?: boolean;
 }
 
 export const StakingMetricsCard = ({
@@ -39,14 +40,15 @@ export const StakingMetricsCard = ({
   isLoading = false,
   isEstimated = false,
   isError = false,
+  isSecondary = false,
 }: StakingMetricsCardProps) => {
   return (
-    <Card className="overflow-hidden glass-card animate-fade-in border-gojira-gray-light">
+    <Card className={`overflow-hidden glass-card animate-fade-in border-gojira-gray-light ${isSecondary ? 'opacity-80' : ''}`}>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+        <CardTitle className={`text-sm font-medium text-muted-foreground flex items-center gap-2 ${isSecondary ? 'text-xs' : ''}`}>
           {icon}
           {title}
-          {isEstimated && (
+          {isEstimated && !title.toLowerCase().includes('estimated') && (
             <span className="text-xs bg-gojira-gray-dark/50 px-1 py-0.5 rounded">
               est.
             </span>
@@ -65,7 +67,7 @@ export const StakingMetricsCard = ({
           </div>
         ) : (
           <>
-            <div className="text-2xl font-bold">{value || "—"}</div>
+            <div className={`${isSecondary ? 'text-xl' : 'text-2xl'} font-bold`}>{value || "—"}</div>
             {description && (
               <CardDescription
                 className={`mt-1 flex items-center gap-1 ${
@@ -74,7 +76,7 @@ export const StakingMetricsCard = ({
                     : trend === "down"
                     ? "text-red-500"
                     : ""
-                }`}
+                } ${isSecondary ? 'text-xs' : ''}`}
               >
                 {trend === "up" && <ArrowUpRight className="h-3 w-3" />}
                 {trend === "down" && <ArrowDownRight className="h-3 w-3" />}
@@ -159,7 +161,8 @@ export const ValidatorMetricsGrid = ({
   const formattedSkipRate = skipRate !== undefined ? `${skipRate.toFixed(2)}%` : "—";
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-4 animate-slide-up">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-4 animate-slide-up">
+      {/* Primary metrics row - most important metrics */}
       <StakingMetricsCard
         title="Total Stake"
         value={isLoading ? null : hasError ? "Error" : formattedTotalStake}
@@ -190,24 +193,29 @@ export const ValidatorMetricsGrid = ({
         title="Estimated APY"
         value={isLoading ? null : hasError ? "Error" : formattedApy}
         icon={<TrendingUp className="h-4 w-4 text-gojira-red" />}
-        isEstimated={true}
         isLoading={isLoading}
         isError={hasError || !estimatedApy}
       />
-      <StakingMetricsCard
-        title="Vote Rate"
-        value={isLoading ? null : hasError ? "Error" : formattedVoteRate}
-        icon={<ArrowUpRight className="h-4 w-4 text-gojira-red" />}
-        isLoading={isLoading}
-        isError={hasError || voteRate === undefined}
-      />
-      <StakingMetricsCard
-        title="Skip Rate"
-        value={isLoading ? null : hasError ? "Error" : formattedSkipRate}
-        icon={<ArrowDownRight className="h-4 w-4 text-gojira-red" />}
-        isLoading={isLoading}
-        isError={hasError || skipRate === undefined}
-      />
+      
+      {/* Secondary metrics row - less important metrics */}
+      <div className="grid grid-cols-2 col-span-1 sm:col-span-2 md:col-span-4 gap-4 mt-2">
+        <StakingMetricsCard
+          title="Vote Rate"
+          value={isLoading ? null : hasError ? "Error" : formattedVoteRate}
+          icon={<ArrowUpRight className="h-3 w-3 text-gojira-red" />}
+          isLoading={isLoading}
+          isError={hasError || voteRate === undefined}
+          isSecondary={true}
+        />
+        <StakingMetricsCard
+          title="Skip Rate"
+          value={isLoading ? null : hasError ? "Error" : formattedSkipRate}
+          icon={<ArrowDownRight className="h-3 w-3 text-gojira-red" />}
+          isLoading={isLoading}
+          isError={hasError || skipRate === undefined}
+          isSecondary={true}
+        />
+      </div>
     </div>
   );
 };
