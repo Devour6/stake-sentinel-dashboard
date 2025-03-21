@@ -27,6 +27,17 @@ const PageLayout = ({
         }}
       />
       
+      {/* Cosmic elements */}
+      <div className="shooting-star shooting-star-1"></div>
+      <div className="shooting-star shooting-star-2"></div>
+      <div className="shooting-star shooting-star-3"></div>
+      
+      <div className="cosmic-particle particle-1"></div>
+      <div className="cosmic-particle particle-2"></div>
+      <div className="cosmic-particle particle-3"></div>
+      <div className="cosmic-particle particle-4"></div>
+      <div className="cosmic-particle particle-5"></div>
+      
       <div className="fixed top-4 right-4 z-10 flex gap-4">
         <Button
           variant="outline"

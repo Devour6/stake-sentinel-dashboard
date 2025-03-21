@@ -1,4 +1,3 @@
-
 import { useRef, useEffect } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -70,7 +69,7 @@ export const HeaderSearchSection = ({
           }
           value={searchInput}
           onChange={handleInputChange}
-          className="pl-9 h-9 w-full bg-gojira-gray-dark border-gojira-gray-light text-sm pr-12"
+          className="pl-9 h-9 w-full bg-gojira-gray-dark border-gojira-gray-light text-sm pr-12 text-white"
           ref={searchInputRef}
           onFocus={() => {
             if (searchInput.length > 2 && filteredValidators.length > 0) {
@@ -96,7 +95,7 @@ export const HeaderSearchSection = ({
         </Button>
 
         {showSuggestions && filteredValidators.length > 0 && (
-          <div className="absolute z-50 w-full mt-1 bg-gojira-gray-dark border border-gojira-gray-light rounded-md shadow-lg max-h-[300px] overflow-y-auto">
+          <div className="absolute z-50 w-full mt-1 bg-aero-dark border border-aero-gray-light rounded-md shadow-lg max-h-[300px] overflow-y-auto">
             {filteredValidators.map((validator) => (
               <div
                 key={validator.votePubkey}
@@ -157,7 +156,7 @@ export const HeaderSearchSection = ({
         {showSuggestions &&
           searchInput.length > 2 &&
           filteredValidators.length === 0 && (
-            <div className="absolute z-50 w-full mt-1 bg-gojira-gray-dark border border-gojira-gray-light rounded-md shadow-lg p-4 text-center">
+            <div className="absolute z-50 w-full mt-1 bg-aero-dark border border-aero-gray-light rounded-md shadow-lg p-4 text-center">
               <p className="text-sm text-muted-foreground">
                 No validators found matching your search
               </p>

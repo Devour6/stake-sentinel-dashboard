@@ -1,4 +1,3 @@
-
 import { forwardRef, useEffect } from "react";
 import { Search, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -81,7 +80,7 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(({
           )}
           
           {showSuggestions && filteredValidators.length > 0 && (
-            <div className="absolute z-50 w-full mt-1 bg-gojira-gray-dark border border-gojira-gray-light rounded-md shadow-lg max-h-[300px] overflow-y-auto">
+            <div className="absolute z-50 w-full mt-1 bg-aero-dark border border-aero-gray-light rounded-md shadow-lg max-h-[300px] overflow-y-auto">
               {filteredValidators.map((validator) => (
                 <div
                   key={validator.votePubkey}
@@ -98,7 +97,6 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(({
                         alt={`${validator.name || 'Validator'} logo`}
                         className="w-6 h-6 rounded-full flex-shrink-0"
                         onError={(e) => {
-                          // Hide broken images
                           (e.target as HTMLImageElement).style.display = 'none';
                         }}
                       />
@@ -134,7 +132,7 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(({
           )}
           
           {showSuggestions && filteredValidators.length === 0 && searchInput.trim().length > 2 && (
-            <div className="absolute z-50 w-full mt-1 bg-gojira-gray-dark border border-gojira-gray-light rounded-md shadow-lg p-4 text-center">
+            <div className="absolute z-50 w-full mt-1 bg-aero-dark border border-aero-gray-light rounded-md shadow-lg p-4 text-center">
               No validators found matching "{searchInput}"
             </div>
           )}

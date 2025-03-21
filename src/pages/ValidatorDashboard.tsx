@@ -64,6 +64,17 @@ const ValidatorDashboard = () => {
         }}
       />
 
+      {/* Cosmic elements */}
+      <div className="shooting-star shooting-star-1"></div>
+      <div className="shooting-star shooting-star-2"></div>
+      <div className="shooting-star shooting-star-3"></div>
+      
+      <div className="cosmic-particle particle-1"></div>
+      <div className="cosmic-particle particle-2"></div>
+      <div className="cosmic-particle particle-3"></div>
+      <div className="cosmic-particle particle-4"></div>
+      <div className="cosmic-particle particle-5"></div>
+
       {isRefreshing && <RefreshOverlay />}
 
       <div className="container relative z-1 max-w-7xl mx-auto py-4 px-3 sm:px-5 lg:px-6">
