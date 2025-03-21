@@ -155,7 +155,7 @@ export const StakeHistoryChart: FC<StakeHistoryChartProps> = ({ vote_identity, i
               <Line 
                 type="monotone" 
                 dataKey="stake" 
-                stroke="#ff4a22" 
+                stroke="#838EFC" 
                 strokeWidth={2}
                 dot={{ r: 2 }}
                 activeDot={{ r: 6 }}

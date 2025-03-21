@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
@@ -23,7 +24,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
       return (
         <div className="glass-effect p-3 border border-gojira-gray-light rounded-lg shadow-sm">
           <p className="font-medium">Epoch {epoch}</p>
-          <p className="text-gojira-red font-bold">{`${new Intl.NumberFormat().format(Math.round(stakeValue * 100) / 100)} SOL`}</p>
+          <p className="text-[#838EFC] font-bold">{`${new Intl.NumberFormat().format(Math.round(stakeValue * 100) / 100)} SOL`}</p>
         </div>
       );
     }
@@ -159,7 +160,7 @@ export const StakeChart = ({ data, isLoading = false }: StakeChartProps) => {
               <p className="text-xs text-muted-foreground mt-1">We're having trouble retrieving historical data for this validator</p>
               <button 
                 onClick={handleRetry}
-                className="mt-4 px-4 py-2 bg-gojira-red text-white rounded-md hover:bg-red-600 transition-colors"
+                className="mt-4 px-4 py-2 bg-[#838EFC] text-white rounded-md hover:bg-[#6e77e0] transition-colors"
               >
                 Retry
               </button>
@@ -173,8 +174,8 @@ export const StakeChart = ({ data, isLoading = false }: StakeChartProps) => {
             >
               <defs>
                 <linearGradient id="colorStake" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#ff4a22" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#ff4a22" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#838EFC" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#838EFC" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
@@ -197,15 +198,15 @@ export const StakeChart = ({ data, isLoading = false }: StakeChartProps) => {
               {currentEpoch && (
                 <ReferenceLine 
                   x={currentEpoch} 
-                  stroke="#ff4a22" 
+                  stroke="#838EFC" 
                   strokeDasharray="3 3" 
-                  label={{ value: 'Current', position: 'top', fill: '#ff4a22' }} 
+                  label={{ value: 'Current', position: 'top', fill: '#838EFC' }} 
                 />
               )}
               <Area 
                 type="monotone" 
                 dataKey="stake" 
-                stroke="#ff4a22" 
+                stroke="#838EFC" 
                 strokeWidth={2}
                 fillOpacity={1}
                 fill="url(#colorStake)"
