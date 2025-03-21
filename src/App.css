@@ -30,7 +30,7 @@
   animation: orbit 15s infinite ease-in-out;
 }
 
-/* Shooting star animation */
+/* Shooting star animation - Enhanced */
 @keyframes shooting-star {
   0% { 
     transform: translateX(0) translateY(0) rotate(315deg) scale(0);
@@ -49,12 +49,12 @@
 .shooting-star {
   position: absolute;
   width: 120px;
-  height: 1px;
+  height: 2px; /* Slightly thicker */
   background: linear-gradient(90deg, #9b87f5 0%, rgba(155, 135, 245, 0) 100%);
   opacity: 0;
-  box-shadow: 0 0 10px 2px #9b87f5;
+  box-shadow: 0 0 15px 4px #9b87f5; /* Enhanced glow */
   border-radius: 100%;
-  z-index: 0;
+  z-index: 1; /* Increased z-index for visibility */
   pointer-events: none;
 }
 
@@ -79,21 +79,37 @@
   animation-delay: 7s;
 }
 
-/* Cosmic dust particles */
+/* Additional shooting stars */
+.shooting-star-4 {
+  top: 50%;
+  right: 15%;
+  animation: shooting-star 14s linear infinite;
+  animation-delay: 2s;
+}
+
+.shooting-star-5 {
+  top: 70%;
+  right: 30%;
+  animation: shooting-star 9s linear infinite;
+  animation-delay: 6s;
+}
+
+/* Cosmic dust particles - Enhanced */
 @keyframes float-particle {
   0%, 100% { transform: translate(0, 0); opacity: 0.3; }
-  50% { transform: translate(5px, -5px); opacity: 0.6; }
+  50% { transform: translate(5px, -5px); opacity: 0.8; }
 }
 
 .cosmic-particle {
   position: absolute;
-  width: 2px;
-  height: 2px;
+  width: 3px; /* Slightly larger */
+  height: 3px;
   background-color: #9b87f5;
   border-radius: 50%;
-  opacity: 0.3;
+  opacity: 0.5; /* More visible */
   pointer-events: none;
-  z-index: 0;
+  z-index: 1;
+  box-shadow: 0 0 8px 2px rgba(155, 135, 245, 0.7); /* Added glow */
 }
 
 .particle-1 { 
@@ -128,4 +144,74 @@
   left: 55%; 
   animation: float-particle 7s infinite ease-in-out;
   animation-delay: 4s;
+}
+
+/* Additional particles */
+.particle-6 { 
+  top: 35%; 
+  left: 40%; 
+  animation: float-particle 10s infinite ease-in-out;
+  animation-delay: 0.5s;
+}
+
+.particle-7 { 
+  top: 75%; 
+  left: 20%; 
+  animation: float-particle 11s infinite ease-in-out;
+  animation-delay: 1.5s;
+}
+
+.particle-8 { 
+  top: 15%; 
+  left: 65%; 
+  animation: float-particle 8.5s infinite ease-in-out;
+  animation-delay: 2.5s;
+}
+
+/* Pulsating star animation */
+@keyframes pulsate {
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.3); opacity: 1; }
+}
+
+.pulsating-star {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background-color: white;
+  border-radius: 50%;
+  box-shadow: 0 0 10px 3px rgba(155, 135, 245, 0.8);
+  pointer-events: none;
+  z-index: 1;
+  animation: pulsate 4s infinite ease-in-out;
+}
+
+.star-1 {
+  top: 20%;
+  left: 25%;
+  animation-delay: 0s;
+}
+
+.star-2 {
+  top: 50%;
+  left: 80%;
+  animation-delay: 1s;
+}
+
+.star-3 {
+  top: 85%;
+  left: 40%;
+  animation-delay: 2s;
+}
+
+.star-4 {
+  top: 15%;
+  left: 70%;
+  animation-delay: 3s;
+}
+
+.star-5 {
+  top: 60%;
+  left: 10%;
+  animation-delay: 2.5s;
 }

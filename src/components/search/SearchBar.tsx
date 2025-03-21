@@ -1,3 +1,4 @@
+
 import { forwardRef, useEffect } from "react";
 import { Search, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -61,7 +62,7 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(({
           <Input
             type="text"
             placeholder={isLoadingValidators ? "Loading..." : "Search validator..."}
-            className="pl-9 pr-3 py-2 bg-gojira-gray-dark border-gojira-gray-light h-9 w-full"
+            className="pl-9 pr-3 py-2 bg-gojira-gray-dark border-gojira-gray-light h-9 w-full text-white"
             value={searchInput}
             onChange={handleInputChange}
             ref={ref}

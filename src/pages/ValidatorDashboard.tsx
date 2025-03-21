@@ -68,12 +68,23 @@ const ValidatorDashboard = () => {
       <div className="shooting-star shooting-star-1"></div>
       <div className="shooting-star shooting-star-2"></div>
       <div className="shooting-star shooting-star-3"></div>
+      <div className="shooting-star shooting-star-4"></div>
+      <div className="shooting-star shooting-star-5"></div>
       
       <div className="cosmic-particle particle-1"></div>
       <div className="cosmic-particle particle-2"></div>
       <div className="cosmic-particle particle-3"></div>
       <div className="cosmic-particle particle-4"></div>
       <div className="cosmic-particle particle-5"></div>
+      <div className="cosmic-particle particle-6"></div>
+      <div className="cosmic-particle particle-7"></div>
+      <div className="cosmic-particle particle-8"></div>
+      
+      <div className="pulsating-star star-1"></div>
+      <div className="pulsating-star star-2"></div>
+      <div className="pulsating-star star-3"></div>
+      <div className="pulsating-star star-4"></div>
+      <div className="pulsating-star star-5"></div>
 
       {isRefreshing && <RefreshOverlay />}
 
