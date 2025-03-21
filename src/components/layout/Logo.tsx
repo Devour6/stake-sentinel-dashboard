@@ -20,7 +20,7 @@ const Logo: React.FC<LogoProps> = ({ size = "md", className = "", animate = fals
   return (
     <div className={`relative ${sizeClasses[size]} ${className}`}>
       <img
-        src="/lovable-uploads/f241ab61-a1b1-4ab3-a458-6a65ffac9040.png"
+        src="/lovable-uploads/d77bb215-62b8-4038-ac27-01eb95f981db.png"
         alt="AeroScan Logo"
         className={`w-full h-full object-contain ${animationClass}`}
         style={{ background: 'transparent' }}
