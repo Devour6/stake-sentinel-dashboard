@@ -63,11 +63,12 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				gojira: {
-					red: '#DD0817',
-					gray: '#282828',
-					'red-light': '#FF1F2E',
-					'red-dark': '#B50613',
+				aero: {
+					purple: '#838EFC',
+					white: '#FFFFFF',
+					dark: '#121212',
+					'purple-light': '#9DA6FD',
+					'purple-dark': '#6B77E9',
 					'gray-light': '#3A3A3A',
 					'gray-dark': '#1A1A1A',
 				}
@@ -125,7 +126,7 @@ export default {
 				'slide-down': 'slide-down 0.4s ease-out',
 				'pulse-subtle': 'pulse-subtle 3s infinite ease-in-out',
 				'float': 'float 3s infinite ease-in-out',
-				'roar': 'roar 2s infinite ease-in-out'
+				'pulse': 'pulse 2s infinite ease-in-out'
 			},
 			backdropFilter: {
 				'none': 'none',
@@ -135,7 +136,7 @@ export default {
 				'glass': '0 4px 30px rgba(0, 0, 0, 0.1)',
 				'glass-hover': '0 8px 32px rgba(0, 0, 0, 0.15)',
 				'card-hover': '0 8px 30px rgba(0, 0, 0, 0.12)',
-				'gojira': '0 4px 20px rgba(221, 8, 23, 0.3)'
+				'aero': '0 4px 20px rgba(131, 142, 252, 0.3)'
 			}
 		}
 	},

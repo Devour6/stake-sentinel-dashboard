@@ -27,7 +27,7 @@ export const HeaderControlsSection = ({
       <Button 
         variant="destructive" 
         size="icon"
-        className="rounded-full bg-gojira-red hover:bg-gojira-red-dark transition-all duration-300 h-8 w-8 flex items-center justify-center"
+        className="rounded-full bg-aero-purple hover:bg-aero-purple-dark transition-all duration-300 h-8 w-8 flex items-center justify-center"
         onClick={handleRefresh}
         disabled={isLoading}
         title="Refresh data"
@@ -40,9 +40,9 @@ export const HeaderControlsSection = ({
           variant="outline"
           size="sm"
           onClick={onStakeModalOpen}
-          className="bg-gojira-red hover:bg-gojira-red-dark text-white border-none whitespace-nowrap"
+          className="bg-aero-purple hover:bg-aero-purple-dark text-white border-none whitespace-nowrap"
         >
-          Stake to Gojira
+          Stake to AeroScan
         </Button>
       )}
     </div>

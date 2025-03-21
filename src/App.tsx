@@ -10,7 +10,7 @@ import NotFound from "./pages/NotFound";
 import { VALIDATOR_PUBKEY } from "./services/api/constants";
 
 // Set the document title
-document.title = "NodeScan - Solana Validator Monitor";
+document.title = "AeroScan - Solana Validator Monitor";
 
 const queryClient = new QueryClient();
 

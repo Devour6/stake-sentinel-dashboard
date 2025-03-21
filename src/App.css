@@ -1,10 +1,10 @@
 
-/* Custom animations for the Gojira logo */
+/* Custom animations for the AeroScan logo */
 @keyframes breathe {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.05); }
 }
 
-.gojira-logo {
+.aero-logo {
   animation: breathe 4s infinite ease-in-out;
 }

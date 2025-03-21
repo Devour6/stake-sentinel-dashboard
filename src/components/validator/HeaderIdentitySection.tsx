@@ -61,22 +61,22 @@ export const HeaderIdentitySection = ({
   return (
     <div className="space-y-4 w-full">
       {description && (
-        <div className="text-sm text-white mb-4 w-full bg-gojira-gray-dark/30 p-3 rounded-md border border-gojira-gray-light/20">
+        <div className="text-sm text-white mb-4 w-full bg-aero-gray-dark/30 p-3 rounded-md border border-aero-gray-light/20">
           {description}
         </div>
       )}
       
       <div className="flex flex-wrap items-center gap-3">
         {/* Vote Account Section */}
-        <div className="flex items-center gap-1 bg-gojira-gray-dark/30 px-2 py-1 rounded-md">
+        <div className="flex items-center gap-1 bg-aero-gray-dark/30 px-2 py-1 rounded-md">
           <span className="text-sm whitespace-nowrap">Vote Account:</span>
-          <code className="bg-gojira-gray-dark/50 px-2 py-0.5 rounded text-sm font-mono">
+          <code className="bg-aero-gray-dark/50 px-2 py-0.5 rounded text-sm font-mono">
             {truncateAddress(validatorPubkey, 6)}
           </code>
           <Button 
             variant="ghost" 
             size="sm" 
-            className="p-0 h-auto hover:bg-transparent text-gojira-red hover:text-gojira-red-light"
+            className="p-0 h-auto hover:bg-transparent text-aero-purple hover:text-aero-purple-light"
             onClick={() => copyToClipboard(validatorPubkey, "Vote Account")}
           >
             <Copy className="h-3.5 w-3.5" />
@@ -85,7 +85,7 @@ export const HeaderIdentitySection = ({
             href={solscanUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-gojira-red hover:text-gojira-red-light transition-colors"
+            className="text-aero-purple hover:text-aero-purple-light transition-colors"
           >
             <ExternalLink className="h-3.5 w-3.5" />
           </a>
@@ -105,15 +105,15 @@ export const HeaderIdentitySection = ({
         
         {/* Identity Account Section */}
         {identityPubkey && (
-          <div className="flex items-center gap-1 bg-gojira-gray-dark/30 px-2 py-1 rounded-md">
+          <div className="flex items-center gap-1 bg-aero-gray-dark/30 px-2 py-1 rounded-md">
             <span className="text-sm whitespace-nowrap">Identity:</span>
-            <code className="bg-gojira-gray-dark/50 px-2 py-0.5 rounded text-sm font-mono">
+            <code className="bg-aero-gray-dark/50 px-2 py-0.5 rounded text-sm font-mono">
               {truncateAddress(identityPubkey, 6)}
             </code>
             <Button 
               variant="ghost" 
               size="sm" 
-              className="p-0 h-auto hover:bg-transparent text-gojira-red hover:text-gojira-red-light"
+              className="p-0 h-auto hover:bg-transparent text-aero-purple hover:text-aero-purple-light"
               onClick={() => copyToClipboard(identityPubkey, "Identity")}
             >
               <Copy className="h-3.5 w-3.5" />
@@ -122,7 +122,7 @@ export const HeaderIdentitySection = ({
               href={identitySolscanUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gojira-red hover:text-gojira-red-light transition-colors"
+              className="text-aero-purple hover:text-aero-purple-light transition-colors"
             >
               <ExternalLink className="h-3.5 w-3.5" />
             </a>
@@ -131,7 +131,7 @@ export const HeaderIdentitySection = ({
         
         {/* Website Badge */}
         {website && (
-          <div className="flex items-center gap-1 bg-gojira-gray-dark/30 px-2 py-1 rounded-md">
+          <div className="flex items-center gap-1 bg-aero-gray-dark/30 px-2 py-1 rounded-md">
             <span className="text-sm whitespace-nowrap">Website:</span>
             <TooltipProvider delayDuration={300}>
               <Tooltip>
@@ -140,7 +140,7 @@ export const HeaderIdentitySection = ({
                     href={website} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="text-gojira-red hover:text-gojira-red-light transition-colors flex items-center"
+                    className="text-aero-purple hover:text-aero-purple-light transition-colors flex items-center"
                   >
                     <ExternalLink className="h-3.5 w-3.5 mr-1" />
                     <span className="text-sm truncate max-w-[120px] sm:max-w-[200px] md:max-w-[300px] xl:max-w-[400px]">
@@ -158,7 +158,7 @@ export const HeaderIdentitySection = ({
         
         {/* Version Badge */}
         {version && (
-          <Badge variant="outline" className="bg-gojira-gray-dark/30 text-white border-gojira-gray-light">
+          <Badge variant="outline" className="bg-aero-gray-dark/30 text-white border-aero-gray-light">
             Version: {version}
           </Badge>
         )}

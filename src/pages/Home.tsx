@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import PageLayout from "@/components/layout/PageLayout";
 import StakeModal from "@/components/StakeModal";
@@ -28,7 +29,7 @@ const Home = () => {
         isOpen={isStakeModalOpen}
         onClose={handleStakeModalClose}
         validatorPubkey={VALIDATOR_PUBKEY}
-        validatorName="Gojira Validator"
+        validatorName="AeroScan Validator"
       />
 
       <PositionsModal

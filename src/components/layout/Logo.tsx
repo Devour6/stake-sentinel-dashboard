@@ -19,19 +19,11 @@ const Logo: React.FC<LogoProps> = ({ size = "md", className = "", animate = fals
 
   return (
     <div className={`relative ${sizeClasses[size]} ${className}`}>
-      {/* Simple hexagon shape - red */}
-      <div className={`absolute inset-0 text-gojira-red transform ${animationClass}`}>
-        <svg viewBox="0 0 100 100" fill="currentColor" className="w-full h-full">
-          <polygon points="50,0 93.3,25 93.3,75 50,100 6.7,75 6.7,25" />
-        </svg>
-      </div>
-      
-      {/* Simple N letter */}
-      <div className="absolute inset-0 flex items-center justify-center text-white">
-        <svg viewBox="0 0 100 100" fill="currentColor" className="w-[60%] h-[60%]">
-          <path d="M30,30 L30,70 L45,70 L45,50 L70,70 L70,30 L55,30 L55,50 L30,30" />
-        </svg>
-      </div>
+      <img
+        src="/lovable-uploads/f241ab61-a1b1-4ab3-a458-6a65ffac9040.png"
+        alt="AeroScan Logo"
+        className={`w-full h-full object-contain ${animationClass}`}
+      />
     </div>
   );
 };

@@ -16,7 +16,7 @@
     --popover: 0 0% 10%;
     --popover-foreground: 0 0% 95%;
 
-    --primary: 356 94% 45%;
+    --primary: 240 97% 75%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 0 0% 20%;
@@ -25,7 +25,7 @@
     --muted: 0 0% 20%;
     --muted-foreground: 0 0% 60%;
 
-    --accent: 356 94% 45%;
+    --accent: 240 97% 75%;
     --accent-foreground: 0 0% 98%;
 
     --destructive: 0 84.2% 60.2%;
@@ -33,18 +33,18 @@
 
     --border: 0 0% 20%;
     --input: 0 0% 20%;
-    --ring: 356 94% 45%;
+    --ring: 240 97% 75%;
 
     --radius: 0.8rem;
 
     --sidebar-background: 0 0% 15%;
     --sidebar-foreground: 0 0% 95%;
-    --sidebar-primary: 356 94% 45%;
+    --sidebar-primary: 240 97% 75%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 0 0% 20%;
     --sidebar-accent-foreground: 0 0% 95%;
     --sidebar-border: 0 0% 25%;
-    --sidebar-ring: 356 94% 45%;
+    --sidebar-ring: 240 97% 75%;
   }
 }
 
@@ -60,20 +60,20 @@
   }
 
   body {
-    @apply bg-gojira-gray text-foreground;
+    @apply bg-aero-dark text-foreground;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
   .glass-effect {
-    @apply bg-gojira-gray-light/40 backdrop-blur-lg shadow-glass border border-gojira-gray-light/50;
+    @apply bg-aero-gray-light/40 backdrop-blur-lg shadow-glass border border-aero-gray-light/50;
   }
 
   .glass-card {
-    @apply glass-effect rounded-2xl transition-all duration-300 hover:shadow-gojira;
+    @apply glass-effect rounded-2xl transition-all duration-300 hover:shadow-aero;
   }
 
-  .gojira-gradient {
-    @apply bg-gradient-to-r from-gojira-red-dark via-gojira-red to-gojira-red-light;
+  .aero-gradient {
+    @apply bg-gradient-to-r from-aero-purple-dark via-aero-purple to-aero-purple-light;
   }
 
   /* Custom scrollbar */
@@ -87,7 +87,7 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-gojira-gray-light hover:bg-gojira-red/80 rounded-full;
+    @apply bg-aero-gray-light hover:bg-aero-purple/80 rounded-full;
   }
 }
 
@@ -135,13 +135,13 @@
 
 /* Smooth refresh transition */
 .refresh-overlay {
-  @apply fixed inset-0 z-50 bg-gojira-gray-dark/70 backdrop-blur-sm 
+  @apply fixed inset-0 z-50 bg-aero-dark/70 backdrop-blur-sm 
          flex items-center justify-center transition-all duration-300;
   animation: fadeIn 300ms ease-in-out;
 }
 
 .refresh-spinner {
-  @apply w-12 h-12 border-4 border-gojira-red/20 border-t-gojira-red rounded-full;
+  @apply w-12 h-12 border-4 border-aero-purple/20 border-t-aero-purple rounded-full;
   animation: spin 1s linear infinite;
 }
 
