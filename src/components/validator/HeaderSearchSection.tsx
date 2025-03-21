@@ -58,7 +58,7 @@ export const HeaderSearchSection = ({
       onSubmit={handleSearchSubmit}
       className={`${
         isMobile ? "w-full" : "w-full sm:w-48 md:w-56"
-      } relative search-container`}
+      } relative search-container font-outfit`}
     >
       <div className="relative">
         <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -69,7 +69,7 @@ export const HeaderSearchSection = ({
           }
           value={searchInput}
           onChange={handleInputChange}
-          className="pl-9 h-9 w-full bg-gojira-gray-dark border-gojira-gray-light text-sm pr-12 text-black"
+          className="pl-9 h-9 w-full bg-gojira-gray-dark border-gojira-gray-light text-sm pr-12 text-black font-outfit"
           style={{ color: '#000' }}
           ref={searchInputRef}
           onFocus={() => {
@@ -83,7 +83,7 @@ export const HeaderSearchSection = ({
           type="submit"
           variant="destructive"
           size="sm"
-          className="absolute right-0 top-0 h-9 rounded-l-none bg-gojira-red hover:bg-gojira-red-dark flex items-center justify-center shadow-md"
+          className="absolute right-0 top-0 h-9 rounded-l-none bg-gojira-red hover:bg-gojira-red-dark flex items-center justify-center shadow-md font-outfit"
           disabled={isLoadingValidators || !searchInput.trim() || isSearching}
         >
           {isSearching ? (
@@ -94,7 +94,7 @@ export const HeaderSearchSection = ({
         </Button>
 
         {showSuggestions && filteredValidators.length > 0 && (
-          <div className="absolute z-50 w-full mt-1 bg-white border border-aero-gray-light rounded-md shadow-lg max-h-[300px] overflow-y-auto">
+          <div className="absolute z-50 w-full mt-1 bg-white border border-aero-gray-light rounded-md shadow-lg max-h-[300px] overflow-y-auto font-outfit">
             {filteredValidators.map((validator) => (
               <div
                 key={validator.votePubkey}
@@ -155,7 +155,7 @@ export const HeaderSearchSection = ({
         {showSuggestions &&
           searchInput.length > 2 &&
           filteredValidators.length === 0 && (
-            <div className="absolute z-50 w-full mt-1 bg-white border border-aero-gray-light rounded-md shadow-lg p-4 text-center">
+            <div className="absolute z-50 w-full mt-1 bg-white border border-aero-gray-light rounded-md shadow-lg p-4 text-center font-outfit">
               <p className="text-sm text-gray-600">
                 No validators found matching your search
               </p>
