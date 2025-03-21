@@ -23,6 +23,7 @@ const Logo: React.FC<LogoProps> = ({ size = "md", className = "", animate = fals
         src="/lovable-uploads/f241ab61-a1b1-4ab3-a458-6a65ffac9040.png"
         alt="AeroScan Logo"
         className={`w-full h-full object-contain ${animationClass}`}
+        style={{ background: 'transparent' }}
       />
     </div>
   );
