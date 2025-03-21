@@ -42,7 +42,7 @@ export const HeaderControlsSection = ({
           onClick={onStakeModalOpen}
           className="bg-aero-purple hover:bg-aero-purple-dark text-white border-none whitespace-nowrap"
         >
-          Stake to AeroScan
+          Swap to aeroSOL
         </Button>
       )}
     </div>

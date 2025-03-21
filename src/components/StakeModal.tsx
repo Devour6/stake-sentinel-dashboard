@@ -72,16 +72,13 @@ const StakeModal = ({
     setIsStaking(true);
 
     try {
-      // Find the wallet provider
       const walletProvider = findWalletProvider(selectedWallet || "");
       if (!walletProvider) {
         throw new Error(`Could not find wallet provider for ${selectedWallet}`);
       }
 
-      // Use the validator pubkey passed as prop, falling back to VALIDATOR_PUBKEY
       const targetValidator = validatorPubkey || VALIDATOR_PUBKEY;
 
-      // Create and send stake transaction
       const result = await createStakeTransaction(
         walletProvider,
         parseFloat(amount),
@@ -97,7 +94,6 @@ const StakeModal = ({
         setAmount("");
         onClose();
       } else {
-        // Transaction was not confirmed or was cancelled
         toast.error("Staking transaction was not completed");
       }
     } catch (error: any) {
@@ -108,7 +104,6 @@ const StakeModal = ({
     }
   };
 
-  // Create and send stake transaction
   const createStakeTransaction = async (
     provider: any,
     amountSol: number,
@@ -119,13 +114,11 @@ const StakeModal = ({
     }
 
     try {
-      // Check if wallet has necessary methods
       if (!provider.publicKey && !provider.signTransaction) {
         throw new Error("Wallet doesn't support transaction signing");
       }
 
-      // Construct transaction request
-      const lamports = amountSol * 1_000_000_000; // Convert SOL to lamports
+      const lamports = amountSol * 1_000_000_000;
       const connection = new Connection(HELIUS_RPC_ENDPOINT);
 
       try {
@@ -187,11 +180,10 @@ const StakeModal = ({
       <DialogContent className="sm:max-w-md bg-gojira-gray-dark">
         <DialogHeader>
           <DialogTitle className="text-white">
-            Stake to {validatorName || "Gojira Validator"}
+            Swap to aeroSOL {validatorName ? `via ${validatorName}` : ""}
           </DialogTitle>
           <DialogDescription>
-            Support the Solana network by staking your SOL tokens to{" "}
-            {validatorName || "Gojira"} validator.
+            Support the Solana network by swapping your SOL tokens to aeroSOL {validatorName ? `via ${validatorName}` : ""}.
           </DialogDescription>
         </DialogHeader>
 
@@ -243,10 +235,10 @@ const StakeModal = ({
               {isStaking ? (
                 <>
                   <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin mr-2" />
-                  Staking...
+                  Swapping...
                 </>
               ) : (
-                "Stake"
+                "Swap"
               )}
             </Button>
           )}

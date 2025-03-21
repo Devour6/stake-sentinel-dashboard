@@ -29,7 +29,7 @@ const PageLayout = ({
           className="border-aero-purple text-aero-purple hover:bg-aero-purple/10"
           onClick={onStakeModalOpen}
         >
-          Stake to AeroScan Validator
+          Swap to aeroSOL
         </Button>
       </div>
 
