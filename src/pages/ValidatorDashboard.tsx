@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ValidatorHeader } from "@/components/validator/ValidatorHeader";
@@ -27,6 +26,8 @@ const ValidatorDashboard = () => {
     totalStake,
     stakeHistory,
     stakeChanges,
+    voteRate,
+    skipRate,
     handleRefresh,
   } = useValidatorData(votePubkey);
 
@@ -133,6 +134,8 @@ const ValidatorDashboard = () => {
           mevCommission={validatorMetrics?.mevCommission}
           estimatedApy={validatorMetrics?.estimatedApy}
           delegatorCount={delegatorCount}
+          voteRate={voteRate}
+          skipRate={skipRate}
           isLoading={isLoading}
           hasError={!!error && totalStake <= 0}
         />

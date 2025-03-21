@@ -35,7 +35,9 @@ export interface ValidatorMetrics {
   uptime?: number;
   version?: string;
   website?: string | null;
-  delegatorCount?: number; // Add this field to fix the type error
+  delegatorCount?: number;
+  voteRate?: number;
+  skipRate?: number;
 }
 
 // Raw RPC response interfaces

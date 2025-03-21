@@ -7,6 +7,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { fetchCurrentEpoch } from "@/services/api/epochApi";
 import { AlertCircle } from "lucide-react";
+import { format } from "date-fns";
 
 interface StakeChartProps {
   data: StakeHistoryItem[];
@@ -19,18 +20,36 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     const epoch = payload[0]?.payload?.epoch;
     const stakeValue = payload[0]?.value;
+    const date = payload[0]?.payload?.date;
+    
+    let formattedDate = "";
+    if (date) {
+      try {
+        formattedDate = format(new Date(date), 'MMM d, yyyy');
+      } catch (e) {
+        console.error("Error formatting date:", e);
+      }
+    }
     
     if (epoch !== undefined && stakeValue !== undefined) {
       return (
         <div className="glass-effect p-3 border border-gojira-gray-light rounded-lg shadow-sm">
           <p className="font-medium">Epoch {epoch}</p>
-          <p className="text-[#838EFC] font-bold">{`${new Intl.NumberFormat().format(Math.round(stakeValue * 100) / 100)} SOL`}</p>
+          {formattedDate && <p className="text-muted-foreground text-xs">{formattedDate}</p>}
+          <p className="text-[#838EFC] font-bold mt-1">{`${new Intl.NumberFormat().format(Math.round(stakeValue * 100) / 100)} SOL`}</p>
         </div>
       );
     }
   }
 
   return null;
+};
+
+// Custom formatter for the X-axis to show both epoch and date
+const formatXAxis = (epoch: number, index: number, data: any[]) => {
+  // Only show every 3rd label to avoid overcrowding
+  if (index % 3 !== 0 && index !== data.length - 1) return '';
+  return `E${epoch}`;
 };
 
 export const StakeChart = ({ data, isLoading = false }: StakeChartProps) => {
@@ -128,6 +147,16 @@ export const StakeChart = ({ data, isLoading = false }: StakeChartProps) => {
     }
   };
 
+  // Function to format dates for secondary axis labels
+  const getDateLabel = (item: StakeHistoryItem) => {
+    if (!item.date) return "";
+    try {
+      return format(new Date(item.date), 'MMM d');
+    } catch (e) {
+      return "";
+    }
+  };
+
   return (
     <Card className="glass-card animate-fade-in border-gojira-gray-light">
       <CardHeader className="pb-2">
@@ -170,7 +199,7 @@ export const StakeChart = ({ data, isLoading = false }: StakeChartProps) => {
           <ResponsiveContainer width="100%" height={320}>
             <AreaChart
               data={chartData}
-              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              margin={{ top: 5, right: 30, left: 20, bottom: 25 }}
             >
               <defs>
                 <linearGradient id="colorStake" x1="0" y1="0" x2="0" y2="1">
@@ -181,8 +210,26 @@ export const StakeChart = ({ data, isLoading = false }: StakeChartProps) => {
               <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
               <XAxis 
                 dataKey="epoch" 
-                label={{ value: 'Epoch', position: 'insideBottomRight', offset: -5 }}
+                label={{ value: 'Epoch', position: 'insideBottomRight', offset: -5, dy: 10 }}
                 style={{ fontSize: '0.75rem' }}
+                tickFormatter={formatXAxis}
+                padding={{ left: 10, right: 10 }}
+              />
+              <XAxis 
+                dataKey={(entry) => getDateLabel(entry)}
+                axisLine={false}
+                tickLine={false}
+                interval={0}
+                tick={{ fontSize: 10 }}
+                xAxisId="date"
+                orientation="bottom"
+                padding={{ left: 10, right: 10 }}
+                height={20}
+                tickFormatter={(value, index) => {
+                  // Only show every nth label to avoid overcrowding
+                  if (index % 3 !== 0 && index !== chartData.length - 1) return '';
+                  return value;
+                }}
               />
               <YAxis 
                 label={{ value: 'Stake (SOL)', angle: -90, position: 'insideLeft' }}

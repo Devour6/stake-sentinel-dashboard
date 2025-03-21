@@ -1,3 +1,4 @@
+
 import {
   Card,
   CardContent,
@@ -13,6 +14,7 @@ import {
   Clock,
   TrendingUp,
   Users,
+  Database,
 } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { formatSolNumber } from "@/services/api/utils";
@@ -94,6 +96,8 @@ interface ValidatorMetricsProps {
   mevCommission?: number;
   estimatedApy?: number;
   delegatorCount?: number;
+  voteRate?: number;
+  skipRate?: number;
   isLoading?: boolean;
   hasError?: boolean;
 }
@@ -106,6 +110,8 @@ export const ValidatorMetricsGrid = ({
   mevCommission,
   estimatedApy,
   delegatorCount,
+  voteRate,
+  skipRate,
   isLoading = false,
   hasError = false,
 }: ValidatorMetricsProps) => {
@@ -148,12 +154,16 @@ export const ValidatorMetricsGrid = ({
     ? `${(estimatedApy * 100).toFixed(2)}%`
     : "—";
 
+  // Format vote rate and skip rate
+  const formattedVoteRate = voteRate !== undefined ? `${voteRate.toFixed(2)}%` : "—";
+  const formattedSkipRate = skipRate !== undefined ? `${skipRate.toFixed(2)}%` : "—";
+
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4 mb-4 animate-slide-up">
+    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-4 animate-slide-up">
       <StakingMetricsCard
         title="Total Stake"
         value={isLoading ? null : hasError ? "Error" : formattedTotalStake}
-        icon={<div className="w-4 h-4 bg-gojira-red rounded-full"></div>}
+        icon={<Database className="h-4 w-4 text-gojira-red" />}
         isLoading={isLoading}
         isError={hasError}
       />
@@ -183,6 +193,20 @@ export const ValidatorMetricsGrid = ({
         isEstimated={true}
         isLoading={isLoading}
         isError={hasError || !estimatedApy}
+      />
+      <StakingMetricsCard
+        title="Vote Rate"
+        value={isLoading ? null : hasError ? "Error" : formattedVoteRate}
+        icon={<ArrowUpRight className="h-4 w-4 text-gojira-red" />}
+        isLoading={isLoading}
+        isError={hasError || voteRate === undefined}
+      />
+      <StakingMetricsCard
+        title="Skip Rate"
+        value={isLoading ? null : hasError ? "Error" : formattedSkipRate}
+        icon={<ArrowDownRight className="h-4 w-4 text-gojira-red" />}
+        isLoading={isLoading}
+        isError={hasError || skipRate === undefined}
       />
     </div>
   );
