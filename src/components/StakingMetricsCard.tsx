@@ -62,22 +62,24 @@ export const StakingMetricsCard = ({
             <span className="text-sm">Error loading data</span>
           </div>
         ) : (
-          <div className="text-2xl font-bold">{value || "—"}</div>
-        )}
-        {description && (
-          <CardDescription
-            className={`mt-1 flex items-center gap-1 ${
-              trend === "up"
-                ? "text-green-500"
-                : trend === "down"
-                ? "text-red-500"
-                : ""
-            }`}
-          >
-            {trend === "up" && <ArrowUpRight className="h-3 w-3" />}
-            {trend === "down" && <ArrowDownRight className="h-3 w-3" />}
-            {description}
-          </CardDescription>
+          <>
+            <div className="text-2xl font-bold">{value || "—"}</div>
+            {description && (
+              <CardDescription
+                className={`mt-1 flex items-center gap-1 ${
+                  trend === "up"
+                    ? "text-green-500"
+                    : trend === "down"
+                    ? "text-red-500"
+                    : ""
+                }`}
+              >
+                {trend === "up" && <ArrowUpRight className="h-3 w-3" />}
+                {trend === "down" && <ArrowDownRight className="h-3 w-3" />}
+                {description}
+              </CardDescription>
+            )}
+          </>
         )}
       </CardContent>
     </Card>
