@@ -83,15 +83,13 @@ export const HeaderSearchSection = ({
           type="submit"
           variant="destructive"
           size="sm"
-          className="absolute right-0 top-0 h-9 rounded-l-none bg-gojira-red hover:bg-gojira-red-dark flex items-center justify-center"
+          className="absolute right-0 top-0 h-9 rounded-l-none bg-gojira-red hover:bg-gojira-red-dark flex items-center justify-center shadow-md"
           disabled={isLoadingValidators || !searchInput.trim() || isSearching}
         >
           {isSearching ? (
             <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-          ) : isMobile ? (
-            ""
           ) : (
-            "Search"
+            <span>{isMobile ? "Search" : "Search"}</span>
           )}
         </Button>
 

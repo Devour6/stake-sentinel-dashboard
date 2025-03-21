@@ -143,13 +143,13 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(({
       <Button 
         type="submit" 
         variant="destructive"
-        className="bg-gojira-red hover:bg-gojira-red-dark flex items-center justify-center"
+        className="bg-gojira-red hover:bg-gojira-red-dark h-9 px-4 py-2 rounded-md text-white flex items-center justify-center shadow-md"
         disabled={isSearching || (isLoadingValidators && !searchInput.trim())}
       >
         {isSearching ? (
           <div className="h-5 w-5 border-2 border-white/20 border-t-white rounded-full animate-spin mr-2" />
         ) : null}
-        {isMobile ? "" : "Search"}
+        <span>{isMobile ? "Search" : "Search"}</span>
       </Button>
     </form>
   );
