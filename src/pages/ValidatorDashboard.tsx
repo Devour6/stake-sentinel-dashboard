@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ValidatorHeader } from "@/components/validator/ValidatorHeader";
@@ -51,10 +52,21 @@ const ValidatorDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gojira-gray to-gojira-gray-dark">
+    <div className="min-h-screen bg-gradient-to-br from-aero-dark to-aero-gray-dark relative overflow-hidden">
+      {/* Background image overlay */}
+      <div 
+        className="absolute inset-0 w-full h-full z-0 pointer-events-none opacity-40"
+        style={{
+          backgroundImage: "url('/lovable-uploads/28b498b2-7737-4119-b4b7-47387f6617b2.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center bottom",
+          mixBlendMode: "soft-light",
+        }}
+      />
+
       {isRefreshing && <RefreshOverlay />}
 
-      <div className="container max-w-7xl mx-auto py-4 px-3 sm:px-5 lg:px-6">
+      <div className="container relative z-1 max-w-7xl mx-auto py-4 px-3 sm:px-5 lg:px-6">
         <ValidatorHeader
           validatorPubkey={votePubkey}
           validatorName={validatorInfo?.name}

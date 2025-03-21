@@ -8,3 +8,24 @@
 .aero-logo {
   animation: breathe 4s infinite ease-in-out;
 }
+
+/* Starry background animation */
+@keyframes twinkle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.twinkle {
+  animation: twinkle 3s infinite ease-in-out;
+}
+
+/* Orbital animation for the background */
+@keyframes orbit {
+  0% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(5px) rotate(0.5deg); }
+  100% { transform: translateY(0) rotate(0deg); }
+}
+
+.orbit-effect {
+  animation: orbit 15s infinite ease-in-out;
+}

@@ -89,6 +89,27 @@
   ::-webkit-scrollbar-thumb {
     @apply bg-aero-gray-light hover:bg-aero-purple/80 rounded-full;
   }
+  
+  /* Enhanced card background for better visibility with new background */
+  .enhanced-card {
+    @apply bg-aero-dark/70 backdrop-blur-md border border-aero-gray-light/30;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Search suggestions overlay */
+  .search-suggestions {
+    @apply bg-aero-dark border border-aero-gray-light/50;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  }
+  
+  /* z-index utilities */
+  .z-1 {
+    z-index: 1;
+  }
+  
+  .z-2 {
+    z-index: 2;
+  }
 }
 
 @layer utilities {
