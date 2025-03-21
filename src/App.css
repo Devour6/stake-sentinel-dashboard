@@ -48,68 +48,88 @@
 
 .shooting-star {
   position: absolute;
-  width: 120px;
-  height: 2px; /* Slightly thicker */
+  width: 200px;
+  height: 3px;
   background: linear-gradient(90deg, #9b87f5 0%, rgba(155, 135, 245, 0) 100%);
   opacity: 0;
-  box-shadow: 0 0 15px 4px #9b87f5; /* Enhanced glow */
+  box-shadow: 0 0 20px 8px #9b87f5;
   border-radius: 100%;
-  z-index: 1; /* Increased z-index for visibility */
+  z-index: 1;
   pointer-events: none;
 }
 
 .shooting-star-1 {
-  top: 10%;
+  top: 5%;
   right: 10%;
-  animation: shooting-star 8s linear infinite;
+  animation: shooting-star 6s linear infinite;
   animation-delay: 0s;
 }
 
 .shooting-star-2 {
-  top: 30%;
+  top: 20%;
   right: 20%;
-  animation: shooting-star 12s linear infinite;
-  animation-delay: 4s;
+  animation: shooting-star 8s linear infinite;
+  animation-delay: 2s;
 }
 
 .shooting-star-3 {
   top: 15%;
-  right: 40%;
-  animation: shooting-star 10s linear infinite;
-  animation-delay: 7s;
+  right: 30%;
+  animation: shooting-star 7s linear infinite;
+  animation-delay: 4s;
 }
 
-/* Additional shooting stars */
 .shooting-star-4 {
-  top: 50%;
+  top: 30%;
   right: 15%;
-  animation: shooting-star 14s linear infinite;
-  animation-delay: 2s;
+  animation: shooting-star 9s linear infinite;
+  animation-delay: 1s;
 }
 
 .shooting-star-5 {
+  top: 50%;
+  right: 25%;
+  animation: shooting-star 7.5s linear infinite;
+  animation-delay: 3s;
+}
+
+.shooting-star-6 {
+  top: 40%;
+  right: 5%;
+  animation: shooting-star 10s linear infinite;
+  animation-delay: 0.5s;
+}
+
+.shooting-star-7 {
+  top: 60%;
+  right: 35%;
+  animation: shooting-star 6.5s linear infinite;
+  animation-delay: 5s;
+}
+
+.shooting-star-8 {
   top: 70%;
-  right: 30%;
-  animation: shooting-star 9s linear infinite;
-  animation-delay: 6s;
+  right: 15%;
+  animation: shooting-star 8.5s linear infinite;
+  animation-delay: 1.5s;
 }
 
 /* Cosmic dust particles - Enhanced */
 @keyframes float-particle {
-  0%, 100% { transform: translate(0, 0); opacity: 0.3; }
-  50% { transform: translate(5px, -5px); opacity: 0.8; }
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; }
+  50% { transform: translate(10px, -10px) scale(1.2); opacity: 0.8; }
 }
 
 .cosmic-particle {
   position: absolute;
-  width: 3px; /* Slightly larger */
-  height: 3px;
+  width: 4px;
+  height: 4px;
   background-color: #9b87f5;
   border-radius: 50%;
-  opacity: 0.5; /* More visible */
+  opacity: 0.7;
   pointer-events: none;
   z-index: 1;
-  box-shadow: 0 0 8px 2px rgba(155, 135, 245, 0.7); /* Added glow */
+  box-shadow: 0 0 12px 4px rgba(155, 135, 245, 0.8);
 }
 
 .particle-1 { 
@@ -146,7 +166,6 @@
   animation-delay: 4s;
 }
 
-/* Additional particles */
 .particle-6 { 
   top: 35%; 
   left: 40%; 
@@ -168,10 +187,38 @@
   animation-delay: 2.5s;
 }
 
+.particle-9 { 
+  top: 55%; 
+  left: 10%; 
+  animation: float-particle 9.5s infinite ease-in-out;
+  animation-delay: 0.8s;
+}
+
+.particle-10 { 
+  top: 20%; 
+  left: 50%; 
+  animation: float-particle 7.5s infinite ease-in-out;
+  animation-delay: 3.5s;
+}
+
+.particle-11 { 
+  top: 85%; 
+  left: 85%; 
+  animation: float-particle 10.5s infinite ease-in-out;
+  animation-delay: 2.2s;
+}
+
+.particle-12 { 
+  top: 5%; 
+  left: 35%; 
+  animation: float-particle 6.5s infinite ease-in-out;
+  animation-delay: 1.2s;
+}
+
 /* Pulsating star animation */
 @keyframes pulsate {
-  0%, 100% { transform: scale(1); opacity: 0.7; }
-  50% { transform: scale(1.3); opacity: 1; }
+  0%, 100% { transform: scale(1); opacity: 0.7; box-shadow: 0 0 10px 2px rgba(155, 135, 245, 0.4); }
+  50% { transform: scale(1.5); opacity: 1; box-shadow: 0 0 20px 5px rgba(155, 135, 245, 0.8); }
 }
 
 .pulsating-star {
@@ -180,38 +227,111 @@
   height: 4px;
   background-color: white;
   border-radius: 50%;
-  box-shadow: 0 0 10px 3px rgba(155, 135, 245, 0.8);
+  box-shadow: 0 0 15px 5px rgba(155, 135, 245, 0.8);
   pointer-events: none;
   z-index: 1;
-  animation: pulsate 4s infinite ease-in-out;
 }
 
 .star-1 {
   top: 20%;
   left: 25%;
+  animation: pulsate 4s infinite ease-in-out;
   animation-delay: 0s;
 }
 
 .star-2 {
   top: 50%;
   left: 80%;
+  animation: pulsate 5s infinite ease-in-out;
   animation-delay: 1s;
 }
 
 .star-3 {
   top: 85%;
   left: 40%;
+  animation: pulsate 6s infinite ease-in-out;
   animation-delay: 2s;
 }
 
 .star-4 {
   top: 15%;
   left: 70%;
+  animation: pulsate 4.5s infinite ease-in-out;
   animation-delay: 3s;
 }
 
 .star-5 {
   top: 60%;
   left: 10%;
+  animation: pulsate 5.5s infinite ease-in-out;
   animation-delay: 2.5s;
+}
+
+.star-6 {
+  top: 30%;
+  left: 45%;
+  animation: pulsate 3.5s infinite ease-in-out;
+  animation-delay: 0.7s;
+}
+
+.star-7 {
+  top: 70%;
+  left: 60%;
+  animation: pulsate 4.2s infinite ease-in-out;
+  animation-delay: 1.7s;
+}
+
+.star-8 {
+  top: 40%;
+  left: 30%;
+  animation: pulsate 6.2s infinite ease-in-out;
+  animation-delay: 2.2s;
+}
+
+.star-9 {
+  top: 10%;
+  left: 5%;
+  animation: pulsate 3.8s infinite ease-in-out;
+  animation-delay: 1.3s;
+}
+
+.star-10 {
+  top: 90%;
+  left: 75%;
+  animation: pulsate 5.3s infinite ease-in-out;
+  animation-delay: 3.3s;
+}
+
+/* Galaxy swirl animation */
+@keyframes galaxy-spin {
+  0% { transform: rotate(0deg) scale(1); opacity: 0.2; }
+  50% { transform: rotate(180deg) scale(1.1); opacity: 0.4; }
+  100% { transform: rotate(360deg) scale(1); opacity: 0.2; }
+}
+
+.galaxy-swirl {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(155, 135, 245, 0.3) 0%, rgba(155, 135, 245, 0) 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.2;
+  filter: blur(8px);
+}
+
+.galaxy-1 {
+  top: 20%;
+  left: 20%;
+  animation: galaxy-spin 60s infinite linear;
+}
+
+.galaxy-2 {
+  bottom: 10%;
+  right: 15%;
+  width: 250px;
+  height: 250px;
+  animation: galaxy-spin 50s infinite linear reverse;
+  animation-delay: 10s;
 }

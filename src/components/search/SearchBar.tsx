@@ -62,7 +62,7 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(({
           <Input
             type="text"
             placeholder={isLoadingValidators ? "Loading..." : "Search validator..."}
-            className="pl-9 pr-3 py-2 bg-gojira-gray-dark border-gojira-gray-light h-9 w-full text-white"
+            className="pl-9 pr-3 py-2 bg-gojira-gray-dark border-gojira-gray-light h-9 w-full text-black"
             value={searchInput}
             onChange={handleInputChange}
             ref={ref}
@@ -72,6 +72,7 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(({
               }
             }}
             disabled={isLoadingValidators && !searchInput.trim()} // Allow typing even when loading
+            style={{ color: '#000' }}
           />
           
           {isLoadingValidators && !searchInput.trim() && (
@@ -81,7 +82,7 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(({
           )}
           
           {showSuggestions && filteredValidators.length > 0 && (
-            <div className="absolute z-50 w-full mt-1 bg-aero-dark border border-aero-gray-light rounded-md shadow-lg max-h-[300px] overflow-y-auto">
+            <div className="absolute z-50 w-full mt-1 bg-white border border-aero-gray-light rounded-md shadow-lg max-h-[300px] overflow-y-auto">
               {filteredValidators.map((validator) => (
                 <div
                   key={validator.votePubkey}
@@ -107,20 +108,20 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(({
                       </div>
                     )}
                     <div className="flex flex-col min-w-0">
-                      <span className="font-medium truncate">{validator.name || "Unknown Validator"}</span>
+                      <span className="font-medium truncate text-black">{validator.name || "Unknown Validator"}</span>
                       {showStakeAmount && validator.commission !== undefined && (
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-gray-600">
                           Commission: {validator.commission}%
                         </span>
                       )}
                     </div>
                   </div>
                   <div className="flex flex-col items-end flex-shrink-0">
-                    <span className="text-xs text-muted-foreground truncate max-w-[80px] sm:max-w-[180px]">
+                    <span className="text-xs text-gray-600 truncate max-w-[80px] sm:max-w-[180px]">
                       {validator.votePubkey.slice(0, 4)}...{validator.votePubkey.slice(-4)}
                     </span>
                     {showStakeAmount && validator.activatedStake !== undefined && (
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      <span className="text-xs text-gray-600 whitespace-nowrap">
                         {validator.activatedStake > 0 
                           ? `${Math.floor(validator.activatedStake).toLocaleString()} SOL` 
                           : ''}
@@ -133,7 +134,7 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(({
           )}
           
           {showSuggestions && filteredValidators.length === 0 && searchInput.trim().length > 2 && (
-            <div className="absolute z-50 w-full mt-1 bg-aero-dark border border-aero-gray-light rounded-md shadow-lg p-4 text-center">
+            <div className="absolute z-50 w-full mt-1 bg-white border border-aero-gray-light rounded-md shadow-lg p-4 text-center">
               No validators found matching "{searchInput}"
             </div>
           )}
@@ -142,7 +143,7 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(({
       <Button 
         type="submit" 
         variant="destructive"
-        className="bg-gojira-red hover:bg-gojira-red-dark"
+        className="bg-gojira-red hover:bg-gojira-red-dark flex items-center justify-center"
         disabled={isSearching || (isLoadingValidators && !searchInput.trim())}
       >
         {isSearching ? (

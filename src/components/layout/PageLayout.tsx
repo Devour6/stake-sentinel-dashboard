@@ -33,6 +33,9 @@ const PageLayout = ({
       <div className="shooting-star shooting-star-3"></div>
       <div className="shooting-star shooting-star-4"></div>
       <div className="shooting-star shooting-star-5"></div>
+      <div className="shooting-star shooting-star-6"></div>
+      <div className="shooting-star shooting-star-7"></div>
+      <div className="shooting-star shooting-star-8"></div>
       
       <div className="cosmic-particle particle-1"></div>
       <div className="cosmic-particle particle-2"></div>
@@ -42,12 +45,24 @@ const PageLayout = ({
       <div className="cosmic-particle particle-6"></div>
       <div className="cosmic-particle particle-7"></div>
       <div className="cosmic-particle particle-8"></div>
+      <div className="cosmic-particle particle-9"></div>
+      <div className="cosmic-particle particle-10"></div>
+      <div className="cosmic-particle particle-11"></div>
+      <div className="cosmic-particle particle-12"></div>
       
       <div className="pulsating-star star-1"></div>
       <div className="pulsating-star star-2"></div>
       <div className="pulsating-star star-3"></div>
       <div className="pulsating-star star-4"></div>
       <div className="pulsating-star star-5"></div>
+      <div className="pulsating-star star-6"></div>
+      <div className="pulsating-star star-7"></div>
+      <div className="pulsating-star star-8"></div>
+      <div className="pulsating-star star-9"></div>
+      <div className="pulsating-star star-10"></div>
+      
+      <div className="galaxy-swirl galaxy-1"></div>
+      <div className="galaxy-swirl galaxy-2"></div>
       
       <div className="fixed top-4 right-4 z-10 flex gap-4">
         <Button
