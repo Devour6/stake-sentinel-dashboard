@@ -1,3 +1,3 @@
 
-// Export the hook and toast function directly from the main implementation
+// Direct re-export from the hooks implementation to avoid circular dependency
 export { useToast, toast } from "@/hooks/use-toast";
