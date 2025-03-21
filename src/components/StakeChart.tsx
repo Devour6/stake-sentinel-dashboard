@@ -46,10 +46,11 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 // Custom formatter for the X-axis to show both epoch and date
-const formatXAxis = (epoch: number, index: number, data: any[]) => {
+// Modified to match the expected tickFormatter signature (value, index)
+const formatXAxis = (value: any, index: number) => {
   // Only show every 3rd label to avoid overcrowding
-  if (index % 3 !== 0 && index !== data.length - 1) return '';
-  return `E${epoch}`;
+  if (index % 3 !== 0) return '';
+  return `E${value}`;
 };
 
 export const StakeChart = ({ data, isLoading = false }: StakeChartProps) => {
