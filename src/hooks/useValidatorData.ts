@@ -12,10 +12,9 @@ import {
   type StakeHistoryItem,
 } from "@/services/solanaApi";
 import { getReliableStakeValue } from "@/services/api/utils/stakeUtils";
-import { useToast } from "@/components/ui/use-toast";
+import { toast as uiToast } from "@/hooks/use-toast";
 
 export function useValidatorData(votePubkey: string | undefined) {
-  const { toast: uiToast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [validatorInfo, setValidatorInfo] = useState<ValidatorInfo | null>(null);
