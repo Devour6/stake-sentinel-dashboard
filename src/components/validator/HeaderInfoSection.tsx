@@ -1,6 +1,7 @@
 
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Logo from "@/components/layout/Logo";
 
 interface HeaderInfoSectionProps {
   validatorName?: string;
@@ -34,15 +35,11 @@ export const HeaderInfoSection = ({
             alt={validatorName || "Validator Logo"}
             className="object-contain w-full h-full rounded-full"
             onError={(e) => {
-              (e.target as HTMLImageElement).src = "/lovable-uploads/31314417-ef5b-4d58-ac5e-91a2ab487110.png";
+              (e.target as HTMLImageElement).src = "/lovable-uploads/d77bb215-62b8-4038-ac27-01eb95f981db.png";
             }}
           />
         ) : (
-          <img 
-            src="/lovable-uploads/31314417-ef5b-4d58-ac5e-91a2ab487110.png" 
-            alt="Gojira Logo" 
-            className="object-contain w-full h-full animate-roar"
-          />
+          <Logo size="md" className="animate-float" />
         )}
       </div>
       <div className="flex-1 min-w-0 w-full flex flex-col justify-center">

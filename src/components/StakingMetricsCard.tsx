@@ -43,13 +43,13 @@ export const StakingMetricsCard = ({
   isSecondary = false,
 }: StakingMetricsCardProps) => {
   return (
-    <Card className={`overflow-hidden glass-card animate-fade-in border-gojira-gray-light ${isSecondary ? 'opacity-80' : ''}`}>
+    <Card className={`overflow-hidden glass-card animate-fade-in border-aero-gray-light ${isSecondary ? 'opacity-80' : ''}`}>
       <CardHeader className="pb-2">
         <CardTitle className={`text-sm font-medium text-muted-foreground flex items-center gap-2 ${isSecondary ? 'text-xs' : ''}`}>
           {icon}
           {title}
           {isEstimated && !title.toLowerCase().includes('estimated') && (
-            <span className="text-xs bg-gojira-gray-dark/50 px-1 py-0.5 rounded">
+            <span className="text-xs bg-aero-gray-dark/50 px-1 py-0.5 rounded">
               est.
             </span>
           )}
@@ -166,14 +166,14 @@ export const ValidatorMetricsGrid = ({
       <StakingMetricsCard
         title="Total Stake"
         value={isLoading ? null : hasError ? "Error" : formattedTotalStake}
-        icon={<Database className="h-4 w-4 text-gojira-red" />}
+        icon={<Database className="h-4 w-4 text-aero-purple" />}
         isLoading={isLoading}
         isError={hasError}
       />
       <StakingMetricsCard
         title="Pending Change in Stake"
         value={isLoading ? null : hasError ? "Error" : formattedPendingStake}
-        icon={<Clock className="h-4 w-4 text-gojira-red" />}
+        icon={<Clock className="h-4 w-4 text-aero-purple" />}
         trend={
           pendingStakeChange > 0 ? (isDeactivating ? "down" : "up") : "neutral"
         }
@@ -185,14 +185,14 @@ export const ValidatorMetricsGrid = ({
         title="Commission"
         value={isLoading ? null : hasError ? "Error" : commissionDisplay}
         description={commissionDescription}
-        icon={<Percent className="h-4 w-4 text-gojira-red" />}
+        icon={<Percent className="h-4 w-4 text-aero-purple" />}
         isLoading={isLoading}
         isError={hasError}
       />
       <StakingMetricsCard
         title="Estimated APY"
         value={isLoading ? null : hasError ? "Error" : formattedApy}
-        icon={<TrendingUp className="h-4 w-4 text-gojira-red" />}
+        icon={<TrendingUp className="h-4 w-4 text-aero-purple" />}
         isLoading={isLoading}
         isError={hasError || !estimatedApy}
       />
@@ -202,7 +202,7 @@ export const ValidatorMetricsGrid = ({
         <StakingMetricsCard
           title="Vote Rate"
           value={isLoading ? null : hasError ? "Error" : formattedVoteRate}
-          icon={<ArrowUpRight className="h-3 w-3 text-gojira-red" />}
+          icon={<ArrowUpRight className="h-3 w-3 text-aero-purple" />}
           isLoading={isLoading}
           isError={hasError || voteRate === undefined}
           isSecondary={true}
@@ -210,7 +210,7 @@ export const ValidatorMetricsGrid = ({
         <StakingMetricsCard
           title="Skip Rate"
           value={isLoading ? null : hasError ? "Error" : formattedSkipRate}
-          icon={<ArrowDownRight className="h-3 w-3 text-gojira-red" />}
+          icon={<ArrowDownRight className="h-3 w-3 text-aero-purple" />}
           isLoading={isLoading}
           isError={hasError || skipRate === undefined}
           isSecondary={true}

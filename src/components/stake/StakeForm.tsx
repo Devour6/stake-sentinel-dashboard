@@ -29,7 +29,7 @@ const StakeForm = ({
         <Button
           variant="ghost" 
           size="sm"
-          className="text-xs text-gojira-red hover:text-gojira-red-light hover:bg-transparent"
+          className="text-xs text-aero-purple hover:text-aero-purple-light hover:bg-transparent"
           onClick={onDisconnect}
         >
           Disconnect
@@ -48,15 +48,15 @@ const StakeForm = ({
           type="number"
           min="0"
           step="0.1"
-          className="bg-gojira-gray border-gojira-gray-light"
+          className="bg-aero-gray border-aero-gray-light"
         />
       </div>
       
       <div className="text-xs text-muted-foreground space-y-1">
-        <p>Gojira Validator Address:</p>
+        <p>AeroScan Validator Address:</p>
         <p className="font-mono text-xs break-all">{VALIDATOR_PUBKEY}</p>
         <p className="mt-2 text-xs">
-          Staking through this interface delegates your SOL to Gojira's validator. 
+          Staking through this interface delegates your SOL to our validator. 
           You maintain full custody of your tokens and can unstake anytime.
         </p>
       </div>

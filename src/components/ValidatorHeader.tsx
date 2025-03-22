@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { ExternalLink, Info, Copy, RefreshCw, ArrowLeft, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useValidatorSearch } from "@/hooks/useValidatorSearch";
+import Logo from "@/components/layout/Logo";
 
 interface ValidatorHeaderProps {
   validatorPubkey: string;
@@ -106,19 +106,15 @@ export const ValidatorHeader = ({
                 alt={validatorName || "Validator Logo"}
                 className="object-contain w-full h-full rounded-full"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/lovable-uploads/31314417-ef5b-4d58-ac5e-91a2ab487110.png";
+                  (e.target as HTMLImageElement).src = "/lovable-uploads/d77bb215-62b8-4038-ac27-01eb95f981db.png";
                 }}
               />
             ) : (
-              <img 
-                src="/lovable-uploads/31314417-ef5b-4d58-ac5e-91a2ab487110.png" 
-                alt="Gojira Logo" 
-                className="object-contain w-full h-full animate-roar"
-              />
+              <Logo size="md" className="animate-float" />
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm uppercase tracking-widest text-gojira-red mb-1">Solana Validator</p>
+            <p className="text-sm uppercase tracking-widest text-aero-purple mb-1">Solana Validator</p>
             <h1 className="text-3xl font-bold tracking-tight mb-2 text-white truncate">
               {isLoading ? (
                 <div className="h-8 w-64 bg-muted/30 rounded animate-pulse"></div>
@@ -137,13 +133,13 @@ export const ValidatorHeader = ({
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3 relative">
                   <div className="flex items-center gap-1 relative z-10">
                     <span className="text-sm whitespace-nowrap">Vote Account:</span>
-                    <code className="bg-gojira-gray-dark/50 px-2 py-0.5 rounded text-sm font-mono">
+                    <code className="bg-aero-gray-dark/50 px-2 py-0.5 rounded text-sm font-mono">
                       {truncateAddress(validatorPubkey, 6)}
                     </code>
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      className="p-0 h-auto hover:bg-transparent text-gojira-red hover:text-gojira-red-light"
+                      className="p-0 h-auto hover:bg-transparent text-aero-purple hover:text-aero-purple-light"
                       onClick={() => copyToClipboard(validatorPubkey, "Vote Account")}
                     >
                       <Copy className="h-3.5 w-3.5" />
@@ -152,7 +148,7 @@ export const ValidatorHeader = ({
                       href={solscanUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-gojira-red hover:text-gojira-red-light transition-colors"
+                      className="text-aero-purple hover:text-aero-purple-light transition-colors"
                     >
                       <ExternalLink className="h-3.5 w-3.5" />
                     </a>
@@ -175,13 +171,13 @@ export const ValidatorHeader = ({
                       <span className="hidden sm:inline text-muted-foreground">•</span>
                       <div className="flex items-center gap-1 relative z-10">
                         <span className="text-sm whitespace-nowrap">Identity:</span>
-                        <code className="bg-gojira-gray-dark/50 px-2 py-0.5 rounded text-sm font-mono">
+                        <code className="bg-aero-gray-dark/50 px-2 py-0.5 rounded text-sm font-mono">
                           {truncateAddress(identityPubkey, 6)}
                         </code>
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="p-0 h-auto hover:bg-transparent text-gojira-red hover:text-gojira-red-light"
+                          className="p-0 h-auto hover:bg-transparent text-aero-purple hover:text-aero-purple-light"
                           onClick={() => copyToClipboard(identityPubkey, "Identity")}
                         >
                           <Copy className="h-3.5 w-3.5" />
@@ -190,7 +186,7 @@ export const ValidatorHeader = ({
                           href={identitySolscanUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-gojira-red hover:text-gojira-red-light transition-colors"
+                          className="text-aero-purple hover:text-aero-purple-light transition-colors"
                         >
                           <ExternalLink className="h-3.5 w-3.5" />
                         </a>
@@ -211,7 +207,7 @@ export const ValidatorHeader = ({
                 placeholder="Search validator..."
                 value={searchInput}
                 onChange={handleInputChange}
-                className="pl-7 h-8 w-full bg-gojira-gray-dark border-gojira-gray-light text-sm"
+                className="pl-7 h-8 w-full bg-aero-gray-dark border-aero-gray-light text-sm"
                 ref={searchInputRef}
                 onFocus={() => {
                   if (searchInput.length > 2 && filteredValidators.length > 0) {
@@ -223,7 +219,7 @@ export const ValidatorHeader = ({
               <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               
               {showSuggestions && filteredValidators.length > 0 && (
-                <div className="absolute z-50 w-full mt-1 bg-gojira-gray-dark border border-gojira-gray-light rounded-md shadow-lg max-h-[300px] overflow-y-auto">
+                <div className="absolute z-50 w-full mt-1 bg-aero-gray-dark border border-aero-gray-light rounded-md shadow-lg max-h-[300px] overflow-y-auto">
                   {filteredValidators.map((validator) => (
                     <div
                       key={validator.votePubkey}
@@ -276,7 +272,7 @@ export const ValidatorHeader = ({
           <Button 
             variant="destructive" 
             size="icon"
-            className="rounded-full bg-gojira-red hover:bg-gojira-red-dark transition-all duration-300 h-8 w-8 flex items-center justify-center"
+            className="rounded-full bg-aero-purple hover:bg-aero-purple-dark transition-all duration-300 h-8 w-8 flex items-center justify-center"
             onClick={handleRefresh}
             disabled={isLoading}
             title="Refresh data"
