@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import PageLayout from "@/components/layout/PageLayout";
 import StakeModal from "@/components/StakeModal";
@@ -19,10 +18,7 @@ const Home = () => {
   };
 
   return (
-    <PageLayout
-      onStakeModalOpen={handleStakeModalOpen}
-      onPositionsModalOpen={() => setPositionsModalOpen(true)}
-    >
+    <PageLayout>
       <HomeContent onStakeButtonClick={handleStakeModalOpen} />
 
       <StakeModal

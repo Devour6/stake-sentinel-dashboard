@@ -177,13 +177,14 @@ const StakeModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md bg-gojira-gray-dark">
+      <DialogContent className="sm:max-w-md bg-gray-900">
         <DialogHeader>
           <DialogTitle className="text-white">
             Swap to aeroSOL {validatorName ? `via ${validatorName}` : ""}
           </DialogTitle>
           <DialogDescription>
-            Support the Solana network by swapping your SOL tokens to aeroSOL {validatorName ? `via ${validatorName}` : ""}.
+            Support the Solana network by swapping your SOL tokens to aeroSOL{" "}
+            {validatorName ? `via ${validatorName}` : ""}.
           </DialogDescription>
         </DialogHeader>
 

@@ -3,14 +3,14 @@ import { ValidatorHeader } from "@/components/ValidatorHeader";
 import { ValidatorMetricsGrid } from "@/components/StakingMetricsCard";
 import { StakeChart } from "@/components/StakeChart";
 import { ValidatorInfoCard } from "@/components/ValidatorInfoCard";
-import { 
-  fetchValidatorInfo, 
-  fetchValidatorMetrics, 
+import {
+  fetchValidatorInfo,
+  fetchValidatorMetrics,
   fetchStakeHistory,
   VALIDATOR_PUBKEY,
   type ValidatorInfo,
   type ValidatorMetrics,
-  type StakeHistoryItem
+  type StakeHistoryItem,
 } from "@/services/solanaApi";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -24,8 +24,11 @@ const Index = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [validatorInfo, setValidatorInfo] = useState<ValidatorInfo | null>(null);
-  const [validatorMetrics, setValidatorMetrics] = useState<ValidatorMetrics | null>(null);
+  const [validatorInfo, setValidatorInfo] = useState<ValidatorInfo | null>(
+    null
+  );
+  const [validatorMetrics, setValidatorMetrics] =
+    useState<ValidatorMetrics | null>(null);
   const [stakeHistory, setStakeHistory] = useState<StakeHistoryItem[]>([]);
 
   const fetchData = async (showToast = false) => {
@@ -35,13 +38,13 @@ const Index = () => {
       const [info, metrics, history] = await Promise.all([
         fetchValidatorInfo(VALIDATOR_PUBKEY),
         fetchValidatorMetrics(VALIDATOR_PUBKEY),
-        fetchStakeHistory(VALIDATOR_PUBKEY)
+        fetchStakeHistory(VALIDATOR_PUBKEY),
       ]);
-      
+
       setValidatorInfo(info);
       setValidatorMetrics(metrics);
       setStakeHistory(history);
-      
+
       if (showToast && info) {
         toast({
           title: "Data refreshed",
@@ -70,23 +73,23 @@ const Index = () => {
       setIsRefreshing(false);
     }, 800);
   };
-  
+
   useEffect(() => {
     fetchData();
-    
+
     // Set up polling interval (every 5 minutes)
     const intervalId = setInterval(() => fetchData(), 5 * 60 * 1000);
-    
+
     return () => clearInterval(intervalId);
   }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gojira-gray to-gojira-gray-dark">
       {isRefreshing && <RefreshOverlay />}
-      
+
       {/* Glass container */}
       <div className="container max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <ValidatorHeader 
+        <ValidatorHeader
           validatorPubkey={VALIDATOR_PUBKEY}
           validatorName={validatorInfo?.name}
           validatorIcon={validatorInfo?.icon}
@@ -94,7 +97,7 @@ const Index = () => {
           isLoading={isLoading}
           onRefresh={handleRefresh}
         />
-        
+
         {/* Validator metrics */}
         {validatorMetrics ? (
           <ValidatorMetricsGrid
@@ -112,30 +115,19 @@ const Index = () => {
             isLoading={true}
           />
         )}
-        
+
         {/* Two column layout for chart and validator info */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
           {/* Chart takes 2/3 of the space on large screens */}
           <div className="lg:col-span-2">
             <StakeChart data={stakeHistory} isLoading={isLoading} />
           </div>
-          
+
           {/* Validator info card takes 1/3 of the space */}
           <div>
-            <ValidatorInfoCard validatorInfo={validatorInfo} isLoading={isLoading} />
-          </div>
-        </div>
-        
-        {/* Footer */}
-        <div className="mt-12 text-center text-sm text-muted-foreground">
-          <p>Data refreshes automatically every 5 minutes. Last updated: {new Date().toLocaleTimeString()}</p>
-          <div className="mt-2 flex justify-center gap-1 items-center">
-            <span>Powered by</span>
-            <span className="text-gojira-red font-semibold">Gojira</span>
-            <img 
-              src="/lovable-uploads/31314417-ef5b-4d58-ac5e-91a2ab487110.png" 
-              alt="Gojira Logo" 
-              className="w-4 h-4"
+            <ValidatorInfoCard
+              validatorInfo={validatorInfo}
+              isLoading={isLoading}
             />
           </div>
         </div>
