@@ -1,8 +1,8 @@
+
 import React from "react";
-import { Button } from "@/components/ui/button";
 import Logo from "@/components/layout/Logo";
 import Footer from "./Footer";
-import Header from "./Header";
+import Navbar from "./Navbar";
 
 interface PageLayoutProps {
   children: React.ReactNode;
@@ -11,9 +11,9 @@ interface PageLayoutProps {
 const PageLayout = ({ children }: PageLayoutProps) => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-aero-dark to-aero-gray-dark p-4 relative overflow-hidden">
-      <Header />
+      <Navbar />
       <div
-        className="relative w-full flex-1 flex items-center justify-center bg-contain bg-no-repeat bg-center"
+        className="relative w-full flex-1 flex items-center justify-center bg-contain bg-no-repeat bg-center pt-16"
         style={{
           backgroundImage: "url(/images/bg_main.svg)",
         }}

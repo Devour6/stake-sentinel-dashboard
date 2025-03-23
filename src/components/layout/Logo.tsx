@@ -1,13 +1,20 @@
 
 import React from "react";
+import { Link } from "react-router-dom";
 
 interface LogoProps {
   size?: "sm" | "md" | "lg";
   className?: string;
   animate?: boolean;
+  linkToHome?: boolean;
 }
 
-const Logo: React.FC<LogoProps> = ({ size = "md", className = "", animate = false }) => {
+const Logo: React.FC<LogoProps> = ({ 
+  size = "md", 
+  className = "", 
+  animate = false,
+  linkToHome = true
+}) => {
   // Size classes
   const sizeClasses = {
     sm: "w-8 h-8",
@@ -16,8 +23,7 @@ const Logo: React.FC<LogoProps> = ({ size = "md", className = "", animate = fals
   };
 
   const animationClass = animate ? "hover:scale-105 transition-transform duration-300" : "";
-
-  return (
+  const logoContent = (
     <div className={`relative ${sizeClasses[size]} ${className}`}>
       <img
         src="/images/logo.png"
@@ -27,6 +33,16 @@ const Logo: React.FC<LogoProps> = ({ size = "md", className = "", animate = fals
       />
     </div>
   );
+
+  if (linkToHome) {
+    return (
+      <Link to="/" className="flex items-center">
+        {logoContent}
+      </Link>
+    );
+  }
+
+  return logoContent;
 };
 
 export default Logo;
