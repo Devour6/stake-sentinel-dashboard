@@ -106,7 +106,7 @@ export const ValidatorHeader = ({
                 alt={validatorName || "Validator Logo"}
                 className="object-contain w-full h-full rounded-full"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/images/logo.png";
+                  (e.target as HTMLImageElement).src = "/lovable-uploads/d77bb215-62b8-4038-ac27-01eb95f981db.png";
                 }}
               />
             ) : (

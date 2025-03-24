@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { HeaderIdentitySection } from "./HeaderIdentitySection";
 import { HeaderInfoSection } from "./HeaderInfoSection";
 import { HeaderSearchSection } from "./HeaderSearchSection";
@@ -18,6 +19,7 @@ interface ValidatorHeaderProps {
   isLoading?: boolean;
   onRefresh: () => void;
   onBack?: () => void;
+  onStakeModalOpen?: () => void;
 }
 
 export const ValidatorHeader = ({
@@ -32,9 +34,12 @@ export const ValidatorHeader = ({
   isLoading = false,
   onRefresh,
   onBack,
+  onStakeModalOpen,
 }: ValidatorHeaderProps) => {
+  const navigate = useNavigate();
   const [localSearchInput, setLocalSearchInput] = useState("");
-  const { handleSearch, setShowSuggestions } = useValidatorSearch();
+  const { handleSearch, isSearching, filteredValidators, setShowSuggestions } =
+    useValidatorSearch();
   const isMobile = useIsMobile();
 
   // Reset suggestions when component mounts
@@ -72,7 +77,12 @@ export const ValidatorHeader = ({
           } gap-2 items-center ${isMobile ? "" : "ml-auto"}`}
         >
           <HeaderSearchSection handleSearchSubmit={handleSearchSubmit} />
-          <HeaderControlsSection onRefresh={onRefresh} isLoading={isLoading} />
+
+          <HeaderControlsSection
+            onRefresh={onRefresh}
+            isLoading={isLoading}
+            onStakeModalOpen={onStakeModalOpen}
+          />
         </div>
       </div>
 

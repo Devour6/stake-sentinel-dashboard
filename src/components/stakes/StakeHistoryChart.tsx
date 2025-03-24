@@ -93,7 +93,7 @@ export const StakeHistoryChart: FC<StakeHistoryChartProps> = ({ vote_identity, i
   };
 
   return (
-    <Card className="glass-card animate-fade-in border-white/20">
+    <Card className="glass-card animate-fade-in border-gojira-gray-light">
       <CardHeader className="pb-2">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>

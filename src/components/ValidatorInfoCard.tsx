@@ -36,7 +36,7 @@ export const ValidatorInfoCard = ({
   const voteStatus = getVoteStatus();
 
   return (
-    <Card className="glass-card animate-fade-in border-white/20">
+    <Card className="glass-card animate-fade-in border-gojira-gray-light">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <div>

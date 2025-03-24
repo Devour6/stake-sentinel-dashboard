@@ -33,7 +33,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     
     if (epoch !== undefined && stakeValue !== undefined) {
       return (
-        <div className="glass-effect p-3 border border-white/20 rounded-lg shadow-sm">
+        <div className="glass-effect p-3 border border-gojira-gray-light rounded-lg shadow-sm">
           <p className="font-medium">Epoch {epoch}</p>
           {formattedDate && <p className="text-muted-foreground text-xs">{formattedDate}</p>}
           <p className="text-[#838EFC] font-bold mt-1">{`${new Intl.NumberFormat().format(Math.round(stakeValue * 100) / 100)} SOL`}</p>
@@ -159,7 +159,7 @@ export const StakeChart = ({ data, isLoading = false }: StakeChartProps) => {
   };
 
   return (
-    <Card className="glass-card animate-fade-in border-white/20">
+    <Card className="glass-card animate-fade-in border-gojira-gray-light">
       <CardHeader className="pb-2">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>

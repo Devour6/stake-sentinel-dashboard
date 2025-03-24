@@ -21,7 +21,7 @@ const WalletButton = ({
   return (
     <Button
       variant="outline"
-      className="flex items-center justify-center py-5 border-white/20 hover:bg-white/20 relative"
+      className="flex items-center justify-center py-5 border-gojira-gray-light hover:bg-gojira-gray-light relative"
       disabled={isConnecting}
       onClick={() => onWalletClick(wallet)}
       onMouseEnter={() => setIsHovered(true)}
@@ -33,7 +33,7 @@ const WalletButton = ({
       <span>{wallet.name}</span>
       
       {!wallet.isDetected && isHovered && (
-        <div className="absolute bottom-full left-0 mb-2 p-2 bg-black text-xs rounded border border-white/20 whitespace-nowrap z-10">
+        <div className="absolute bottom-full left-0 mb-2 p-2 bg-gojira-gray-dark text-xs rounded border border-gojira-gray-light whitespace-nowrap z-10">
           Not installed. Click to install.
         </div>
       )}

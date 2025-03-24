@@ -1,3 +1,4 @@
+
 import { useRef, useEffect } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -68,7 +69,8 @@ export const HeaderSearchSection = ({
           }
           value={searchInput}
           onChange={handleInputChange}
-          className="pl-9 pr-3 py-2 bg-[#222] outline outline-1 outline-black/20 h-9 w-full text-white"
+          className="pl-9 h-9 w-full bg-gojira-gray-dark border-gojira-gray-light text-sm pr-12 text-black font-outfit"
+          style={{ color: '#000' }}
           ref={searchInputRef}
           onFocus={() => {
             if (searchInput.length > 2 && filteredValidators.length > 0) {
@@ -77,12 +79,26 @@ export const HeaderSearchSection = ({
           }}
         />
 
+        <Button
+          type="submit"
+          variant="destructive"
+          size="sm"
+          className="absolute right-0 top-0 h-9 rounded-l-none bg-gojira-red hover:bg-gojira-red-dark flex items-center justify-center shadow-md font-outfit"
+          disabled={isLoadingValidators || !searchInput.trim() || isSearching}
+        >
+          {isSearching ? (
+            <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+          ) : (
+            <span>{isMobile ? "Search" : "Search"}</span>
+          )}
+        </Button>
+
         {showSuggestions && filteredValidators.length > 0 && (
-          <div className="absolute z-50 w-64 mt-2 bg-[#222] outline outline-1 outline-black/20 rounded-md shadow-lg max-h-[300px] overflow-y-auto font-outfit">
+          <div className="absolute z-50 w-full mt-1 bg-white border border-aero-gray-light rounded-md shadow-lg max-h-[300px] overflow-y-auto font-outfit">
             {filteredValidators.map((validator) => (
               <div
                 key={validator.votePubkey}
-                className="flex gap-4 items-start p-3 hover:bg-accent cursor-pointer"
+                className="flex items-center justify-between p-3 hover:bg-accent cursor-pointer"
                 onMouseDown={(e) => {
                   e.preventDefault();
                   handleSelectValidator(validator.votePubkey);
@@ -95,46 +111,41 @@ export const HeaderSearchSection = ({
                     <img
                       src={validator.icon}
                       alt={`${validator.name || "Validator"} logo`}
-                      className="w-8 h-8 rounded-full flex-shrink-0"
+                      className="w-6 h-6 rounded-full flex-shrink-0"
                       onError={(e) => {
                         (e.target as HTMLImageElement).style.display = "none";
                       }}
                     />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-xs flex-shrink-0">
+                    <div className="w-6 h-6 rounded-full bg-gojira-gray-light flex items-center justify-center text-xs flex-shrink-0">
                       {validator.name?.[0] || "V"}
                     </div>
                   )}
-                </div>
-
-                <div className="flex flex-col gap-0">
-                  <div className="w-32">
-                    <span className="font-medium line-clamp-1 text-white">
+                  <div className="flex flex-col min-w-0">
+                    <span className="font-medium truncate text-black">
                       {validator.name || "Unknown Validator"}
                     </span>
-                  </div>
-                  <div className="flex justify-between items-end flex-shrink-0 text-gray-400 gap-4">
-                    <span className="text-xs truncate max-w-[80px] sm:max-w-[120px]">
-                      {validator.votePubkey.slice(0, 4)}...
-                      {validator.votePubkey.slice(-4)}
-                    </span>
-                    {validator.activatedStake !== undefined && (
-                      <span className="text-xs whitespace-nowrap">
-                        {validator.activatedStake > 0
-                          ? `${Math.floor(
-                              validator.activatedStake
-                            ).toLocaleString()} SOL`
-                          : ""}
-                      </span>
-                    )}
-                  </div>
-                  <div>
                     {validator.commission !== undefined && (
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-gray-600">
                         Commission: {validator.commission}%
                       </span>
                     )}
                   </div>
+                </div>
+                <div className="flex flex-col items-end flex-shrink-0">
+                  <span className="text-xs text-gray-600 truncate max-w-[80px] sm:max-w-[120px]">
+                    {validator.votePubkey.slice(0, 4)}...
+                    {validator.votePubkey.slice(-4)}
+                  </span>
+                  {validator.activatedStake !== undefined && (
+                    <span className="text-xs text-gray-600 whitespace-nowrap">
+                      {validator.activatedStake > 0
+                        ? `${Math.floor(
+                            validator.activatedStake
+                          ).toLocaleString()} SOL`
+                        : ""}
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
@@ -144,8 +155,8 @@ export const HeaderSearchSection = ({
         {showSuggestions &&
           searchInput.length > 2 &&
           filteredValidators.length === 0 && (
-            <div className="absolute z-50 w-full mt-2 bg-[#222] outline outline-1 outline-black/20 rounded-md shadow-lg p-4">
-              <p className="text-sm text-white/50 text-center">
+            <div className="absolute z-50 w-full mt-1 bg-white border border-aero-gray-light rounded-md shadow-lg p-4 text-center font-outfit">
+              <p className="text-sm text-gray-600">
                 No validators found matching your search
               </p>
             </div>
