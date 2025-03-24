@@ -222,7 +222,7 @@ const StakeModal = ({
           <Button
             variant="outline"
             onClick={onClose}
-            className="border-gojira-gray-light text-white"
+            className="border-white/20 text-white"
           >
             Cancel
           </Button>

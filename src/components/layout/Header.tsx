@@ -13,7 +13,13 @@ const Header = () => {
         <div className="max-w-screen-2xl mx-auto my-4">
           <div className="flex justify-between gap-6 items-center">
             <div className="flex gap-8 text-white text-base items-center">
-              <img src="/images/logo_header.png" alt="Logo" className="h-12" />
+              <Link to={"/"}>
+                <img
+                  src="/images/logo_header.png"
+                  alt="Logo"
+                  className="h-12"
+                />
+              </Link>
 
               <a href="_" target="_blank">
                 <span className="">AeroPool</span>
@@ -36,12 +42,6 @@ const Header = () => {
                 onClick={() => setStakeModalOpen(true)}
               >
                 Swap to aeroSOL
-              </Button>
-              <Button
-                variant="outline"
-                className="border-aero-purple text-aero-purple hover:bg-aero-purple/10"
-              >
-                Connect Wallet
               </Button>
             </div>
           </div>

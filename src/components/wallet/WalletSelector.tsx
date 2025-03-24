@@ -64,8 +64,8 @@ const WalletSelector = ({ onWalletSelect, isConnecting, selectedWallet }: Wallet
       {availableWallets.length > 0 && (
         <>
           <div className="mt-6">
-            <Accordion type="single" collapsible className="border-gojira-gray-light rounded-md">
-              <AccordionItem value="available-wallets" className="border-gojira-gray-light">
+            <Accordion type="single" collapsible className="border-white/20 rounded-md">
+              <AccordionItem value="available-wallets" className="border-white/20">
                 <AccordionTrigger className="py-3 px-4 text-sm font-medium text-white hover:no-underline">
                   Available wallets ({availableWallets.length})
                 </AccordionTrigger>

@@ -65,7 +65,7 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
               placeholder={
                 isLoadingValidators ? "Loading..." : "Search validator..."
               }
-              className="pl-9 pr-3 py-2 bg-white bg-opacity-5 outline outline-1 h-9 w-full !text-white"
+              className="pl-9 pr-3 py-2 bg-white bg-opacity-5 outline outline-1 outline-black/20 h-9 w-full text-white"
               value={searchInput}
               onChange={handleInputChange}
               ref={ref}
@@ -75,7 +75,6 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
                 }
               }}
               disabled={isLoadingValidators && !searchInput.trim()} // Allow typing even when loading
-              style={{ color: "#000" }}
             />
 
             {isLoadingValidators && !searchInput.trim() && (
@@ -107,7 +106,7 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
                           }}
                         />
                       ) : (
-                        <div className="w-6 h-6 rounded-full bg-gojira-gray-light flex items-center justify-center text-xs flex-shrink-0">
+                        <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs flex-shrink-0">
                           {validator.name?.[0] || "V"}
                         </div>
                       )}
@@ -153,17 +152,6 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
               )}
           </div>
         </div>
-        <Button
-          type="submit"
-          variant="destructive"
-          className="bg-gojira-red hover:bg-gojira-red-dark h-9 px-4 py-2 rounded-md text-white flex items-center justify-center shadow-md"
-          disabled={isSearching || (isLoadingValidators && !searchInput.trim())}
-        >
-          {isSearching ? (
-            <div className="h-5 w-5 border-2 border-white/20 border-t-white rounded-full animate-spin mr-2" />
-          ) : null}
-          <span>{isMobile ? "Search" : "Search"}</span>
-        </Button>
       </form>
     );
   }

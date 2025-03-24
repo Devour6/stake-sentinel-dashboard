@@ -1,6 +1,4 @@
 import React from "react";
-import { Button } from "@/components/ui/button";
-import Logo from "@/components/layout/Logo";
 import Footer from "./Footer";
 import Header from "./Header";
 
@@ -10,7 +8,7 @@ interface PageLayoutProps {
 
 const PageLayout = ({ children }: PageLayoutProps) => {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-aero-dark to-aero-gray-dark p-4 relative overflow-hidden">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-aero-dark to-aero-gray-dark relative overflow-hidden">
       <Header />
       <div
         className="relative w-full flex-1 flex items-center justify-center bg-contain bg-no-repeat bg-center"

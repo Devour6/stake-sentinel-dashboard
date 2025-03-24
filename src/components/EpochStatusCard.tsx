@@ -103,7 +103,7 @@ export const EpochStatusCard = ({ compact = false }: EpochStatusCardProps) => {
 
   if (compact) {
     return (
-      <Card className="overflow-hidden bg-gojira-gray-dark/50 shadow-md border-gojira-gray-light">
+      <Card className="overflow-hidden bg-back/50 shadow-md border-white/20">
         <CardContent className="p-3 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-gojira-red" />
@@ -148,7 +148,7 @@ export const EpochStatusCard = ({ compact = false }: EpochStatusCardProps) => {
   }
 
   return (
-    <Card className="glass-card animate-fade-in border-gojira-gray-light">
+    <Card className="glass-card animate-fade-in border-white/20">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2">
           <CalendarClock className="h-5 w-5 text-gojira-red" />

@@ -139,7 +139,7 @@ const PositionsModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-xl bg-gojira-gray-dark">
+      <DialogContent className="sm:max-w-xl bg-back">
         <DialogHeader>
           <DialogTitle className="text-white mb-2">My stakes</DialogTitle>
           <DialogDescription>
@@ -223,7 +223,7 @@ const PositionsModal = ({
           <Button
             variant="outline"
             onClick={onClose}
-            className="border-gojira-gray-light text-white"
+            className="border-white/20 text-white"
           >
             Close
           </Button>

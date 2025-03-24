@@ -1,7 +1,7 @@
 const Footer = () => {
   return (
     <div
-      className="absolute bottom-0 left-0 right-0"
+      className="sticky w-full bottom-0 left-0 right-0"
       style={{
         backgroundImage: `url('/images/bg_footer.svg')`,
       }}

@@ -9,6 +9,7 @@ import { VALIDATOR_PUBKEY } from "@/services/api/constants";
 import { RefreshOverlay } from "@/components/validator/RefreshOverlay";
 import { ErrorNotice } from "@/components/validator/ErrorNotice";
 import { useValidatorData } from "@/hooks/useValidatorData";
+import PageLayout from "@/components/layout/PageLayout";
 
 const ValidatorDashboard = () => {
   const { votePubkey } = useParams<{ votePubkey: string }>();
@@ -52,10 +53,12 @@ const ValidatorDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-aero-dark to-aero-gray-dark relative overflow-hidden">
-      {isRefreshing && <RefreshOverlay />}
+    <PageLayout>
+      <div className="container relative z-1 max-w-7xl mx-auto py-4 px-3 sm:px-5 lg:px-6 flex flex-col gap-4">
+        {isRefreshing && <RefreshOverlay />}
 
-      <div className="container relative z-1 max-w-7xl mx-auto py-4 px-3 sm:px-5 lg:px-6">
+        {error && !isLoading && <ErrorNotice error={error} />}
+
         <ValidatorHeader
           validatorPubkey={votePubkey}
           validatorName={validatorInfo?.name}
@@ -68,12 +71,7 @@ const ValidatorDashboard = () => {
           isLoading={isLoading}
           onRefresh={handleRefresh}
           onBack={() => navigate("/")}
-          onStakeModalOpen={handleStakeModalOpen}
         />
-
-        <div className="mt-6"></div>
-
-        {error && !isLoading && <ErrorNotice error={error} />}
 
         <ValidatorMetricsGrid
           totalStake={totalStake}
@@ -105,10 +103,10 @@ const ValidatorDashboard = () => {
       <StakeModal
         isOpen={isStakeModalOpen}
         onClose={handleStakeModalClose}
-        validatorPubkey={votePubkey || VALIDATOR_PUBKEY}
-        validatorName={validatorInfo?.name || "Validator"}
+        validatorPubkey={VALIDATOR_PUBKEY}
+        validatorName="AeroScan Validator"
       />
-    </div>
+    </PageLayout>
   );
 };
 
