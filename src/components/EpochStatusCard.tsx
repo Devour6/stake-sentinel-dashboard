@@ -103,10 +103,10 @@ export const EpochStatusCard = ({ compact = false }: EpochStatusCardProps) => {
 
   if (compact) {
     return (
-      <Card className="overflow-hidden bg-gojira-gray-dark/50 shadow-md border-gojira-gray-light">
+      <Card className="overflow-hidden bg-aero-gray-dark/50 shadow-md border-aero-gray-light">
         <CardContent className="p-3 flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-gojira-red" />
+            <Clock className="h-4 w-4 text-aero-red" />
             <div>
               <span className="text-sm font-medium">Current Epoch: </span>
               {isLoading ? (
@@ -148,10 +148,10 @@ export const EpochStatusCard = ({ compact = false }: EpochStatusCardProps) => {
   }
 
   return (
-    <Card className="glass-card animate-fade-in border-gojira-gray-light">
+    <Card className="glass-card animate-fade-in border-aero-gray-light">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2">
-          <CalendarClock className="h-5 w-5 text-gojira-red" />
+          <CalendarClock className="h-5 w-5 text-aero-red" />
           Epoch Status
         </CardTitle>
         <CardDescription>Current Solana blockchain epoch information</CardDescription>

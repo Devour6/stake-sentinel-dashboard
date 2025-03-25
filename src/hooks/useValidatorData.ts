@@ -135,7 +135,7 @@ export function useValidatorData(votePubkey: string | undefined) {
           title: "Data refreshed",
           description: "Validator information updated successfully",
           variant: "default",
-          className: "bg-gojira-gray-light border-gojira-red text-white",
+          className: "bg-aero-gray-light border-aero-red text-white",
         });
       }
     } catch (err) {

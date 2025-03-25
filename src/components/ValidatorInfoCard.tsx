@@ -36,12 +36,12 @@ export const ValidatorInfoCard = ({
   const voteStatus = getVoteStatus();
 
   return (
-    <Card className="glass-card animate-fade-in border-gojira-gray-light">
+    <Card className="glass-card animate-fade-in border-aero-gray-light">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <Info className="h-4 w-4 text-gojira-red" />
+              <Info className="h-4 w-4 text-aero-red" />
               Validator Details
             </CardTitle>
             <CardDescription>Information about this validator</CardDescription>
@@ -75,7 +75,7 @@ export const ValidatorInfoCard = ({
           <div className="space-y-4">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Clock className="h-3.5 w-3.5 text-gojira-red" />
+                <Clock className="h-3.5 w-3.5 text-aero-red" />
                 <span className="text-sm text-muted-foreground">Vote Status</span>
               </div>
               <p className="font-medium">{voteStatus.text}</p>

@@ -88,7 +88,7 @@ const StakeModal = ({
       if (result) {
         toast.success(
           `Successfully initiated staking of ${amount} SOL to ${
-            validatorName || "Gojira Validator"
+            validatorName || "AeroScan Validator"
           }`
         );
         setAmount("");
@@ -177,7 +177,7 @@ const StakeModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md bg-gojira-gray-dark">
+      <DialogContent className="sm:max-w-md bg-aero-gray-dark">
         <DialogHeader>
           <DialogTitle className="text-white">
             Swap to aeroSOL {validatorName ? `via ${validatorName}` : ""}
@@ -193,7 +193,7 @@ const StakeModal = ({
               <div className="flex justify-center my-6">
                 <Button
                   onClick={handleConnectOption}
-                  className="bg-gojira-red hover:bg-gojira-red-dark"
+                  className="bg-aero-red hover:bg-aero-red-dark"
                 >
                   Connect Wallet
                 </Button>
@@ -221,7 +221,7 @@ const StakeModal = ({
           <Button
             variant="outline"
             onClick={onClose}
-            className="border-gojira-gray-light text-white"
+            className="border-aero-gray-light text-white"
           >
             Cancel
           </Button>
@@ -229,7 +229,7 @@ const StakeModal = ({
           {isConnected && (
             <Button
               onClick={handleStake}
-              className="bg-gojira-red hover:bg-gojira-red-dark"
+              className="bg-aero-red hover:bg-aero-red-dark"
               disabled={isStaking || !amount}
             >
               {isStaking ? (

@@ -47,7 +47,7 @@ const Index = () => {
           title: "Data refreshed",
           description: "Validator information updated successfully",
           variant: "default",
-          className: "bg-gojira-gray-light border-gojira-red text-white",
+          className: "bg-aero-gray-light border-aero-red text-white",
         });
       }
     } catch (error) {
@@ -81,7 +81,7 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gojira-gray to-gojira-gray-dark">
+    <div className="min-h-screen bg-gradient-to-br from-aero-gray to-aero-gray-dark">
       {isRefreshing && <RefreshOverlay />}
       
       {/* Glass container */}
@@ -131,7 +131,7 @@ const Index = () => {
           <p>Data refreshes automatically every 5 minutes. Last updated: {new Date().toLocaleTimeString()}</p>
           <div className="mt-2 flex justify-center gap-1 items-center">
             <span>Powered by</span>
-            <span className="text-gojira-red font-semibold">Gojira</span>
+            <span className="text-aero-red font-semibold">Gojira</span>
             <img 
               src="/lovable-uploads/31314417-ef5b-4d58-ac5e-91a2ab487110.png" 
               alt="Gojira Logo" 

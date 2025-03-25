@@ -69,8 +69,7 @@ export const HeaderSearchSection = ({
           }
           value={searchInput}
           onChange={handleInputChange}
-          className="pl-9 h-9 w-full bg-gojira-gray-dark border-gojira-gray-light text-sm pr-12 text-black font-outfit"
-          style={{ color: '#000' }}
+          className="pl-9 h-9 w-full bg-aero-gray-dark border-aero-gray-light text-sm pr-12 text-white font-outfit"
           ref={searchInputRef}
           onFocus={() => {
             if (searchInput.length > 2 && filteredValidators.length > 0) {
@@ -83,7 +82,7 @@ export const HeaderSearchSection = ({
           type="submit"
           variant="destructive"
           size="sm"
-          className="absolute right-0 top-0 h-9 rounded-l-none bg-gojira-red hover:bg-gojira-red-dark flex items-center justify-center shadow-md font-outfit"
+          className="absolute right-0 top-0 h-9 rounded-l-none bg-aero-red hover:bg-aero-red-dark flex items-center justify-center shadow-md font-outfit"
           disabled={isLoadingValidators || !searchInput.trim() || isSearching}
         >
           {isSearching ? (
@@ -117,7 +116,7 @@ export const HeaderSearchSection = ({
                       }}
                     />
                   ) : (
-                    <div className="w-6 h-6 rounded-full bg-gojira-gray-light flex items-center justify-center text-xs flex-shrink-0">
+                    <div className="w-6 h-6 rounded-full bg-aero-gray-light flex items-center justify-center text-xs flex-shrink-0">
                       {validator.name?.[0] || "V"}
                     </div>
                   )}

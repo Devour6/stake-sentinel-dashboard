@@ -139,7 +139,7 @@ const PositionsModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-xl bg-gojira-gray-dark">
+      <DialogContent className="sm:max-w-xl bg-aero-gray-dark">
         <DialogHeader>
           <DialogTitle className="text-white mb-2">My stakes</DialogTitle>
           <DialogDescription>
@@ -187,7 +187,7 @@ const PositionsModal = ({
                       {stake.activationEpoch == stake.deactivationEpoch ? (
                         <button
                           type="button"
-                          className="border px-2.5 py-1.5 rounded-xl text-white hover:border-gojira-red"
+                          className="border px-2.5 py-1.5 rounded-xl text-white hover:border-aero-red"
                           onClick={() =>
                             handleWithdraw(stake.account, stake.lamports)
                           }
@@ -197,7 +197,7 @@ const PositionsModal = ({
                       ) : (
                         <button
                           type="button"
-                          className="border px-2.5 py-1.5 rounded-xl text-gojira-red hover:border-gojira-red"
+                          className="border px-2.5 py-1.5 rounded-xl text-aero-red hover:border-aero-red"
                           onClick={() => handleDeactivate(stake.account)}
                         >
                           Deactivate
@@ -223,7 +223,7 @@ const PositionsModal = ({
           <Button
             variant="outline"
             onClick={onClose}
-            className="border-gojira-gray-light text-white"
+            className="border-aero-gray-light text-white"
           >
             Close
           </Button>

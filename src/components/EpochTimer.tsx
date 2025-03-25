@@ -57,7 +57,7 @@ export const EpochTimer = ({
   if (compact) {
     return (
       <div className="flex items-center gap-1">
-        <Clock className="h-4 w-4 text-gojira-red" />
+        <Clock className="h-4 w-4 text-aero-red" />
         <span className="text-sm whitespace-nowrap">
           {isLoading ? "..." : formatTimeRemaining()}
         </span>
