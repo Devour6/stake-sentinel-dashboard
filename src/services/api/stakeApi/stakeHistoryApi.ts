@@ -93,7 +93,7 @@ async function fetchStakeHistoryFromStakewiz(
   votePubkey: string
 ): Promise<StakeHistoryItem[]> {
   const response = await axios.get(
-    `https://api.stakewiz.com/validator_total_stakes/${votePubkey}`,
+    `https://api.stakewiz.com/validator_total_stakes/${votePubkey}?limit=2000`,
     { timeout: 6000 }
   );
 
