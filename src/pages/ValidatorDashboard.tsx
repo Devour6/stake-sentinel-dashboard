@@ -6,6 +6,7 @@ import { ValidatorMetricsGrid } from "@/components/StakingMetricsCard";
 import { EpochStatusCard } from "@/components/EpochStatusCard";
 import StakeModal from "@/components/StakeModal";
 import { StakeChart } from "@/components/StakeChart";
+import { StakeChangesTable } from "@/components/StakeChangesTable";
 import { VALIDATOR_PUBKEY } from "@/services/api/constants";
 import { RefreshOverlay } from "@/components/validator/RefreshOverlay";
 import { ErrorNotice } from "@/components/validator/ErrorNotice";
@@ -27,6 +28,7 @@ const ValidatorDashboard = () => {
     totalStake,
     stakeHistory,
     stakeChanges,
+    stakeChangeDetails,
     voteRate,
     skipRate,
     handleRefresh,
@@ -149,6 +151,17 @@ const ValidatorDashboard = () => {
           <div className="lg:col-span-8">
             <StakeChart data={stakeHistory} isLoading={isLoading} />
           </div>
+        </div>
+
+        {/* Add the new StakeChangesTable component */}
+        <div className="mt-6">
+          <StakeChangesTable 
+            activatingDetails={stakeChangeDetails?.activating || []}
+            deactivatingDetails={stakeChangeDetails?.deactivating || []}
+            activatingTotal={activatingStake}
+            deactivatingTotal={deactivatingStake}
+            isLoading={isLoading}
+          />
         </div>
 
         <DashboardFooter />

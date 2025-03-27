@@ -122,3 +122,12 @@ export interface EpochInfo {
   transactionCount?: number;
   timeRemaining?: number; // Added field for time remaining in seconds
 }
+
+// Added new StakeChangeDetail type
+export interface StakeChangeDetail {
+  stakeAccount: string;
+  amount: number;
+  remainingEpochs: number;
+  owner: string;
+  epoch: number;
+}
