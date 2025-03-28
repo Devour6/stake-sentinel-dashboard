@@ -10,9 +10,7 @@ import {
   type ValidatorInfo,
   type ValidatorMetrics,
   type StakeHistoryItem,
-  type StakeChangeDetail,
 } from "@/services/solanaApi";
-import { fetchStakeChangeDetails } from "@/services/api/stakeApi/stakeHistoryApi";
 import { getReliableStakeValue } from "@/services/api/utils/stakeUtils";
 import { toast as uiToast } from "@/hooks/use-toast";
 
@@ -29,10 +27,6 @@ export function useValidatorData(votePubkey: string | undefined) {
     activatingStake: number;
     deactivatingStake: number;
   }>({ activatingStake: 0, deactivatingStake: 0 });
-  const [stakeChangeDetails, setStakeChangeDetails] = useState<{
-    activating: StakeChangeDetail[];
-    deactivating: StakeChangeDetail[];
-  }>({ activating: [], deactivating: [] });
   const [voteRate, setVoteRate] = useState<number | undefined>(undefined);
   const [skipRate, setSkipRate] = useState<number | undefined>(undefined);
 
@@ -60,10 +54,7 @@ export function useValidatorData(votePubkey: string | undefined) {
         fetchStakeChanges(votePubkey),
         
         // Get stake history
-        fetchStakeHistory(votePubkey),
-        
-        // Get detailed stake change information
-        fetchStakeChangeDetails(votePubkey)
+        fetchStakeHistory(votePubkey)
       ]);
       
       // Extract results from the promises
@@ -72,8 +63,7 @@ export function useValidatorData(votePubkey: string | undefined) {
         metricsResult, 
         totalStakeResult, 
         stakeChangesResult,
-        stakeHistoryResult,
-        stakeChangeDetailsResult
+        stakeHistoryResult
       ] = results;
       
       // Process validator info
@@ -140,12 +130,6 @@ export function useValidatorData(votePubkey: string | undefined) {
         setStakeChanges(stakeChangesResult.value);
       }
       
-      // Process stake change details
-      if (stakeChangeDetailsResult.status === 'fulfilled' && stakeChangeDetailsResult.value) {
-        console.log("Stake change details:", stakeChangeDetailsResult.value);
-        setStakeChangeDetails(stakeChangeDetailsResult.value);
-      }
-      
       if (showToast && infoResult.status === 'fulfilled' && infoResult.value) {
         uiToast({
           title: "Data refreshed",
@@ -189,7 +173,6 @@ export function useValidatorData(votePubkey: string | undefined) {
     totalStake,
     stakeHistory,
     stakeChanges,
-    stakeChangeDetails,
     voteRate,
     skipRate,
     handleRefresh

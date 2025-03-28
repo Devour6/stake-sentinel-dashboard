@@ -24,12 +24,9 @@ import {
   fetchReliableStakeChanges as fetchStakeChanges,
   fetchReliableStakeHistory as fetchStakeHistory
 } from "./api/betterStakeService";
-import {
-  fetchStakeChangeDetails
-} from "./api/stakeApi/stakeHistoryApi";
 
 // Type imports
-import type { ValidatorInfo, ValidatorMetrics, StakeHistoryItem, ValidatorSearchResult, EpochInfo, RpcVoteAccount, StakeChangeDetail } from "./api/types";
+import type { ValidatorInfo, ValidatorMetrics, StakeHistoryItem, ValidatorSearchResult, EpochInfo, RpcVoteAccount } from "./api/types";
 import type { ValidatorI, ClusterStatsI, EpochInfoI } from "./api/interfaces";
 
 // Re-export everything
@@ -49,7 +46,6 @@ export {
   type EpochInfoI,
   type EpochInfo,
   type RpcVoteAccount,
-  type StakeChangeDetail,
   
   // API methods
   fetchValidatorInfo,
@@ -63,7 +59,6 @@ export {
   fetchTotalStake,
   fetchStakeChanges,
   fetchStakeHistory,
-  fetchStakeChangeDetails,
   
   // Utils
   validateVotePubkey,
