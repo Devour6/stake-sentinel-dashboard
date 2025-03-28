@@ -39,8 +39,8 @@ export const fetchValidatorMetrics = async (votePubkey = VALIDATOR_PUBKEY): Prom
     const stakewizData = await fetchStakewizMetrics(votePubkey);
     
     // Initialize vote rate and skip rate with reasonable defaults
-    let voteRate: number = 99.5 - (Math.random() * 2); // Default between 97.5% and 99.5%
-    let skipRate: number = 0.2 + (Math.random() * 0.5); // Default between 0.2% and 0.7%
+    let voteRate: number = 0;
+    let skipRate: number = 0;
     
     // If we have Stakewiz data, use it to fill in any missing stake data
     if (stakewizData) {

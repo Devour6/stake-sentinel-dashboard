@@ -90,19 +90,19 @@ export function useValidatorData(votePubkey: string | undefined) {
           setVoteRate(metricsResult.value.voteRate);
         } else {
           // If no vote rate in metrics, generate a reasonable value
-          setVoteRate(99.5 - (Math.random() * 2));
+          setVoteRate(0);
         }
         
         if (metricsResult.value.skipRate !== undefined) {
           setSkipRate(metricsResult.value.skipRate);
         } else {
           // If no skip rate in metrics, generate a reasonable value
-          setSkipRate(0.2 + (Math.random() * 0.5));
+          setSkipRate(0);
         }
       } else {
         // Set default vote rate and skip rate if metrics call failed
-        setVoteRate(99.5 - (Math.random() * 2));
-        setSkipRate(0.2 + (Math.random() * 0.5));
+        setVoteRate(0);
+        setSkipRate(0);
       }
       
       // Save stake history data first so we can use it as a fallback for total stake

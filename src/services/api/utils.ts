@@ -52,35 +52,6 @@ export const lamportsToSol = (lamports: number): number => {
   return lamports / 1_000_000_000;
 };
 
-// Mock data generator for stake history
-export const generateMockStakeHistory = (
-  days: number,
-  currentStake: number
-) => {
-  const stakeHistory = [];
-  let stake = currentStake;
-  const today = new Date();
-
-  for (let i = days - 1; i >= 0; i--) {
-    const date = new Date(today);
-    date.setDate(today.getDate() - i);
-    const dateString = date.toLocaleDateString("en-CA"); // Use a consistent date format
-
-    // Generate a random stake change
-    const stakeChange = (Math.random() - 0.5) * 0.02 * currentStake; // Up to 2% change
-    stake += stakeChange;
-    stake = Math.max(0, stake); // Stake cannot be negative
-
-    stakeHistory.push({
-      epoch: days - i,
-      stake: stake,
-      date: dateString,
-    });
-  }
-
-  return stakeHistory;
-};
-
 // Add a function to validate vote pubkey format
 export const validateVotePubkey = (pubkey: string): boolean => {
   // This is a simple check for Solana address format (base58, 32-44 chars)
